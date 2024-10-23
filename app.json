@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "ActableMVP",
-    "slug": "ActableMVP",
+    "name": "actable",
+    "slug": "actable",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",

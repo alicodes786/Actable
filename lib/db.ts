@@ -2,7 +2,6 @@ import { AppState } from 'react-native'
 import 'react-native-url-polyfill/auto'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { createClient } from '@supabase/supabase-js'
-// import { EXPO_PUBLIC_DB_URL, EXPO_PUBLIC_DB_KEY } from "@env"
 
 const supabaseUrl = 'https://guzdcdafvddjcwxesvqd.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd1emRjZGFmdmRkamN3eGVzdnFkIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTcyOTYzMTg1OCwiZXhwIjoyMDQ1MjA3ODU4fQ.VJszQqwE6jeQcgtqaTWiSHTh6zxYngr0TNxatMXKvME';

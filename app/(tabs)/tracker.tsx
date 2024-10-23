@@ -1,12 +1,12 @@
 import React from 'react';
 import { Image, StyleSheet, Platform, View, Text } from 'react-native';
 
-export default function HomeScreen() {
+export default function TrackerScreen() {
   return (
     <View style={styles.container}>
     
     {/* Welcome Text */}
-    <Text style={styles.welcomeText}>Welcome!</Text>
+    <Text style={styles.welcomeText}>This is your Tracker Screen</Text>
   </View>
 );
 }

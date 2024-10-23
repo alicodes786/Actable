@@ -1,12 +1,12 @@
 import React from 'react';
 import { Image, StyleSheet, Platform, View, Text } from 'react-native';
 
-export default function HomeScreen() {
+export default function AddDeadlineScreen() {
   return (
     <View style={styles.container}>
     
     {/* Welcome Text */}
-    <Text style={styles.welcomeText}>Welcome!</Text>
+    <Text style={styles.welcomeText}>Add your deadlines here</Text>
   </View>
 );
 }
