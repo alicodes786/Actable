@@ -1,9 +1,22 @@
-import React from 'react';
+import { getDeadlines } from '@/db/deadlines';
+import { IdeadlineList } from '@/lib/interfaces';
+import React, { useEffect, useState } from 'react';
 import { Image, StyleSheet, Platform, View, Text } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 
 export default function HomeScreen() {
+  const [deadlines, setDeadlines] = useState<IdeadlineList | null >(null);
+
+  useEffect(() => {
+    const fetchDeadlines = async () => {
+      const fetchedDeadlines: IdeadlineList | null = await getDeadlines();
+      console.log(fetchedDeadlines);
+      setDeadlines(fetchedDeadlines);
+    };
+    fetchDeadlines();
+  }, []);
+
   return (
     <View style={styles.container}>
     
@@ -14,6 +27,13 @@ export default function HomeScreen() {
     
     {/* Welcome Text */}
     <Text style={styles.welcomeText}>Welcome!</Text>
+
+    {deadlines &&
+          <>
+          {deadlines.deadlineList.map((item, idx) => <Text key={idx}>{item.description}</Text>)}
+          </>
+    }
+    
   </View>
 );
 }
