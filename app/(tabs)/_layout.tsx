@@ -11,7 +11,6 @@ export default function TabLayout() {
 
   return (
     <View style={styles.container}>
-      {/* Custom Top Bar */}
       <View style={styles.header}>
         <Text style={styles.headerText}>Welcome, Hassan</Text>
         <View style={styles.icons}>
@@ -112,7 +111,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 20,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#fff',
     width: '100%',
   },
   headerText: {
