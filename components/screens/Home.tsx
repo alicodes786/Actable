@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Image, StyleSheet, Platform, View, Text, Dimensions, TouchableOpacity, ScrollView } from 'react-native';
+import { StyleSheet, Platform, View, Text, Dimensions, TouchableOpacity, ScrollView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { IdeadlineList } from '@/lib/interfaces';
 import { getDeadlines } from '@/db/deadlines';
 import CountDownTimer from '../CountDownTimer';
+
+import { router } from 'expo-router';
 
 const windowWidth = Dimensions.get('window').width;
 const windowHeight = Dimensions.get('window').height;
@@ -11,51 +13,60 @@ const windowHeight = Dimensions.get('window').height;
 
 export default function Home() {
     const [deadlines, setDeadlines] = useState<IdeadlineList | null >(null);
+    const blueGradient = ['#66b3ff', '#007FFF', '#0066cc'];
+    const blackGradient = ['#333333', '#111111', '#000000'];
 
     useEffect(() => {
       const fetchDeadlines = async () => {
         const fetchedDeadlines: IdeadlineList | null = await getDeadlines();
-        console.log(fetchedDeadlines);
+        // console.log(fetchedDeadlines);
         setDeadlines(fetchedDeadlines);
       };
       fetchDeadlines();
     }, []);
-    const blueGradient = ['#66b3ff', '#007FFF', '#0066cc'];
-    const blackGradient = ['#333333', '#111111', '#000000'];
+
   return (
     <View style={styles.container}>
-    <View style={styles.content}>
-      <View style={styles.upcomingDeadlines}>
-        <Text style={styles.title}>Upcoming Deadlines</Text>
-        <ScrollView>
-          {deadlines && deadlines.deadlineList.map((item, idx) => (
-            <LinearGradient
-              key={idx}
-              colors={idx % 2 === 0 ? blueGradient : blackGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.deadlinesCard}
-            >
-              <Text style={styles.taskText}>
-                {item.description}
-              </Text>
-              <Text style={styles.taskText}>
-                <CountDownTimer deadlineDate={item.date} />
-              </Text>
-              <TouchableOpacity 
-                style={styles.submitButton}
-                onPress={() => {
-                  console.log('Submit pressed for item:', item);
-                }}
+      <View style={styles.content}>
+        <View style={styles.upcomingDeadlines}>
+          <Text style={styles.title}>Upcoming Deadlines</Text>
+          <ScrollView>
+            {deadlines && deadlines.deadlineList.map((item, idx) => (
+              <LinearGradient
+                key={idx}
+                colors={idx % 2 === 0 ? blueGradient : blackGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.deadlinesCard}
               >
-                <Text style={styles.submitButtonText}>Submit</Text>
-              </TouchableOpacity>
-            </LinearGradient>
-          ))}
-        </ScrollView>
+                <Text style={styles.taskText}>
+                  {item.description}
+                </Text>
+                <Text style={styles.taskText}>
+                  <CountDownTimer deadlineDate={item.date} />
+                </Text>
+                <TouchableOpacity 
+                  style={styles.submitButton}
+                  onPress={() => {
+                    router.push({
+                      pathname: "/(tabs)/submission",
+                      params: {
+                        deadlineId: item.id,
+                        description: item.description,
+                        date: item.date instanceof Date ? item.date.toISOString() : item.date,
+                      }
+                    })
+                  }
+                }
+                >
+                  <Text style={styles.submitButtonText}>Submit</Text>
+                </TouchableOpacity>
+              </LinearGradient>
+            ))}
+          </ScrollView>
+        </View>
       </View>
     </View>
-  </View>
   );
 }
 

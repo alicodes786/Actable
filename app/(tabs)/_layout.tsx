@@ -94,6 +94,15 @@ export default function TabLayout() {
           }}
         />
         
+
+        <Tabs.Screen
+        name="submission"
+        options={{
+          // Hide this route from the tab bar since it's accessed via navigation
+          href: null,
+        }}
+      />
+
       </Tabs>
     </SafeAreaView>
 
