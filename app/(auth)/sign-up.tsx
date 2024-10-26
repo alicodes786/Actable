@@ -2,43 +2,117 @@ import React, { useState } from 'react';
 import { Separator, Text, Button, Input, YStack, View } from 'tamagui';
 import Toast from 'react-native-toast-message';
 import { router } from "expo-router";
+import { createUser } from "@/db/signup";
 
 export default function SignUp() {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [repeatPassword, setRepeatPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSignUp = () => {
-    // Basic validation example: ensure passwords match
-    if (password !== repeatPassword) {
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const validatePassword = (password: string) => {
+    // At least 8 characters, 1 uppercase, 1 lowercase, 1 number
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+    return passwordRegex.test(password);
+  };
+
+  const handleSignUp = async () => {
+    setIsLoading(true);
+
+    try {
+      // Check for empty fields
+      if (!username || !email || !password || !repeatPassword) {
+        Toast.show({
+          type: 'error',
+          text1: 'Missing Information',
+          text2: 'Please fill in all fields',
+          position: 'bottom',
+        });
+        return;
+      }
+
+      // Username validation
+      if (username.length < 3) {
+        Toast.show({
+          type: 'error',
+          text1: 'Invalid Username',
+          text2: 'Username must be at least 3 characters long',
+          position: 'bottom',
+        });
+        return;
+      }
+
+      // Email validation
+      if (!validateEmail(email)) {
+        Toast.show({
+          type: 'error',
+          text1: 'Invalid Email',
+          text2: 'Please enter a valid email address',
+          position: 'bottom',
+        });
+        return;
+      }
+
+      // Password validation
+      if (!validatePassword(password)) {
+        Toast.show({
+          type: 'error',
+          text1: 'Weak Password',
+          text2: 'Password must be at least 8 characters long and contain uppercase, lowercase, and numbers',
+          position: 'bottom',
+        });
+        return;
+      }
+
+      // Password match validation
+      if (password !== repeatPassword) {
+        Toast.show({
+          type: 'error',
+          text1: 'Password Mismatch',
+          text2: 'Passwords do not match. Please try again.',
+          position: 'bottom',
+        });
+        return;
+      }
+
+      const isRegistered = await createUser(username, password, email);
+
+      if (isRegistered) {
+        Toast.show({
+          type: 'success',
+          text1: 'Registration Successful',
+          text2: 'Redirecting to sign-in...',
+          position: 'bottom',
+          visibilityTime: 2000,
+        });
+        
+        // Delay redirect to allow toast to be visible
+        setTimeout(() => {
+          router.replace("/(auth)/sign-in");
+        }, 2000);
+      } else {
+        Toast.show({
+          type: 'error',
+          text1: 'Registration Failed',
+          text2: 'An error occurred. Please try again.',
+          position: 'bottom',
+        });
+      }
+    } catch (error) {
       Toast.show({
         type: 'error',
-        text1: 'Password Mismatch',
-        text2: 'Passwords do not match. Please try again.',
+        text1: 'Unexpected Error',
+        text2: 'Something went wrong. Please try again later.',
         position: 'bottom',
       });
-      return;
-    }
-
-    // Assuming `registerUser` is a function that registers the user
-    const isRegistered = true; // Replace this with actual registration logic
-
-    if (isRegistered) {
-      Toast.show({
-        type: 'success',
-        text1: 'Registration Successful',
-        text2: 'Redirecting to sign-in...',
-        position: 'bottom',
-      });
-      router.replace("/(auth)/sign-in"); // Redirect to sign-in page
-    } else {
-      Toast.show({
-        type: 'error',
-        text1: 'Registration Failed',
-        text2: 'An error occurred. Please try again.',
-        position: 'bottom',
-      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -54,7 +128,6 @@ export default function SignUp() {
           Sign Up
         </Text>
 
-        {/* Username Input */}
         <Input
           placeholder="Username"
           value={username}
@@ -62,9 +135,9 @@ export default function SignUp() {
           marginBottom={12}
           fontSize={16}
           width="100%"
+          disabled={isLoading}
         />
 
-        {/* Email Input */}
         <Input
           placeholder="Email Address"
           value={email}
@@ -73,9 +146,10 @@ export default function SignUp() {
           marginBottom={12}
           fontSize={16}
           width="100%"
+          disabled={isLoading}
+          autoCapitalize="none"
         />
 
-        {/* Password Input */}
         <Input
           placeholder="Password"
           value={password}
@@ -84,9 +158,9 @@ export default function SignUp() {
           marginBottom={12}
           fontSize={16}
           width="100%"
+          disabled={isLoading}
         />
 
-        {/* Repeat Password Input */}
         <Input
           placeholder="Repeat Password"
           value={repeatPassword}
@@ -95,17 +169,18 @@ export default function SignUp() {
           marginBottom={32}
           fontSize={16}
           width="100%"
+          disabled={isLoading}
         />
 
-        {/* Sign Up Button */}
         <Button
           onPress={handleSignUp}
           width="100%"
           marginBottom={12}
           backgroundColor="#443399"
           color="#fff"
+          disabled={isLoading}
         >
-          Sign Up
+          {isLoading ? 'Signing up...' : 'Sign Up'}
         </Button>
 
         <Separator alignSelf="stretch" marginTop={12} marginBottom={12} />
@@ -114,11 +189,11 @@ export default function SignUp() {
           Already have an account?
         </Text>
 
-        {/* Navigate to Sign In */}
         <Button
           onPress={() => router.push("/(auth)/sign-in")}
           width="100%"
           marginTop={8}
+          disabled={isLoading}
         >
           Sign In
         </Button>
