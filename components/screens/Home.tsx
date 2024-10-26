@@ -3,9 +3,11 @@ import { Image, StyleSheet, Platform, View, Text, Dimensions, TouchableOpacity, 
 import { LinearGradient } from 'expo-linear-gradient';
 import { IdeadlineList } from '@/lib/interfaces';
 import { getDeadlines } from '@/db/deadlines';
+import CountDownTimer from '../CountDownTimer';
 
 const windowWidth = Dimensions.get('window').width;
 const windowHeight = Dimensions.get('window').height;
+
 
 export default function Home() {
     const [deadlines, setDeadlines] = useState<IdeadlineList | null >(null);
@@ -18,20 +20,18 @@ export default function Home() {
       };
       fetchDeadlines();
     }, []);
+    const blueGradient = ['#66b3ff', '#007FFF', '#0066cc'];
+    const blackGradient = ['#333333', '#111111', '#000000'];
   return (
     <View style={styles.container}>
     <View style={styles.content}>
       <View style={styles.upcomingDeadlines}>
         <Text style={styles.title}>Upcoming Deadlines</Text>
-        <ScrollView style={styles.scrollView}>
+        <ScrollView>
           {deadlines && deadlines.deadlineList.map((item, idx) => (
             <LinearGradient
               key={idx}
-              colors={[
-                '#66b3ff',
-                '#007FFF',
-                '#0066cc'
-              ]}
+              colors={idx % 2 === 0 ? blueGradient : blackGradient}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.deadlinesCard}
@@ -40,7 +40,7 @@ export default function Home() {
                 {item.description}
               </Text>
               <Text style={styles.taskText}>
-                {item.date}
+                <CountDownTimer deadlineDate={item.date} />
               </Text>
               <TouchableOpacity 
                 style={styles.submitButton}
@@ -73,9 +73,6 @@ const styles = StyleSheet.create({
     width: '100%',
     marginBottom: 20,
   },
-//   scrollView: {
-//     flex: 1, 
-//   },
   deadlinesCard: {
     marginTop: 15,
     padding: 20,
@@ -94,7 +91,7 @@ const styles = StyleSheet.create({
   taskText: {
     color: 'white',
     marginVertical: windowHeight * 0.01, 
-    fontSize: 20,
+    fontSize: 17,
     fontWeight: '500',
   },
   title: {
@@ -112,7 +109,7 @@ const styles = StyleSheet.create({
   },
   submitButtonText: {
     color: 'white',
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '600',
   }
 });
