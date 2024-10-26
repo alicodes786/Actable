@@ -2,6 +2,7 @@
 import { Stack } from 'expo-router';
 import { View, Text, StyleSheet } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
+import CountDownTimer from '@/components/CountDownTimer';
 
 // Type for your route params
 interface SubmissionScreenParams {
@@ -36,11 +37,13 @@ export default function SubmissionScreen() {
 // Separate component for the content
 function SubmissionContent() {
   const params = useLocalSearchParams();
+  const deadlineDate = new Date(params.date as string);
 
   return (
     <View style={styles.container}>
       <Text>Submission for: {params.description}</Text>
-      <Text>Deadline: {params.date}</Text>
+      <Text><CountDownTimer deadlineDate={deadlineDate} textColour='black'/></Text>
+      <Text>Some filler</Text>
     </View>
   );
 }
@@ -50,5 +53,5 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
     backgroundColor: "#fff"
-  },
+  }
 });

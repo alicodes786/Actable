@@ -9,11 +9,20 @@ type TimeLeft = {
 };
 
 type CountdownTimerProps = {
-  deadlineDate: Date; 
+  deadlineDate: Date;
+  textColour?: string;
 };
 
-export default function CountDownTimer({ deadlineDate }: CountdownTimerProps) {
+export default function CountDownTimer({ deadlineDate, textColour }: CountdownTimerProps) {
   const [timeLeft, setTimeLeft] = useState<TimeLeft>(timeRemaining(deadlineDate));
+
+  const styles = StyleSheet.create({
+    taskText: {
+        color: textColour ? textColour : "white", 
+        fontSize: 25,
+        fontWeight: '500',
+      },
+})
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -42,12 +51,3 @@ export default function CountDownTimer({ deadlineDate }: CountdownTimerProps) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-    taskText: {
-        color: 'white',
-         
-        fontSize: 25,
-        fontWeight: '500',
-      },
-})
