@@ -5,13 +5,13 @@ import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { View, StyleSheet, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
 
   return (
-    <View style={styles.container}>
-      {/* Custom Top Bar */}
+    <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerText}>Welcome, Hassan</Text>
         <View style={styles.icons}>
@@ -95,9 +95,8 @@ export default function TabLayout() {
         />
         
       </Tabs>
-    </View>
+    </SafeAreaView>
 
-    
   );
 }
 
@@ -112,7 +111,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 20,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#fff',
     width: '100%',
   },
   headerText: {
