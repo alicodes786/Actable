@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Text, Button, Input, YStack, View } from 'tamagui';
+import { Separator, Text, Button, Input, YStack, View } from 'tamagui';
 import Toast from 'react-native-toast-message';
 import { checkPass } from '@/db/signin';
+import { router } from "expo-router";
 
 
-export default function SignInPage() {
+export default function SignIn() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
@@ -19,6 +20,7 @@ export default function SignInPage() {
         text2: 'Redirecting to your dashboard...',
         position: 'bottom', 
       });
+      router.replace("/(tabs)");
 
     } else {
 
@@ -31,8 +33,6 @@ export default function SignInPage() {
   };
 };
 
-
-
   return (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
       <YStack 
@@ -41,7 +41,7 @@ export default function SignInPage() {
         padding={20}
         width="100%"
       >
-        <Text fontSize={24} marginBottom={12} fontWeight="bold" textAlign="center">Sign In</Text>
+        <Text fontSize={24} marginBottom={64} fontWeight="bold" textAlign="center">Sign In</Text>
         
         {/* Username Input */}
         <Input
@@ -59,7 +59,7 @@ export default function SignInPage() {
           value={password}
           onChangeText={setPassword}
           secureTextEntry
-          marginBottom={12}
+          marginBottom={32}
           fontSize={16}
           width="100%"
         />
@@ -69,6 +69,8 @@ export default function SignInPage() {
           onPress={handleSignIn} // Call handleSignIn on press
           width="100%"
           marginBottom={12}
+          backgroundColor="#443399"
+          color="#fff"
         >
           Sign In
         </Button>
@@ -80,8 +82,12 @@ export default function SignInPage() {
         >
           Sign in with Google
         </Button>
+
+        <Separator alignSelf="stretch" marginTop={12} marginBottom={12} />
+        <Text width="100%">Already have an account?</Text>
+        
       </YStack>
-      
+
       <Toast />
     </View>
   );
