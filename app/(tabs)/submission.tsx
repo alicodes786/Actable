@@ -8,13 +8,6 @@ import CountDownTimer from '@/components/CountDownTimer';
 import { uploadSubmissionImage } from '@/db/imageUpload';
 import { supabase } from '@/lib/db';
 
-// Type for your route params
-interface SubmissionScreenParams {
-  deadlineId: string;
-  description: string;
-  date: string;
-}
-
 interface SubmissionData {
   description: string;
   date: Date;

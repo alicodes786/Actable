@@ -27,29 +27,26 @@ export const uploadSubmissionImage = async ({
     }
     console.log('File exists:', uri);
 
-    // Read the file contents
+    // Read the file contents as base64
     try {
       const fileData = await FileSystem.readAsStringAsync(uri, {
         encoding: FileSystem.EncodingType.Base64,
       });
       console.log('File read successfully, length:', fileData.length);
 
+      // Convert base64 to Uint8Array
+      const binaryData = base64ToUint8Array(fileData);
+      console.log('Converted to binary data, length:', binaryData.length);
+
       // Generate unique file path
       const fileName = `submission-${Date.now()}.jpg`;
       const filePath = `${userId}/${deadlineId}/${fileName}`;
       console.log('Generated file path:', filePath);
 
-      // Get the current session
-      // const session = await supabase.auth.getSession();
-      // console.log(session)
-      // if (!session.data.session) {
-      //   throw new Error('No active session');
-      // }
-
       // Upload to Supabase Storage
       const { data: storageData, error: uploadError } = await supabase.storage
         .from('submissions')
-        .upload(filePath, fileData, {
+        .upload(filePath, binaryData, {
           contentType: 'image/jpeg',
           upsert: false,
         });
@@ -99,3 +96,16 @@ export const uploadSubmissionImage = async ({
     };
   }
 };
+
+// Helper function to convert base64 to Uint8Array
+function base64ToUint8Array(base64String: string): Uint8Array {
+  const binaryString = atob(base64String);
+  const length = binaryString.length;
+  const bytes = new Uint8Array(length);
+  
+  for (let i = 0; i < length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  
+  return bytes;
+}
