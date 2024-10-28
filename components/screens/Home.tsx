@@ -40,7 +40,7 @@ export default function Home() {
                 style={styles.deadlinesCard}
               >
                 <Text style={styles.taskText}>
-                  {item.description}
+                  {item.name}
                 </Text>
                 <Text style={styles.taskText}>
                   <CountDownTimer deadlineDate={item.date} />
@@ -52,6 +52,7 @@ export default function Home() {
                       pathname: "/(tabs)/submission",
                       params: {
                         deadlineId: item.id,
+                        name: item.name,
                         description: item.description,
                         date: item.date instanceof Date ? item.date.toISOString() : item.date,
                       }

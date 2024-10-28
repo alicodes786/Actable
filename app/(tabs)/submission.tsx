@@ -6,8 +6,10 @@ import * as ImagePicker from 'expo-image-picker';
 import CountDownTimer from '@/components/CountDownTimer';
 import { uploadSubmissionImage } from '@/db/imageUpload';
 import { createNewSubmission, fetchLastSubmissionImage, SubmissionError } from '@/db/submissions';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 interface SubmissionData {
+  name: string;
   description: string;
   date: Date;
 }
@@ -30,15 +32,6 @@ export default function SubmissionScreen() {
       />
       <SubmissionContent />
     </>
-  );
-}
-
-function LoadingSpinner() {
-  return (
-    <View style={styles.loadingContainer}>
-      <ActivityIndicator size="large" color="#0000ff" />
-      <Text style={styles.loadingText}>Loading submission details...</Text>
-    </View>
   );
 }
 
@@ -179,7 +172,7 @@ function ImageCapture({ deadlineId, userId }: { deadlineId: string; userId: stri
               disabled={!isNewPhoto || uploading}
             >
               <Text style={styles.buttonText}>
-                {uploading ? 'Uploading...' : 'Resubmit'}
+                {uploading ? 'Uploading...' : 'Submit'}
               </Text>
             </TouchableOpacity>
           </View>
@@ -193,7 +186,7 @@ function ImageCapture({ deadlineId, userId }: { deadlineId: string; userId: stri
         </View>
       ) : (
         <TouchableOpacity 
-          style={styles.button} 
+          style={[styles.button, styles.photoButton]} 
           onPress={takePhoto}
         >
           <Text style={styles.buttonText}>Take Photo</Text>
@@ -217,6 +210,7 @@ function SubmissionContent() {
         await new Promise(resolve => setTimeout(resolve, 1000));
         
         setSubmissionData({
+          name: params.name as string,
           description: params.description as string,
           date: new Date(params.date as string)
         });
@@ -236,13 +230,16 @@ function SubmissionContent() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Submission for: {submissionData.description}</Text>
-      <Text style={styles.timer}>
+      <Text style={styles.title}>{submissionData.name}</Text>
+      <Text style={styles.description}>{submissionData.description}</Text>
+
+      <View style={styles.timer}>      
         <CountDownTimer 
-          deadlineDate={submissionData.date} 
-          textColour='black'
+            deadlineDate={submissionData.date} 
+            textColour='black'
         />
-      </Text>
+      </View>
+
       <ImageCapture deadlineId={params.deadlineId as string} userId={'1'} />
     </View>
   );
@@ -251,8 +248,8 @@ function SubmissionContent() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
-    backgroundColor: "#fff"
+    padding: 24,
+    backgroundColor: "#fff",
   },
   loadingContainer: {
     flex: 1,
@@ -269,9 +266,14 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 10,
   },
+  description: {
+    fontSize: 14,
+    marginBottom: 10,
+  },
   timer: {
-    fontSize: 16,
-    marginBottom: 20,
+    width: '100%',
+    alignItems: 'center',
+    marginTop: 50
   },
   imageSection: {
     alignItems: 'center',
@@ -299,6 +301,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     minWidth: 120,
     alignItems: 'center',
+  },
+  photoButton: {
+    minWidth: '100%'
   },
   retakeButton: {
     backgroundColor: '#FF3B30',
