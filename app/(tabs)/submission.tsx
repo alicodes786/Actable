@@ -1,4 +1,3 @@
-// (tabs)/submission.tsx
 import { Stack } from 'expo-router';
 import { View, Text, StyleSheet, ActivityIndicator, Image, TouchableOpacity, Alert } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
@@ -46,6 +45,36 @@ function LoadingSpinner() {
 function ImageCapture({ deadlineId, userId }: { deadlineId: string; userId: string }) {
   const [image, setImage] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [isNewPhoto, setIsNewPhoto] = useState(false);
+
+  useEffect(() => {
+    const fetchLastSubmission = async () => {
+      try {
+        const { data: deadlineData } = await supabase
+          .from('deadlines')
+          .select('lastsubmissionid')
+          .eq('id', deadlineId)
+          .single();
+        
+        if (deadlineData && deadlineData.lastsubmissionid) {
+          const { data: submissionData } = await supabase
+            .from('submissions')
+            .select('imageurl')
+            .eq('id', deadlineData.lastsubmissionid)
+            .single();
+          
+          if (submissionData) {
+            setImage(submissionData.imageurl);
+            setIsNewPhoto(false); // Existing photo is not new
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching last submission:', error);
+      }
+    };
+
+    fetchLastSubmission();
+  }, [deadlineId]);
 
   const requestCameraPermission = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
@@ -72,8 +101,8 @@ function ImageCapture({ deadlineId, userId }: { deadlineId: string; userId: stri
       });
 
       if (!result.canceled && result.assets[0]) {
-        console.log('Photo taken:', result.assets[0].uri);
         setImage(result.assets[0].uri);
+        setIsNewPhoto(true); // Set to true when a new photo is taken
       }
     } catch (error) {
       console.error('Error taking photo:', error);
@@ -85,24 +114,8 @@ function ImageCapture({ deadlineId, userId }: { deadlineId: string; userId: stri
     }
   };
 
-  const checkAuth = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      Alert.alert(
-        'Authentication Required',
-        'Please sign in to upload submissions.',
-        [{ text: 'OK' }]
-      );
-      return false;
-    }
-    return true;
-  };
-
   const handleUpload = async () => {
-    if (!image) return;
-
-    // const isAuthenticated = await checkAuth();
-    // if (!isAuthenticated) return;
+    if (!image || !isNewPhoto) return;
 
     setUploading(true);
 
@@ -117,12 +130,34 @@ function ImageCapture({ deadlineId, userId }: { deadlineId: string; userId: stri
         throw error;
       }
 
+      const { data: newSubmission, error: submissionError } = await supabase
+        .from('submissions')
+        .insert({
+          deadlineid: deadlineId,
+          imageurl: publicUrl,
+          userid: userId,
+          isapproved: false,
+          submitteddate: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (submissionError) {
+        throw submissionError;
+      }
+
+      await supabase
+        .from('deadlines')
+        .update({ lastsubmissionid: newSubmission.id })
+        .eq('id', deadlineId);
+
       Alert.alert(
         'Success',
         'Submission uploaded successfully!',
         [{ text: 'OK' }]
       );
-      setImage(null);
+      setImage(publicUrl);
+      setIsNewPhoto(false); // Reset after successful upload
     } catch (error) {
       console.error('Error uploading submission:', error);
       Alert.alert(
@@ -156,13 +191,13 @@ function ImageCapture({ deadlineId, userId }: { deadlineId: string; userId: stri
               style={[
                 styles.button, 
                 styles.uploadButton,
-                uploading && styles.disabledButton
+                (!isNewPhoto || uploading) && styles.disabledButton
               ]}
               onPress={handleUpload}
-              disabled={uploading}
+              disabled={!isNewPhoto || uploading}
             >
               <Text style={styles.buttonText}>
-                {uploading ? 'Uploading...' : 'Submit'}
+                {uploading ? 'Uploading...' : 'Resubmit'}
               </Text>
             </TouchableOpacity>
           </View>
@@ -185,6 +220,7 @@ function ImageCapture({ deadlineId, userId }: { deadlineId: string; userId: stri
     </View>
   );
 }
+
 function SubmissionContent() {
   const params = useLocalSearchParams();
   const [isLoading, setIsLoading] = useState(true);
