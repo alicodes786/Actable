@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import CountDownTimer from '@/components/CountDownTimer';
 import { uploadSubmissionImage } from '@/db/imageUpload';
-import { supabase } from '@/lib/db';
+import { createNewSubmission, fetchLastSubmissionImage, SubmissionError } from '@/db/submissions';
 
 interface SubmissionData {
   description: string;
@@ -48,32 +48,26 @@ function ImageCapture({ deadlineId, userId }: { deadlineId: string; userId: stri
   const [isNewPhoto, setIsNewPhoto] = useState(false);
 
   useEffect(() => {
-    const fetchLastSubmission = async () => {
+    const loadLastSubmission = async () => {
       try {
-        const { data: deadlineData } = await supabase
-          .from('deadlines')
-          .select('lastsubmissionid')
-          .eq('id', deadlineId)
-          .single();
-        
-        if (deadlineData && deadlineData.lastsubmissionid) {
-          const { data: submissionData } = await supabase
-            .from('submissions')
-            .select('imageurl')
-            .eq('id', deadlineData.lastsubmissionid)
-            .single();
-          
-          if (submissionData) {
-            setImage(submissionData.imageurl);
-            setIsNewPhoto(false); // Existing photo is not new
-          }
+        const imageUrl = await fetchLastSubmissionImage(deadlineId);
+        if (imageUrl) {
+          setImage(imageUrl);
+          setIsNewPhoto(false);
         }
       } catch (error) {
-        console.error('Error fetching last submission:', error);
+        if (error instanceof SubmissionError) {
+          console.error('Error loading last submission:', error.message);
+          Alert.alert(
+            'Error',
+            'Failed to load previous submission. Please try again.',
+            [{ text: 'OK' }]
+          );
+        }
       }
     };
 
-    fetchLastSubmission();
+    loadLastSubmission();
   }, [deadlineId]);
 
   const requestCameraPermission = async () => {
@@ -102,7 +96,7 @@ function ImageCapture({ deadlineId, userId }: { deadlineId: string; userId: stri
 
       if (!result.canceled && result.assets[0]) {
         setImage(result.assets[0].uri);
-        setIsNewPhoto(true); // Set to true when a new photo is taken
+        setIsNewPhoto(true);
       }
     } catch (error) {
       console.error('Error taking photo:', error);
@@ -130,26 +124,11 @@ function ImageCapture({ deadlineId, userId }: { deadlineId: string; userId: stri
         throw error;
       }
 
-      const { data: newSubmission, error: submissionError } = await supabase
-        .from('submissions')
-        .insert({
-          deadlineid: deadlineId,
-          imageurl: publicUrl,
-          userid: userId,
-          isapproved: false,
-          submitteddate: new Date().toISOString()
-        })
-        .select()
-        .single();
-
-      if (submissionError) {
-        throw submissionError;
-      }
-
-      await supabase
-        .from('deadlines')
-        .update({ lastsubmissionid: newSubmission.id })
-        .eq('id', deadlineId);
+      const newSubmission = await createNewSubmission(
+        deadlineId,
+        userId,
+        publicUrl
+      );
 
       Alert.alert(
         'Success',
@@ -157,12 +136,15 @@ function ImageCapture({ deadlineId, userId }: { deadlineId: string; userId: stri
         [{ text: 'OK' }]
       );
       setImage(publicUrl);
-      setIsNewPhoto(false); // Reset after successful upload
+      setIsNewPhoto(false);
+
     } catch (error) {
       console.error('Error uploading submission:', error);
       Alert.alert(
         'Upload Failed',
-        'Failed to upload submission. Please try again.',
+        error instanceof SubmissionError 
+          ? error.message 
+          : 'Failed to upload submission. Please try again.',
         [{ text: 'OK' }]
       );
     } finally {
