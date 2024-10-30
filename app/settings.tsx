@@ -1,8 +1,22 @@
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import React from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
+import { useAuth } from '@/providers/AuthProvider';
 
 export default function Settings() {
+  const { logout } = useAuth();
+  
+  const handleSignOut = async () => {
+    try {
+        await logout();
+        router.replace('/(auth)/sign-in');
+    } catch (error) {
+        console.error('Error signing out:', error);
+    }
+};
+
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.settingsBox}>
@@ -31,7 +45,7 @@ export default function Settings() {
         </TouchableOpacity>
         <View style={styles.divider} />
 
-        <TouchableOpacity style={styles.settingOption}>
+        <TouchableOpacity style={styles.settingOption} onPress={handleSignOut}>
           <Text style={[styles.settingText, { color: 'red' }]}>Sign Out</Text>
         </TouchableOpacity>
       </View>
