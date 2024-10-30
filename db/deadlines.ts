@@ -1,13 +1,13 @@
 import { supabase } from '@/lib/db';
 import { IdeadlineList, Ideadline } from '@/lib/interfaces'
 
-export const getDeadlines = async (): Promise<IdeadlineList | null> => {
+export const getDeadlines = async (userId: string): Promise<IdeadlineList | null> => {
   const { data: deadlines, error } = await supabase
     .from('deadlines')
-    .select('*');
-
+    .select('*')
+    .eq('userid', userId);
   if (error) {
-    console.error('Error fetching deadlines:', error);
+    console.error('Error fetching deadlines for user:', error);
     return null;
   }
 

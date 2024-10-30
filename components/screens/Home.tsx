@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { IdeadlineList } from '@/lib/interfaces';
 import { getDeadlines } from '@/db/deadlines';
 import CountDownTimer from '../CountDownTimer';
+import { useAuth } from '@/providers/AuthProvider';
 
 import { router } from 'expo-router';
 
@@ -15,10 +16,11 @@ export default function Home() {
     const [deadlines, setDeadlines] = useState<IdeadlineList | null >(null);
     const blueGradient = ['#66b3ff', '#007FFF', '#0066cc'];
     const blackGradient = ['#333333', '#111111', '#000000'];
+    const { user } = useAuth();
 
     useEffect(() => {
       const fetchDeadlines = async () => {
-        const fetchedDeadlines: IdeadlineList | null = await getDeadlines();
+        const fetchedDeadlines: IdeadlineList | null = await getDeadlines(String(user));
         // console.log(fetchedDeadlines);
         setDeadlines(fetchedDeadlines);
       };
