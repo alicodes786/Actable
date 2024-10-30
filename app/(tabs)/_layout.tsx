@@ -13,7 +13,7 @@ export default function TabLayout() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerText}>Welcome, Hassan</Text>
+        {/* <Text style={styles.headerText}>Welcome, Hassan</Text> */}
         <View style={styles.icons}>
           <Ionicons name="notifications-outline" size={24} color="black" style={styles.icon} />
           <Ionicons name="person-circle-outline" size={24} color="black" style={styles.icon} />
@@ -117,15 +117,11 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end',
     alignItems: 'center',
-    padding: 20,
+    padding: 10,
     backgroundColor: '#fff',
     width: '100%',
-  },
-  headerText: {
-    fontSize: 20,
-    fontWeight: 'light',
   },
   icons: {
     flexDirection: 'row',
