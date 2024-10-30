@@ -1,18 +1,22 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Separator, Text, Button, Input, YStack, View } from 'tamagui';
 import Toast from 'react-native-toast-message';
-import { checkPass } from '@/db/signin';
+import { authenticateUser } from '@/db/signin';
 import { router, Href } from "expo-router";
+import { useAuth } from '@/providers/AuthProvider';
 
 export default function SignIn() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [attemptCount, setAttemptCount] = useState(0);
   const signUpPath = "/(auth)/sign-up" as Href<any>;
+  const { login, user } = useAuth();
 
-  const MAX_LOGIN_ATTEMPTS = 5;
-  const LOCKOUT_DURATION = 300000; // 5 minutes in milliseconds
+    useEffect(() => {
+      if (user) {
+          router.replace('/(tabs)');
+      }
+  }, [user]);
 
   const validateInputs = () => {
     if (!username.trim() || !password.trim()) {
@@ -29,33 +33,17 @@ export default function SignIn() {
 
   const handleSignIn = async () => {
     try {
-      // Check if user is locked out
-      if (attemptCount >= MAX_LOGIN_ATTEMPTS) {
-        Toast.show({
-          type: 'error',
-          text1: 'Account Locked',
-          text2: 'Too many failed attempts. Please try again in 5 minutes.',
-          position: 'bottom',
-        });
-        setTimeout(() => {
-          setAttemptCount(0);
-        }, LOCKOUT_DURATION);
-        return;
-      }
-
-      // Validate inputs before attempting login
       if (!validateInputs()) {
         return;
       }
 
       setIsLoading(true);
 
-      const userAuth = await checkPass(username, password);
+      const userAuth = await authenticateUser(username, password);
 
-      if (userAuth) {
-        // Reset attempt count on successful login
-        setAttemptCount(0);
-        
+      if (userAuth.success && userAuth.user) {
+        await login(userAuth.user.id);  // Store session with login function
+
         Toast.show({
           type: 'success',
           text1: 'Login Successful',
@@ -63,24 +51,17 @@ export default function SignIn() {
           position: 'bottom',
           visibilityTime: 2000,
         });
-        
-        // Delay redirect to show success message
-        setTimeout(() => {
-          router.replace("/(tabs)");
-        }, 2000);
+
+        // setTimeout(() => {
+        //   router.replace("/(tabs)");
+        // }, 2000);
+
       } else {
-        // Increment failed attempt count
-        setAttemptCount(prev => prev + 1);
-        
-        // Calculate remaining attempts
-        const remainingAttempts = MAX_LOGIN_ATTEMPTS - (attemptCount + 1);
-        
+
         Toast.show({
           type: 'error',
           text1: 'Login Failed',
-          text2: remainingAttempts > 0 
-            ? `Invalid credentials. ${remainingAttempts} attempts remaining.`
-            : 'Account locked. Please try again in 5 minutes.',
+          text2: userAuth.error,
           position: 'bottom',
         });
       }
@@ -99,7 +80,6 @@ export default function SignIn() {
   const handleGoogleSignIn = async () => {
     try {
       setIsLoading(true);
-      // Implement Google Sign-in logic here
       Toast.show({
         type: 'info',
         text1: 'Google Sign In',
@@ -137,7 +117,7 @@ export default function SignIn() {
           marginBottom={12}
           fontSize={16}
           width="100%"
-          disabled={isLoading || attemptCount >= MAX_LOGIN_ATTEMPTS}
+          disabled={isLoading}
           autoCapitalize="none"
           autoCorrect={false}
         />
@@ -150,7 +130,7 @@ export default function SignIn() {
           marginBottom={32}
           fontSize={16}
           width="100%"
-          disabled={isLoading || attemptCount >= MAX_LOGIN_ATTEMPTS}
+          disabled={isLoading}
           autoCapitalize="none"
           autoCorrect={false}
         />
@@ -161,7 +141,7 @@ export default function SignIn() {
           marginBottom={12}
           backgroundColor="#443399"
           color="#fff"
-          disabled={isLoading || attemptCount >= MAX_LOGIN_ATTEMPTS}
+          disabled={isLoading}
         >
           {isLoading ? 'Signing in...' : 'Sign In'}
         </Button>
@@ -169,7 +149,7 @@ export default function SignIn() {
         <Button 
           onPress={handleGoogleSignIn}
           width="100%"
-          disabled={isLoading || attemptCount >= MAX_LOGIN_ATTEMPTS}
+          disabled={isLoading}
         >
           Sign in with Google
         </Button>

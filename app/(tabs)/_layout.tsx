@@ -1,4 +1,4 @@
-import { Tabs } from 'expo-router';
+import { router, Tabs } from 'expo-router';
 import React from 'react';
 import { TabBarIcon } from '@/components/navigation/TabBarIcon';
 import { Colors } from '@/constants/Colors';
@@ -6,14 +6,33 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import { View, StyleSheet, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Button } from 'tamagui';
+import { useAuth } from '@/providers/AuthProvider';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+
+  const { user, logout } = useAuth();
+  const handleSignOut = async () => {
+    try {
+        await logout();
+        router.replace('/(auth)/sign-in');
+    } catch (error) {
+        console.error('Error signing out:', error);
+    }
+};
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerText}>Welcome, Hassan</Text>
+        <Button 
+                onPress={handleSignOut}
+                backgroundColor="red"
+                color="white"
+                style={{ marginTop: 20 }}
+            ></Button>
+        
         <View style={styles.icons}>
           <Ionicons name="notifications-outline" size={24} color="black" style={styles.icon} />
           <Ionicons name="person-circle-outline" size={24} color="black" style={styles.icon} />
