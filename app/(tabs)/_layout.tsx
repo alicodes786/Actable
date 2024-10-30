@@ -1,23 +1,50 @@
-import { Tabs } from 'expo-router';
-import React from 'react';
+import { Tabs, useNavigation } from 'expo-router';
+import React, { useEffect, useState } from 'react';
 import { TabBarIcon } from '@/components/navigation/TabBarIcon';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
-import { View, StyleSheet, Text } from 'react-native';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { fetchNotifications } from '@/db/notifications'; // Adjust the path if necessary
+import NotificationDropdown from '@/components/DropDown'; // Adjust the path if necessary
 
-export default function TabLayout() {
+const TabLayout: React.FC = () => {
   const colorScheme = useColorScheme();
+  const navigation = useNavigation();
+  const [notifications, setNotifications] = useState<{ message: string }[]>([]);
+  const [isDropdownOpen, setDropdownOpen] = useState<boolean>(false);
+
+  const loadNotifications = async () => {
+    const notificationsData = await fetchNotifications();
+    setNotifications(notificationsData);
+  };
+
+  useEffect(() => {
+    loadNotifications();
+  }, []);
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        {/* <Text style={styles.headerText}>Welcome, Hassan</Text> */}
         <View style={styles.icons}>
-          <Ionicons name="notifications-outline" size={24} color="black" style={styles.icon} />
-          <Ionicons name="person-circle-outline" size={24} color="black" style={styles.icon} />
+          <TouchableOpacity onPress={() => setDropdownOpen(prev => !prev)}>
+            <Ionicons name="notifications-outline" size={24} color="black" style={styles.icon} />
+          </TouchableOpacity>
+          <Ionicons 
+            name="person-circle-outline" 
+            size={24} 
+            color="black" 
+            style={styles.icon} 
+            onPress={() => navigation.navigate('settings')}
+          />
         </View>
+        {isDropdownOpen && (
+          <NotificationDropdown 
+            notifications={notifications} 
+            onClose={() => setDropdownOpen(false)} 
+          />
+        )}
       </View>
 
       {/* Tab Navigation */}
@@ -93,27 +120,25 @@ export default function TabLayout() {
             ),
           }}
         />
-        
 
         <Tabs.Screen
-        name="submission"
-        options={{
-          // Hide this route from the tab bar since it's accessed via navigation
-          href: null,
-        }}
-      />
-
+          name="submission"
+          options={{
+            // Hide this route from the tab bar since it's accessed via navigation
+            href: null,
+          }}
+        />
       </Tabs>
     </SafeAreaView>
-
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
     marginTop: 30,
+    overflow: 'visible',
   },
   header: {
     flexDirection: 'row',
@@ -122,6 +147,7 @@ const styles = StyleSheet.create({
     padding: 10,
     backgroundColor: '#fff',
     width: '100%',
+    zIndex:10
   },
   icons: {
     flexDirection: 'row',
@@ -148,3 +174,5 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
 });
+
+export default TabLayout;

@@ -40,6 +40,7 @@ export default function RootLayout() {
   return (
     <TamaguiProvider config={config}>
       <Stack>
+      
         <Stack.Screen 
           name="(auth)" 
           options={{ 
@@ -52,7 +53,16 @@ export default function RootLayout() {
             headerShown: false,
           }} 
         />
+        <Stack.Screen 
+      name="settings"
+      options={{
+        title:'Settings',
+        headerBackTitleVisible:false
+      }} 
+      />
       </Stack>
+      
+
     </TamaguiProvider>
   );
 }

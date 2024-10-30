@@ -19,7 +19,6 @@ export default function Home() {
     useEffect(() => {
       const fetchDeadlines = async () => {
         const fetchedDeadlines: IdeadlineList | null = await getDeadlines();
-        // console.log(fetchedDeadlines);
         setDeadlines(fetchedDeadlines);
       };
       fetchDeadlines();
@@ -127,7 +126,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   headerText: {
-    // position:'absolute',
     fontSize: 20,
     fontWeight: '500',
     marginLeft:12,
