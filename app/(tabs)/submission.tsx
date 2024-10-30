@@ -7,6 +7,7 @@ import CountDownTimer from '@/components/CountDownTimer';
 import { uploadSubmissionImage } from '@/db/imageUpload';
 import { createNewSubmission, fetchLastSubmissionImage, SubmissionError } from '@/db/submissions';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import { useAuth } from '@/providers/AuthProvider';
 
 interface SubmissionData {
   name: string;
@@ -102,7 +103,7 @@ function ImageCapture({ deadlineId, userId }: { deadlineId: string; userId: stri
   };
 
   const handleUpload = async () => {
-    if (!image || !isNewPhoto) return;
+    if (!image || !isNewPhoto || !userId) return;
 
     setUploading(true);
 
@@ -200,6 +201,7 @@ function SubmissionContent() {
   const params = useLocalSearchParams();
   const [isLoading, setIsLoading] = useState(true);
   const [submissionData, setSubmissionData] = useState<SubmissionData | null>(null);
+  const { user } = useAuth();
 
   useEffect(() => {
     setIsLoading(true);
@@ -240,7 +242,7 @@ function SubmissionContent() {
         />
       </View>
 
-      <ImageCapture deadlineId={params.deadlineId as string} userId={'1'} />
+      <ImageCapture deadlineId={params.deadlineId as string} userId={String(user)} />
     </View>
   );
 }
