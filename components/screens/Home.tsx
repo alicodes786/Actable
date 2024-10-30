@@ -24,6 +24,7 @@ export default function Home() {
     const blackGradient = ['#333333', '#111111', '#000000'];
   return (
     <View style={styles.container}>
+     <Text style={styles.headerText}>Welcome, Hassan</Text>
     <View style={styles.content}>
       <View style={styles.upcomingDeadlines}>
         <Text style={styles.title}>Upcoming Deadlines</Text>
@@ -67,7 +68,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: windowWidth * 0.05, 
-    paddingTop: Platform.OS === 'ios' ? windowHeight * 0.05 : windowHeight * 0.02,
+    paddingTop: Platform.OS === 'ios' ? windowHeight * 0.03 : windowHeight * 0.02,
   },
   upcomingDeadlines: {
     width: '100%',
@@ -95,8 +96,9 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   title: {
-    fontSize: Math.min(windowWidth * 0.05, 24), 
+    fontSize: Math.min(windowWidth * 0.06, 24), 
     fontWeight: 'bold',
+    
   },
   submitButton: {
     backgroundColor: 'black',
@@ -111,5 +113,13 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 18,
     fontWeight: '600',
-  }
+  },
+  headerText: {
+    // position:'absolute',
+    fontSize: 20,
+    fontWeight: '500',
+    marginLeft:12,
+    top:-5
+    
+  },
 });
