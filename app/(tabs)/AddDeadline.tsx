@@ -3,11 +3,11 @@ import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { useAuth } from '@/providers/AuthProvider';
 import { addDeadline } from '@/db/deadlines';
-import { useNavigation } from 'expo-router';
+import { useRouter } from 'expo-router';
 
 export default function AddDeadlineScreen() {
   const { user } = useAuth();
-  const navigation = useNavigation();
+  const router = useRouter();
   const [deadlineName, setDeadlineName] = useState('');
   const [deadlineDescription, setDeadlineDescription] = useState('');
   const [deadlineDate, setDeadlineDate] = useState<Date | null>(null);
@@ -56,7 +56,7 @@ export default function AddDeadlineScreen() {
       setDeadlineName('');
       setDeadlineDescription('');
       setDeadlineDate(null);
-      navigation.goBack();
+      router.back();
     } catch (error) {
       console.error(error);
       Alert.alert('Error', 'Failed to add deadline. Please try again.');

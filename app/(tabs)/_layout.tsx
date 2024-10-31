@@ -1,4 +1,4 @@
-import { Tabs, useNavigation } from 'expo-router';
+import { router, Tabs } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { TabBarIcon } from '@/components/navigation/TabBarIcon';
 import { Colors } from '@/constants/Colors';
@@ -11,7 +11,6 @@ import NotificationDropdown from '@/components/DropDown'; // Adjust the path if 
 
 const TabLayout: React.FC = () => {
   const colorScheme = useColorScheme();
-  const navigation = useNavigation();
   const [notifications, setNotifications] = useState<{ message: string }[]>([]);
   const [isDropdownOpen, setDropdownOpen] = useState<boolean>(false);
 
@@ -36,7 +35,7 @@ const TabLayout: React.FC = () => {
             size={24} 
             color="black" 
             style={styles.icon} 
-            onPress={() => navigation.navigate('settings')}
+            onPress={() => router.push('/settings')}
           />
         </View>
         {isDropdownOpen && (
@@ -70,7 +69,7 @@ const TabLayout: React.FC = () => {
         />
 
         <Tabs.Screen
-          name="ViewDeadlines"
+          name="viewDeadlines"
           options={{
             title: 'Deadlines',
             tabBarIcon: ({ color, focused }) => (
@@ -80,7 +79,7 @@ const TabLayout: React.FC = () => {
         />
 
         <Tabs.Screen
-          name="AddDeadline"
+          name="addDeadline"
           options={{
             title: '',
             tabBarIcon: ({ color }) => (
@@ -112,7 +111,7 @@ const TabLayout: React.FC = () => {
         />
 
         <Tabs.Screen
-          name="Coach"
+          name="coach"
           options={{
             title: 'Coach',
             tabBarIcon: ({ color, focused }) => (
