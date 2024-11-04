@@ -16,9 +16,11 @@ export default function Home() {
     const [deadlines, setDeadlines] = useState<IdeadlineList | null >(null);
     const blueGradient = ['#66b3ff', '#007FFF', '#0066cc'];
     const blackGradient = ['#333333', '#111111', '#000000'];
-    const { user } = useAuth();
+    const { isLoading, user } = useAuth();
 
     useEffect(() => {
+      if (isLoading || !user ) return;
+
       const fetchDeadlines = async () => {
         const fetchedDeadlines: IdeadlineList | null = await getDeadlines(String(user));
         // console.log(fetchedDeadlines);
