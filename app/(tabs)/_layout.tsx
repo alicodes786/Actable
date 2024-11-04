@@ -71,7 +71,7 @@ const TabLayout: React.FC = () => {
         />
 
         <Tabs.Screen
-          name="viewDeadlines"
+          name="ViewDeadlines"
           options={{
             title: 'Deadlines',
             tabBarIcon: ({ color, focused }) => (
@@ -81,7 +81,7 @@ const TabLayout: React.FC = () => {
         />
 
         <Tabs.Screen
-          name="addDeadline"
+          name="AddDeadline"
           options={{
             title: '',
             tabBarIcon: ({ color }) => (
@@ -113,7 +113,7 @@ const TabLayout: React.FC = () => {
         />
 
         <Tabs.Screen
-          name="coach"
+          name="Coach"
           options={{
             title: 'Coach',
             tabBarIcon: ({ color, focused }) => (
