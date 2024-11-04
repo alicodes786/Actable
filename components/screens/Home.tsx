@@ -36,14 +36,14 @@ export default function Home() {
         <View style={styles.upcomingDeadlines}>
           <Text style={styles.title}>Upcoming Deadlines</Text>
           <ScrollView>
-            {deadlines && deadlines.deadlineList.map((item, idx) => (
-              <LinearGradient
-                key={idx}
-                colors={idx % 2 === 0 ? blueGradient : blackGradient}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.deadlinesCard}
-              >
+  {deadlines && deadlines.deadlineList.slice(0, 2).map((item, idx) => (
+    <LinearGradient
+      key={idx}
+      colors={idx % 2 === 0 ? blueGradient : blackGradient}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 0 }}
+      style={styles.deadlinesCard}
+    >
                 <Text style={styles.taskText}>
                   {item.name}
                 </Text>

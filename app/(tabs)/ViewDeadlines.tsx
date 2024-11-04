@@ -1,35 +1,129 @@
-import React from 'react';
-import { Image, StyleSheet, Platform, View, Text } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { StyleSheet, View, Text, ScrollView, TouchableOpacity, Dimensions, Platform } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { getDeadlines } from '@/db/deadlines';
+import { useAuth } from '@/providers/AuthProvider';
+import { Ideadline } from '@/lib/interfaces';
+
+const windowWidth = Dimensions.get('window').width;
 
 export default function ViewDeadlinesScreen() {
+  const [deadlines, setDeadlines] = useState<Ideadline[]>([]);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    const fetchDeadlines = async () => {
+      if (user) {  
+        const result = await getDeadlines(String(user)); // Convert number to string for the DB call
+        if (result?.deadlineList) {
+          setDeadlines(result.deadlineList);
+        }
+      }
+    };
+
+    fetchDeadlines();
+  }, [user]);
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  };
+
+  const blueGradient = ['#66b3ff', '#007FFF', '#0066cc'];
+
   return (
     <View style={styles.container}>
-    
-    {/* Welcome Text */}
-    <Text style={styles.welcomeText}>This is where you can view deadlines</Text>
-  </View>
-);
+      <Text style={styles.title}>Your Deadlines</Text>
+      
+      <ScrollView style={styles.scrollView}>
+        {deadlines.map((deadline) => (
+          <TouchableOpacity key={deadline.id}>
+            <LinearGradient
+              colors={blueGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.deadlineCard}
+            >
+              <View style={styles.deadlineContent}>
+                <Text style={styles.deadlineName}>{deadline.name}</Text>
+                <Text style={styles.deadlineDescription}>{deadline.description}</Text>
+                <Text style={styles.deadlineDate}>Due: {formatDate(deadline.date)}</Text>
+              </View>
+              
+              <TouchableOpacity 
+                style={styles.submitButton}
+                onPress={() => {/* Handle submission */}}
+              >
+                <Text style={styles.submitButtonText}>Submit</Text>
+              </TouchableOpacity>
+            </LinearGradient>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
-container: {
-  flex: 1,
-  justifyContent: 'center', 
-  alignItems: 'center',     
-  paddingHorizontal: 20,
-},
-topBar: {
-  flexDirection: 'row',       
-  position: 'absolute',       
-  top: 50,
-  right: 20,                 
-},
-notificationIcon: {
-  marginLeft: 20,             
-},
-welcomeText: {
-  fontSize: 24,
-  fontWeight: 'bold',
-  marginTop: 60,           
-},
+  container: {
+    flex: 1,
+    backgroundColor: 'white',
+    padding: 16,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    marginTop: 40,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  deadlineCard: {
+    marginBottom: 16,
+    borderRadius: 15,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  deadlineContent: {
+    flex: 1,
+  },
+  deadlineName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: 'white',
+    marginBottom: 8,
+  },
+  deadlineDescription: {
+    fontSize: 14,
+    color: 'white',
+    marginBottom: 8,
+  },
+  deadlineDate: {
+    fontSize: 14,
+    color: 'white',
+    fontWeight: '500',
+  },
+  submitButton: {
+    backgroundColor: 'white',
+    padding: 8,
+    borderRadius: 8,
+    alignSelf: 'flex-end',
+    marginTop: 8,
+  },
+  submitButtonText: {
+    color: '#007FFF',
+    fontWeight: 'bold',
+  },
 });
