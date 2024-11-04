@@ -1,4 +1,4 @@
-import { Tabs, useNavigation } from 'expo-router';
+import { Tabs, useNavigation, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { TabBarIcon } from '@/components/navigation/TabBarIcon';
 import { Colors } from '@/constants/Colors';
@@ -12,6 +12,7 @@ import NotificationDropdown from '@/components/DropDown'; // Adjust the path if 
 const TabLayout: React.FC = () => {
   const colorScheme = useColorScheme();
   const navigation = useNavigation();
+  const router = useRouter();
   const [notifications, setNotifications] = useState<{ message: string }[]>([]);
   const [isDropdownOpen, setDropdownOpen] = useState<boolean>(false);
 
@@ -36,7 +37,7 @@ const TabLayout: React.FC = () => {
             size={24} 
             color="black" 
             style={styles.icon} 
-            onPress={() => navigation.navigate('settings')}
+            onPress={() => router.push('/settings')}
           />
         </View>
         {isDropdownOpen && (
