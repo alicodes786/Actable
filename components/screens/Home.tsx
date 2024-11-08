@@ -13,6 +13,7 @@ export default function Home() {
     const blackGradient =  ['#D100D1', '#9A00E6', '#6A0DAD'];
     const orangeGradient = ['#FF8C00', '#FF4500', '#FF0000'];
     const { isLoading, user } = useAuth();
+    const today = new Date().toISOString().split('T')[0]; 
 
     useEffect(() => {
         if (isLoading || !user) return;
@@ -33,7 +34,11 @@ export default function Home() {
                     <Text className="text-xl font-bold">Upcoming Deadlines</Text>
                     
                     <ScrollView>
-                        {deadlines && deadlines.deadlineList.slice(0, 3).map((item, idx) => (
+                    {deadlines && deadlines.deadlineList
+                      .filter(item => new Date(item.date) >= new Date(today))  // Filter out items with dates before today
+                      .sort((a, b) => new Date(a.date) - new Date(b.date))  // Sort by date in ascending order
+                      .slice(0, 3)  // Get the first 3 items
+                      .map((item, idx) => (
                             <LinearGradient
                                 key={idx}
                                 colors={[blueGradient,blackGradient,orangeGradient][idx]}
