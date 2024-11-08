@@ -27,7 +27,7 @@ const TabLayout: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+      <View style={styles.header} className="bg-red">
         <View style={styles.icons}>
           <TouchableOpacity onPress={() => setDropdownOpen(prev => !prev)}>
             <Ionicons name="notifications-outline" size={24} color="black" style={styles.icon} />
@@ -71,7 +71,7 @@ const TabLayout: React.FC = () => {
         />
 
         <Tabs.Screen
-          name="ViewDeadlines"
+          name="viewDeadlines"
           options={{
             title: 'Deadlines',
             tabBarIcon: ({ color, focused }) => (
@@ -81,7 +81,7 @@ const TabLayout: React.FC = () => {
         />
 
         <Tabs.Screen
-          name="AddDeadline"
+          name="addDeadline"
           options={{
             title: '',
             tabBarIcon: ({ color }) => (
@@ -113,7 +113,7 @@ const TabLayout: React.FC = () => {
         />
 
         <Tabs.Screen
-          name="Coach"
+          name="coach"
           options={{
             title: 'Coach',
             tabBarIcon: ({ color, focused }) => (
