@@ -3,13 +3,15 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { useFonts } from 'expo-font';
 import { SplashScreen, Stack } from 'expo-router';
 import { useEffect } from 'react';
+import * as Notifications from 'expo-notifications';
 import 'react-native-reanimated';
-import { View, ActivityIndicator } from 'react-native';
+import { View, ActivityIndicator, Platform } from 'react-native';
 
 import { TamaguiProvider } from '@tamagui/core';
 import config from '../tamagui.config';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { AuthProvider, useAuth } from '@/providers/AuthProvider';
+
 
 export {
   ErrorBoundary,
@@ -42,6 +44,7 @@ function AppContent() {
     );
   }
 
+
   return (
     <TamaguiProvider config={config}>
       <Stack>
@@ -73,6 +76,43 @@ function AppContent() {
 }
 
 export default function RootLayout() {
+
+  useEffect(() => {
+    async function setupNotifications() {
+      try {
+        // Request permissions only on iOS
+        if (Platform.OS === 'ios') {
+          const { status: existingStatus } = await Notifications.getPermissionsAsync();
+          let finalStatus = existingStatus;
+          
+          if (existingStatus !== 'granted') {
+            const { status } = await Notifications.requestPermissionsAsync();
+            finalStatus = status;
+          }
+          
+          if (finalStatus !== 'granted') {
+            console.log('Failed to get notification permissions!');
+            return;
+          }
+        }
+
+        // Set notification handler for both platforms
+        Notifications.setNotificationHandler({
+          handleNotification: async () => ({
+            shouldShowAlert: true,
+            shouldPlaySound: true,
+            shouldSetBadge: false,
+          }),
+        });
+
+      } catch (error) {
+        console.error('Error setting up notifications:', error);
+      }
+    }
+
+    setupNotifications();
+  }, []);
+
   return (
     <AuthProvider>
       <AppContent />

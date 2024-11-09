@@ -34,12 +34,14 @@ export default function CountDownTimer({ deadlineDate, textColour }: CountdownTi
 
   function timeRemaining(deadline: Date): TimeLeft {
     const total = new Date(deadline).getTime() - new Date().getTime();
+    if (total <= 0) return { days: 0, hours: 0, minutes: 0, seconds: 0 }; // Ensure timeLeft stops at 0
+    
     const days = Math.floor(total / (1000 * 60 * 60 * 24));
     const hours = Math.floor((total / (1000 * 60 * 60)) % 24);
     const minutes = Math.floor((total / (1000 * 60)) % 60);
     const seconds = Math.floor((total / 1000) % 60);
     return { days, hours, minutes, seconds };
-  }
+}
 
   // Conditionally render the time parts
   const timeParts: string[] = [];

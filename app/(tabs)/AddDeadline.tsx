@@ -39,19 +39,21 @@ export default function AddDeadlineScreen() {
 
   const handleSubmit = async () => {
     if (!validateForm()) return;
-
+  
     setIsSubmitting(true);
-
+  
     try {
-      const { error }  = await addDeadline(
+      const { success, error } = await addDeadline(
         String(user), 
         deadlineName, 
         deadlineDescription, 
         deadlineDate!
       );
-
-      if (error) throw error;
-
+  
+      if (!success) {
+        throw new Error(error);
+      }
+  
       Alert.alert('Success', 'Deadline added successfully!');
       setDeadlineName('');
       setDeadlineDescription('');
