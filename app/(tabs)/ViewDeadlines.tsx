@@ -24,7 +24,7 @@ export default function ViewDeadlinesScreen() {
     fetchDeadlines();
   }, [user]);
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: Date) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
       month: 'short',

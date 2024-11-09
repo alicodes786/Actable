@@ -1,5 +1,9 @@
 import { supabase } from '@/lib/db';
 
+interface Notification {
+  message: string;
+}
+
 export const createNotification = async (
   userId: string, 
   deadlineId: number, 
@@ -26,4 +30,19 @@ export const createNotification = async (
     console.error('Error creating notification:', error);
     return { success: false, error: 'Failed to create notification.' };
   }
+};
+
+
+export const fetchNotifications = async (id: number): Promise<Notification[]> => {
+  const { data, error } = await supabase
+    .from('notifications') // Your notifications table name
+    .select('message') // Assuming the message column contains the notification text
+    .eq('id', id)
+
+  if (error) {
+    console.error('Error fetching notifications:', error);
+    return [];
+  }
+
+  return data || [];
 };

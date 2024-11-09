@@ -8,16 +8,17 @@ import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { fetchNotifications } from '@/db/notifications'; // Adjust the path if necessary
 import NotificationDropdown from '@/components/DropDown'; // Adjust the path if necessary
+import { useAuth } from '@/providers/AuthProvider';
 
 const TabLayout: React.FC = () => {
-  const colorScheme = useColorScheme();
-  const navigation = useNavigation();
+  const { user } = useAuth();
   const router = useRouter();
   const [notifications, setNotifications] = useState<{ message: string }[]>([]);
   const [isDropdownOpen, setDropdownOpen] = useState<boolean>(false);
 
   const loadNotifications = async () => {
-    const notificationsData = await fetchNotifications();
+    if (!user){return;}
+    const notificationsData = await fetchNotifications(user);
     setNotifications(notificationsData);
   };
 
