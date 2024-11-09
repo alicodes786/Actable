@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { TabBarIcon } from '@/components/navigation/TabBarIcon';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Text, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { fetchNotifications } from '@/db/notifications'; // Adjust the path if necessary
@@ -27,7 +27,7 @@ const TabLayout: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header} className="bg-red">
+      <View style={styles.header}>
         <View style={styles.icons}>
           <TouchableOpacity onPress={() => setDropdownOpen(prev => !prev)}>
             <Ionicons name="notifications-outline" size={24} color="black" style={styles.icon} />
@@ -50,14 +50,15 @@ const TabLayout: React.FC = () => {
 
       {/* Tab Navigation */}
       <Tabs
-        screenOptions={{
-          tabBarActiveTintColor: Colors["light"].tint,
-          headerShown: false,
-          tabBarStyle: {
-            height: 70,
-            paddingBottom: 10,
-          },
-        }}
+      screenOptions={{
+        tabBarActiveTintColor: '#000', // Active icon color changed to red
+        headerShown: false,
+        tabBarStyle: {
+          height: 70,
+          paddingBottom: 10,
+          borderTopLeftRadius: 20,
+          borderTopRightRadius: 20, 
+        },}}
       >
         {/* Home Screen */}
         <Tabs.Screen
@@ -84,20 +85,27 @@ const TabLayout: React.FC = () => {
           name="addDeadline"
           options={{
             title: '',
-            tabBarIcon: ({ color }) => (
+            tabBarIcon: () => (
               <View style={styles.addButtonContainer}>
                 <Ionicons
-                  name={'add-circle'}
-                  size={56}
-                  color={color}
+                  name={'add'}
+                  size={36}
+                  color="white"
                   style={styles.addButton}
                 />
               </View>
             ),
             tabBarItemStyle: {
               height: 60,
-              marginTop: -20, // Adjust this value to control how much the button sticks out
+              marginTop: -20,
             },
+            tabBarButton: (props) => (
+              <TouchableOpacity
+                {...props}
+                style={props.style}
+                activeOpacity={0.7}
+              />
+            )
           }}
         />
 
@@ -163,6 +171,8 @@ const styles = StyleSheet.create({
     width: 56,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: '#000',
+    borderRadius: 100,
   },
   addButton: {
     shadowColor: '#000',
