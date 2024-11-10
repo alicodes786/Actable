@@ -4,8 +4,9 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { getDeadlines } from '@/db/deadlines';
 import { useAuth } from '@/providers/AuthProvider';
 import { Ideadline } from '@/lib/interfaces';
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 
-const windowWidth = Dimensions.get('window').width;
 
 export default function ViewDeadlinesScreen() {
   const [deadlines, setDeadlines] = useState<Ideadline[]>([]);
@@ -24,6 +25,27 @@ export default function ViewDeadlinesScreen() {
     fetchDeadlines();
   }, [user]);
 
+  const handleSubmission = (item: any) => {
+    router.push({
+        pathname: "/(tabs)/submission",
+        params: {
+            deadlineId: item.id,
+            name: item.name,
+            description: item.description,
+            date: item.date instanceof Date ? item.date.toISOString() : item.date,
+        }
+    });
+  };
+
+  const handleEdit = (item: any) => {
+    router.push({
+        pathname: "/(tabs)/editDeadline",
+        params: {
+            deadlineId: item.id
+        }
+    });
+  };
+
   const formatDate = (dateString: Date) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
@@ -41,7 +63,7 @@ export default function ViewDeadlinesScreen() {
       
       <ScrollView style={styles.scrollView}>
         {deadlines.map((deadline) => (
-          <TouchableOpacity key={deadline.id}>
+          <View key={deadline.id}>
             <LinearGradient
               colors={blueGradient}
               start={{ x: 0, y: 0 }}
@@ -53,15 +75,26 @@ export default function ViewDeadlinesScreen() {
                 <Text style={styles.deadlineDescription}>{deadline.description}</Text>
                 <Text style={styles.deadlineDate}>Due: {formatDate(deadline.date)}</Text>
               </View>
-              
-              <TouchableOpacity 
-                style={styles.submitButton}
-                onPress={() => {/* Handle submission */}}
-              >
-                <Text style={styles.submitButtonText}>Submit</Text>
-              </TouchableOpacity>
+
+              <View style={styles.buttonRow}>
+                <TouchableOpacity
+                    style={styles.iconButton} 
+                    onPress={() => handleEdit(deadline)}
+                  >
+                    <Ionicons name="create" size={24} color="#fff" />
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={styles.submitButton}
+                  onPress={() => handleSubmission(deadline)}
+                >
+                  <Text>Submit</Text>
+                </TouchableOpacity>
+              </View>
+
+
             </LinearGradient>
-          </TouchableOpacity>
+          </View>
         ))}
       </ScrollView>
     </View>
@@ -78,7 +111,6 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 20,
-    marginTop: 40,
   },
   scrollView: {
     flex: 1,
@@ -125,5 +157,16 @@ const styles = StyleSheet.create({
   submitButtonText: {
     color: '#007FFF',
     fontWeight: 'bold',
+  },
+  iconButton:{
+    flex: 1,
+    flexDirection: 'row',
+    gap: 10
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    marginTop: 10
   },
 });

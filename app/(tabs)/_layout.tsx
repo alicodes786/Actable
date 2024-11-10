@@ -1,13 +1,11 @@
-import { Tabs, useNavigation, useRouter } from 'expo-router';
+import { Tabs, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { TabBarIcon } from '@/components/navigation/TabBarIcon';
-import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
-import { View, StyleSheet, TouchableOpacity, Text, Pressable } from 'react-native';
+import { View, StyleSheet, TouchableOpacity} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { fetchNotifications } from '@/db/notifications'; // Adjust the path if necessary
-import NotificationDropdown from '@/components/DropDown'; // Adjust the path if necessary
+import { fetchNotifications } from '@/db/notifications';
+import NotificationDropdown from '@/components/DropDown';
 import { useAuth } from '@/providers/AuthProvider';
 
 const TabLayout: React.FC = () => {
@@ -133,6 +131,14 @@ const TabLayout: React.FC = () => {
 
         <Tabs.Screen
           name="submission"
+          options={{
+            // Hide this route from the tab bar since it's accessed via navigation
+            href: null,
+          }}
+        />
+
+      <Tabs.Screen
+          name="editDeadline"
           options={{
             // Hide this route from the tab bar since it's accessed via navigation
             href: null,
