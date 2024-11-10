@@ -6,6 +6,7 @@ import { useAuth } from '@/providers/AuthProvider';
 import { Ideadline } from '@/lib/interfaces';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import CountDownTimer from '@/components/CountDownTimer';
 
 
 export default function ViewDeadlinesScreen() {
@@ -46,56 +47,69 @@ export default function ViewDeadlinesScreen() {
     });
   };
 
-  const formatDate = (dateString: Date) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
+  const getUpcomingDeadlines = () => {
+    if (!deadlines) return [];
+    
+    return deadlines
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
   };
 
   const blueGradient = ['#66b3ff', '#007FFF', '#0066cc'];
+  const redGradient = ['#ff6666', '#ff1a1a', '#cc0000'];
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Your Deadlines</Text>
       
       <ScrollView style={styles.scrollView}>
-        {deadlines.map((deadline) => (
-          <View key={deadline.id}>
-            <LinearGradient
-              colors={blueGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.deadlineCard}
-            >
-              <View style={styles.deadlineContent}>
-                <Text style={styles.deadlineName}>{deadline.name}</Text>
-                <Text style={styles.deadlineDescription}>{deadline.description}</Text>
-                <Text style={styles.deadlineDate}>Due: {formatDate(deadline.date)}</Text>
-              </View>
-
-              <View style={styles.buttonRow}>
-                <TouchableOpacity
-                    style={styles.iconButton} 
-                    onPress={() => handleEdit(deadline)}
-                  >
-                    <Ionicons name="create" size={24} color="#fff" />
-                </TouchableOpacity>
-                
-                <TouchableOpacity 
-                  style={styles.submitButton}
-                  onPress={() => handleSubmission(deadline)}
+        {
+          getUpcomingDeadlines().map((deadline) => {
+            const deadlinePassed = new Date(deadline.date).getTime() >= Date.now();
+            
+            return(
+              <View key={deadline.id}>
+                <LinearGradient
+                  colors={deadlinePassed ? blueGradient : redGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.deadlineCard}
                 >
-                  <Text>Submit</Text>
-                </TouchableOpacity>
+                  <View style={styles.deadlineContent}>
+                    <Text style={styles.deadlineName}>{deadline.name}</Text>
+                    <Text style={styles.deadlineDescription}>{deadline.description}</Text>
+                    
+                    
+                    <Text className="text-white text-base font-medium">
+                      {deadlinePassed ?
+                        <CountDownTimer deadlineDate={deadline.date} />
+                        :
+                        "Deadline Passed"
+                      }
+                    </Text>
+                  </View>
+
+                  <View style={styles.buttonRow}>
+                    <TouchableOpacity
+                        style={styles.iconButton} 
+                        onPress={() => handleEdit(deadline)}
+                      >
+                        <Ionicons name="create" size={24} color="#fff" />
+                    </TouchableOpacity>
+                    
+                    <TouchableOpacity 
+                      style={styles.submitButton}
+                      onPress={() => handleSubmission(deadline)}
+                    >
+                      <Text>Submit</Text>
+                    </TouchableOpacity>
+                  </View>
+
+
+                </LinearGradient>
               </View>
-
-
-            </LinearGradient>
-          </View>
-        ))}
+            )
+          })
+        }
       </ScrollView>
     </View>
   );
