@@ -50,7 +50,7 @@ export default function Home() {
         if (!deadlines?.deadlineList) return [];
         
         return deadlines.deadlineList
-            .filter(item => new Date(item.date) >= new Date(today))
+            .filter(item => new Date(item.date).getTime() >= Date.now())
             .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
             .slice(0, 3);
     };
