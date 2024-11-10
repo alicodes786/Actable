@@ -18,9 +18,12 @@ export default function EditDeadlineScreen() {
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  navigation.setOptions({
-    title: 'Edit Deadline',
-  });
+  useEffect(() => {
+    // This will set the title after the component has mounted
+    navigation.setOptions({
+      title: 'Edit Deadline',
+    });
+  }, [navigation]); 
 
   useEffect(() => {
     const fetchDeadline = async () => {
