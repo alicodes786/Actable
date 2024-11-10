@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
 import { StyleSheet, View, Text, ScrollView, TouchableOpacity, Dimensions, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { getDeadlines } from '@/db/deadlines';
@@ -13,18 +14,20 @@ export default function ViewDeadlinesScreen() {
   const [deadlines, setDeadlines] = useState<Ideadline[]>([]);
   const { user } = useAuth();
 
-  useEffect(() => {
-    const fetchDeadlines = async () => {
-      if (user) {  
-        const result = await getDeadlines(String(user)); // Convert number to string for the DB call
-        if (result?.deadlineList) {
-          setDeadlines(result.deadlineList);
+  useFocusEffect(
+    useCallback(() => {
+      const fetchDeadlines = async () => {
+        if (user) {  
+          const result = await getDeadlines(String(user)); // Convert number to string for the DB call
+          if (result?.deadlineList) {
+            setDeadlines(result.deadlineList);
+          }
         }
-      }
-    };
+      };
 
-    fetchDeadlines();
-  }, [user]);
+      fetchDeadlines();
+    }, [user])
+  );
 
   const handleSubmission = (item: any) => {
     router.push({

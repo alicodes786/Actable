@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { IdeadlineList } from '@/lib/interfaces';
 import { getDeadlines } from '@/db/deadlines';
 import CountDownTimer from '../CountDownTimer';
@@ -16,23 +16,24 @@ const GRADIENT_COLORS = [
 export default function Home() {
     const [deadlines, setDeadlines] = useState<IdeadlineList | null>(null);
     const { isLoading, user } = useAuth();
-    const today = new Date().toISOString().split('T')[0];
 
-    useEffect(() => {
-        if (isLoading || !user) return;
+    useFocusEffect(
+        useCallback(() => {
+            if (isLoading || !user) return;
 
-        const fetchDeadlines = async () => {
-            try {
-                const fetchedDeadlines = await getDeadlines(String(user));
-                setDeadlines(fetchedDeadlines);
-            } catch (error) {
-                console.error('Error fetching deadlines:', error);
-                // Handle error appropriately
-            }
-        };
+            const fetchDeadlines = async () => {
+                try {
+                    const fetchedDeadlines = await getDeadlines(String(user));
+                    setDeadlines(fetchedDeadlines);
+                } catch (error) {
+                    console.error('Error fetching deadlines:', error);
+                    // Handle error appropriately
+                }
+            };
 
-        fetchDeadlines();
-    }, [isLoading, user]);
+            fetchDeadlines();
+        }, [isLoading, user])
+    );
 
     const handleSubmission = (item: any) => {
         router.push({
