@@ -3,19 +3,24 @@ import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { useAuth } from '@/providers/AuthProvider';
 import { getSingleDeadline, updateDeadline, deleteDeadline } from '@/db/deadlines';
-import { useRouter } from 'expo-router';
+import { useNavigation, useRouter } from 'expo-router';
 import { useRoute } from '@react-navigation/native';
 
 export default function EditDeadlineScreen() {
   const { user } = useAuth();
   const router = useRouter();
   const route = useRoute();
+  const navigation = useNavigation();
   const { deadlineId } = route.params as { deadlineId: number };
   const [deadlineName, setDeadlineName] = useState('');
   const [deadlineDescription, setDeadlineDescription] = useState('');
   const [deadlineDate, setDeadlineDate] = useState<Date | null>(null);
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  navigation.setOptions({
+    title: 'Edit Deadline',
+  });
 
   useEffect(() => {
     const fetchDeadline = async () => {

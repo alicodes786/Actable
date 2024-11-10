@@ -43,7 +43,7 @@ export default function ViewDeadlinesScreen() {
 
   const handleEdit = (item: any) => {
     router.push({
-        pathname: "/(tabs)/editDeadline",
+        pathname: "/editDeadline",
         params: {
             deadlineId: item.id
         }

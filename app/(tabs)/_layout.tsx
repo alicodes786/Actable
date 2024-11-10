@@ -136,14 +136,6 @@ const TabLayout: React.FC = () => {
             href: null,
           }}
         />
-
-      <Tabs.Screen
-          name="editDeadline"
-          options={{
-            // Hide this route from the tab bar since it's accessed via navigation
-            href: null,
-          }}
-        />
       </Tabs>
     </SafeAreaView>
   );
