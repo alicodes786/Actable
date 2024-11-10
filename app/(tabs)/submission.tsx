@@ -8,6 +8,7 @@ import { uploadSubmissionImage } from '@/db/imageUpload';
 import { createNewSubmission, fetchLastSubmissionImage, SubmissionError } from '@/db/submissions';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { useAuth } from '@/providers/AuthProvider';
+import { getSingleDeadline } from '@/db/deadlines';
 
 interface SubmissionData {
   name: string;
@@ -202,29 +203,35 @@ function SubmissionContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [submissionData, setSubmissionData] = useState<SubmissionData | null>(null);
   const { user } = useAuth();
+  const deadlineId = Number(params.deadlineId); // Assumes `deadlineId` is in params
 
   useEffect(() => {
     setIsLoading(true);
     setSubmissionData(null);
 
-    const processData = async () => {
+    const fetchSubmissionData = async () => {
       try {
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        const deadline = await getSingleDeadline(deadlineId);
         
-        setSubmissionData({
-          name: params.name as string,
-          description: params.description as string,
-          date: new Date(params.date as string)
-        });
+        if (deadline) {
+          setSubmissionData({
+            name: deadline.name,
+            description: deadline.description,
+            date: new Date(deadline.date),
+          });
+        }
       } catch (error) {
-        console.error('Error processing submission data:', error);
+        console.error('Error fetching submission data:', error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    processData();
-  }, [params.description, params.date]);
+    if (deadlineId) {
+      fetchSubmissionData();
+    }
+  }, [deadlineId]); // Refetches if `deadlineId` changes
+
 
   if (isLoading || !submissionData) {
     return <LoadingSpinner />;
