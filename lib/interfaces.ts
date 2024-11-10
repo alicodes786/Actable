@@ -10,3 +10,9 @@ export interface Ideadline {
 export interface IdeadlineList {
   deadlineList: Ideadline[];
 }
+
+export interface IUser {
+  id: number; // Unique identifier for the user
+  name: string; // Full name of the user
+ 
+}

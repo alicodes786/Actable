@@ -1,7 +1,7 @@
 import { Tabs, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { TabBarIcon } from '@/components/navigation/TabBarIcon';
-import { View, StyleSheet, TouchableOpacity} from 'react-native';
+import { View, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { fetchNotifications } from '@/db/notifications';
@@ -15,7 +15,7 @@ const TabLayout: React.FC = () => {
   const [isDropdownOpen, setDropdownOpen] = useState<boolean>(false);
 
   const loadNotifications = async () => {
-    if (!user){return;}
+    if (!user) return;
     const notificationsData = await fetchNotifications(user);
     setNotifications(notificationsData);
   };
@@ -25,41 +25,42 @@ const TabLayout: React.FC = () => {
   }, []);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.icons}>
-          <TouchableOpacity onPress={() => setDropdownOpen(prev => !prev)}>
-            <Ionicons name="notifications-outline" size={24} color="black" style={styles.icon} />
+    <SafeAreaView className="flex-1 bg-white mt-8 overflow-visible">
+      {/* Header */}
+      <View className="flex-row justify-end  items-center p-2 bg-white w-full z-10">
+        <View className="flex-row mr-2 space-x-4">
+          <TouchableOpacity onPress={() => setDropdownOpen((prev) => !prev)}>
+            <Ionicons name="notifications-outline" size={24} color="black" className="ml-4" />
           </TouchableOpacity>
-          <Ionicons 
-            name="person-circle-outline" 
-            size={24} 
-            color="black" 
-            style={styles.icon} 
+          <Ionicons
+            name="person-circle-outline"
+            size={24}
+            color="black"
+            className="ml-4"
             onPress={() => router.push('/settings')}
           />
         </View>
         {isDropdownOpen && (
-          <NotificationDropdown 
-            notifications={notifications} 
-            onClose={() => setDropdownOpen(false)} 
+          <NotificationDropdown
+            notifications={notifications}
+            onClose={() => setDropdownOpen(false)}
           />
         )}
       </View>
 
       {/* Tab Navigation */}
       <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: '#000', // Active icon color changed to red
-        headerShown: false,
-        tabBarStyle: {
-          height: 70,
-          paddingBottom: 10,
-          borderTopLeftRadius: 20,
-          borderTopRightRadius: 20, 
-        },}}
+        screenOptions={{
+          tabBarActiveTintColor: '#000',
+          headerShown: false,
+          tabBarStyle: {
+            height: 70,
+            paddingBottom: 10,
+            borderTopLeftRadius: 20,
+            borderTopRightRadius: 20,
+          },
+        }}
       >
-        {/* Home Screen */}
         <Tabs.Screen
           name="index"
           options={{
@@ -69,7 +70,6 @@ const TabLayout: React.FC = () => {
             ),
           }}
         />
-
         <Tabs.Screen
           name="viewDeadlines"
           options={{
@@ -79,36 +79,21 @@ const TabLayout: React.FC = () => {
             ),
           }}
         />
-
         <Tabs.Screen
           name="addDeadline"
           options={{
             title: '',
             tabBarIcon: () => (
-              <View style={styles.addButtonContainer}>
-                <Ionicons
-                  name={'add'}
-                  size={36}
-                  color="white"
-                  style={styles.addButton}
-                />
+              <View className="absolute bottom-0 h-14 w-14 items-center justify-center bg-black rounded-full shadow-md">
+                <Ionicons name="add" size={36} color="white" />
               </View>
             ),
-            tabBarItemStyle: {
-              height: 60,
-              marginTop: -20,
-            },
+            tabBarItemStyle: { height: 60, marginTop: -20 },
             tabBarButton: (props) => (
-              <TouchableOpacity
-                {...props}
-                style={props.style}
-                activeOpacity={0.7}
-              />
-            )
+              <TouchableOpacity {...props} style={props.style} activeOpacity={0.7} />
+            ),
           }}
         />
-
-        {/* Tracker Screen */}
         <Tabs.Screen
           name="tracker"
           options={{
@@ -118,7 +103,6 @@ const TabLayout: React.FC = () => {
             ),
           }}
         />
-
         <Tabs.Screen
           name="coach"
           options={{
@@ -128,11 +112,9 @@ const TabLayout: React.FC = () => {
             ),
           }}
         />
-
         <Tabs.Screen
           name="submission"
           options={{
-            // Hide this route from the tab bar since it's accessed via navigation
             href: null,
           }}
         />
@@ -140,49 +122,5 @@ const TabLayout: React.FC = () => {
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    marginTop: 30,
-    overflow: 'visible',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-    padding: 10,
-    backgroundColor: '#fff',
-    width: '100%',
-    zIndex:10
-  },
-  icons: {
-    flexDirection: 'row',
-  },
-  icon: {
-    marginLeft: 15,
-  },
-  addButtonContainer: {
-    position: 'absolute',
-    bottom: 0,
-    height: 56,
-    width: 56,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#000',
-    borderRadius: 100,
-  },
-  addButton: {
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-});
 
 export default TabLayout;
