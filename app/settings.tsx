@@ -50,7 +50,7 @@ export default function Settings() {
       <View style={styles.settingsGroup}>
         <Text style={styles.groupTitle}>General</Text>
         <View style={styles.settingsBox}>
-          {renderSettingItem('notifications-outline', 'Notifications')}
+          {renderSettingItem('notifications-outline', 'Notifications', () => router.push('/notifications'))}
           {renderSettingItem('alarm-outline', 'Alarm')}
           {renderSettingItem('chatbubbles-outline', 'Chat')}
         </View>

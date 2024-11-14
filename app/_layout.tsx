@@ -68,9 +68,16 @@ function AppContent() {
         headerBackTitleVisible:false
       }} 
       />
+       <Stack.Screen 
+      name="notifications"
+      options={{
+        title:'',
+        headerBackTitleVisible:false,
+        // headerShown:false
+      }} 
+      />
       </Stack>
       
-
     </TamaguiProvider>
   );
 }
