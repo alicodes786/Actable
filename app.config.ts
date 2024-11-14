@@ -5,4 +5,8 @@ export default ({ config }:any) => ({
   extra: {
     skipAuth: process.env.SKIP_AUTH === 'true'
   },
+    "plugins": [
+      "expo-secure-store"
+    ]
+  
 });

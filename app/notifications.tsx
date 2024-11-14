@@ -1,34 +1,74 @@
 import { View, Text, StyleSheet, TouchableOpacity, Switch } from 'react-native';
-import React, { useState } from 'react';
+import * as SecureStore from 'expo-secure-store';
+import React, { useEffect, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Notifications from 'expo-notifications';
 
 const NotificationsSettings = () => {
   const [isNotificationsEnabled, setIsNotificationsEnabled] = useState(true);
-  const [notificationTime, setNotificationTime] = useState<number>(30); // Default to 30 minutes
+  const [notificationTime, setNotificationTime] = useState<number>(30); 
+
+  // Function to save settings in SecureStore
+  const saveSettings = async () => {
+    await SecureStore.setItemAsync('notificationsEnabled', JSON.stringify(isNotificationsEnabled));
+    await SecureStore.setItemAsync('notificationTime', JSON.stringify(notificationTime));
+  };
+
+   // Function to load settings from SecureStore
+   const loadSettings = async () => {
+    const notificationsEnabled = await SecureStore.getItemAsync('notificationsEnabled');
+    const notificationTime = await SecureStore.getItemAsync('notificationTime');
+    
+    if (notificationsEnabled) {
+      setIsNotificationsEnabled(JSON.parse(notificationsEnabled));
+    }
+    if (notificationTime) {
+        console.log("LoadedTime: ",notificationTime)
+      setNotificationTime(JSON.parse(notificationTime));
+    }
+  };
+
+  // Call loadSettings when the component mounts
+  useEffect(() => {
+    loadSettings();
+  }, []);
 
   const handleToggleNotifications = () => {
     setIsNotificationsEnabled(prev => !prev);
   };
-
+  
   const handleNotificationTimeChange = (time: number) => {
     setNotificationTime(time);
   };
+  
+  // Call `saveSettings` after each state change
+  useEffect(() => {
+    saveSettings();
+  }, [isNotificationsEnabled, notificationTime]);
 
   const scheduleNotification = async (deadline: Date) => {
     if (!isNotificationsEnabled) return;
+    console.log(notificationTime)
 
     const notificationTriggerTime = new Date(deadline.getTime() - notificationTime * 60 * 1000); // Time in milliseconds
+    console.log(notificationTriggerTime)
 
     await Notifications.scheduleNotificationAsync({
       content: {
         title: "Upcoming Deadline",
         body: `Reminder: Your deadline is approaching!`,
-        data: { deadlineId: 'someId' }, // You can pass dynamic data here
+        data: { deadlineId: 'someId' }, 
       },
-      trigger: notificationTriggerTime, // Set the time based on user preference
+      trigger: notificationTriggerTime ,
     });
+  };
+
+  // Button press handler to simulate scheduling a notification
+  const handleScheduleNotification = () => {
+    const deadline = new Date(); // Replace with actual deadline logic
+    deadline.setHours(deadline.getHours() + 1); // Simulate a deadline 1 hour from now
+    scheduleNotification(deadline);
   };
 
   const renderSettingItem = (icon: string, label: string, onPress?: () => void) => (
@@ -93,6 +133,13 @@ const NotificationsSettings = () => {
           </TouchableOpacity>
         </View>
       </View>
+
+      {/* Button to simulate scheduling a notification */}
+      <TouchableOpacity style={styles.settingOption} onPress={handleScheduleNotification}>
+        <View style={styles.settingContent}>
+          <Text style={styles.settingText}>Schedule Test Notification</Text>
+        </View>
+      </TouchableOpacity>
     </SafeAreaView>
   );
 };

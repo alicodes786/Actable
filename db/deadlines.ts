@@ -1,6 +1,7 @@
 // deadlines.ts
 import { supabase } from '@/lib/db';
 import { IdeadlineList, Ideadline } from '@/lib/interfaces';
+import { getItemAsync } from 'expo-secure-store';
 import { scheduleDeadlineNotification, cancelDeadlineNotifications } from '@/lib/notifications';
 
 interface DeadlineResult {
@@ -37,9 +38,9 @@ export const getSingleDeadline = async (id: number): Promise<Ideadline | null> =
 };
 
 export const addDeadline = async (
-  userId: string, 
-  name: string, 
-  description: string, 
+  userId: string,
+  name: string,
+  description: string,
   date: Date
 ): Promise<DeadlineResult> => {
   try {
@@ -59,8 +60,23 @@ export const addDeadline = async (
       throw new Error(error?.message || 'Failed to retrieve newly added deadline.');
     }
 
-    // Schedule notification
-    await scheduleDeadlineNotification(userId, data.id, name, date);
+    // Fetch user preferences from SecureStore
+    const notificationsEnabled = await getItemAsync('notificationsEnabled');
+    const notificationTime = await getItemAsync('notificationTime');
+    const notificationTimeValue = notificationTime ? JSON.parse(notificationTime) : 30;
+
+    console.log(notificationsEnabled, notificationTime, notificationTimeValue)
+
+    // If notifications are enabled, schedule the notification
+    if (notificationsEnabled === 'true') {
+      await scheduleDeadlineNotification(
+        userId,
+        data.id,
+        name,
+        date,
+        notificationTimeValue // Pass the user's preferred notification time
+      );
+    }
 
     return { success: true };
   } catch (error) {
@@ -97,13 +113,18 @@ export const updateDeadline = async (
       throw new Error(error?.message || 'Failed to update deadline.');
     }
 
+    // Fetch user preferences from SecureStore (notificationTime)
+    const notificationTime = await getItemAsync('notificationTime');
+    const notificationTimeValue = notificationTime ? JSON.parse(notificationTime) : 30; // Default to 30 minutes
+
     // If the date or name was updated, schedule new notification
     if (updates.date || updates.name) {
       await scheduleDeadlineNotification(
         userId,
         deadlineId,
         updates.name || data.name,
-        updates.date ? new Date(updates.date) : new Date(data.date)
+        updates.date ? new Date(updates.date) : new Date(data.date),
+        notificationTimeValue // Pass the user's preferred notification time
       );
     }
 
