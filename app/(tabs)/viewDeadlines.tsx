@@ -56,9 +56,8 @@ export default function ViewDeadlinesScreen() {
     return deadlines
         .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
   };
-
-  const blueGradient = ['#66b3ff', '#007FFF', '#0066cc'];
-  const redGradient = ['#ff6666', '#ff1a1a', '#cc0000'];
+  const blueGradient: [string, string, ...string[]] = ['#66b3ff', '#007FFF', '#0066cc'];
+  const redGradient: [string, string, ...string[]] = ['#ff6666', '#ff1a1a', '#cc0000'];
 
   return (
     <View style={styles.container}>

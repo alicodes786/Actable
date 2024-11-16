@@ -21,8 +21,8 @@ export default function TrackerScreen() {
       getDeadlineStats();
     }, []);
 
-  const blueGradient = ['#66b3ff', '#007FFF', '#0066cc'];
-  const blackGradient = ['#333333', '#111111', '#000000'];
+    const blueGradient: [string, string, ...string[]] = ['#66b3ff', '#007FFF', '#0066cc'];
+    const blackGradient: [string, string, ...string[]] = ['#333333', '#111111', '#000000'];    
 
   return (
     <View style={styles.container}>

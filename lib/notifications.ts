@@ -12,23 +12,28 @@ export async function scheduleDeadlineNotification(
   userId: string,
   deadlineId: number,
   deadlineName: string,
-  deadlineDate: Date
+  deadlineDate: Date,
+  notificationTime: number
 ): Promise<NotificationScheduleResult> {
   try {
-    const reminderTime = new Date(deadlineDate.getTime() - 30 * 60 * 1000); // 30 minutes before
-    const notificationMessage = `Reminder: The deadline "${deadlineName}" is coming up in 30 minutes.`;
+    const reminderTime = new Date(deadlineDate.getTime() - notificationTime * 60 * 1000); // Calculate reminder time
 
-    // Schedule local device notification with metadata
+    // Check if reminder time is valid (in the future)
+    if (reminderTime.getTime() <= new Date().getTime()) {
+      throw new Error('Reminder time must be in the future');
+    }
+
+    const notificationMessage = `Reminder: The deadline "${deadlineName}" is coming up in ${notificationTime} minutes.`;
+
     const notificationId = await Notifications.scheduleNotificationAsync({
       content: {
         title: 'Upcoming Deadline Reminder',
         body: notificationMessage,
-        data: { deadlineId }, // Store reference to which deadline this notification is for
+        data: { deadlineId },
       },
       trigger: reminderTime,
     });
 
-    // Add to your existing notifications table
     await createNotification(userId, deadlineId, notificationMessage, reminderTime);
 
     return { 
@@ -43,6 +48,7 @@ export async function scheduleDeadlineNotification(
     };
   }
 }
+
 
 export async function cancelDeadlineNotifications(deadlineId: number): Promise<void> {
   try {
