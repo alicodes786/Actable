@@ -1,5 +1,3 @@
-// _layout.tsx
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { SplashScreen, Stack } from 'expo-router';
 import { useEffect } from 'react';
@@ -7,11 +5,9 @@ import * as Notifications from 'expo-notifications';
 import 'react-native-reanimated';
 import { View, ActivityIndicator, Platform } from 'react-native';
 
-import { TamaguiProvider } from '@tamagui/core';
 import config from '../tamagui.config';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { AuthProvider, useAuth } from '@/providers/AuthProvider';
-
 
 export {
   ErrorBoundary,
@@ -44,50 +40,42 @@ function AppContent() {
     );
   }
 
-
   return (
-    <TamaguiProvider config={config}>
-      <Stack>
-      
-        <Stack.Screen 
-          name="(auth)" 
-          options={{ 
-            headerShown: false,
-          }} 
-        />
-        <Stack.Screen 
-          name="(tabs)" 
-          options={{ 
-            headerShown: false,
-          }} 
-        />
-        <Stack.Screen 
-      name="settings"
-      options={{
-        title:'Settings',
-        headerBackTitleVisible:false
-      }} 
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen 
+        name="(auth)" 
+        options={{ 
+          headerShown: false,
+        }} 
       />
-       <Stack.Screen 
-      name="notifications"
-      options={{
-        title:'',
-        headerBackTitleVisible:false,
-        // headerShown:false
-      }} 
+      <Stack.Screen 
+        name="(tabs)" 
+        options={{ 
+          headerShown: false,
+        }} 
       />
-      </Stack>
-      
-    </TamaguiProvider>
+      <Stack.Screen 
+        name="settings"
+        options={{
+          title: 'Settings',
+          headerShown: true,
+        }} 
+      />
+      <Stack.Screen 
+        name="notifications"
+        options={{
+          title: '',
+          headerShown: true,
+        }} 
+      />
+    </Stack>
   );
 }
 
 export default function RootLayout() {
-
   useEffect(() => {
     async function setupNotifications() {
       try {
-        // Request permissions only on iOS
         if (Platform.OS === 'ios') {
           const { status: existingStatus } = await Notifications.getPermissionsAsync();
           let finalStatus = existingStatus;
@@ -103,7 +91,6 @@ export default function RootLayout() {
           }
         }
 
-        // Set notification handler for both platforms
         Notifications.setNotificationHandler({
           handleNotification: async () => ({
             shouldShowAlert: true,
@@ -111,7 +98,6 @@ export default function RootLayout() {
             shouldSetBadge: false,
           }),
         });
-
       } catch (error) {
         console.error('Error setting up notifications:', error);
       }
