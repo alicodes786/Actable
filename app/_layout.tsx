@@ -8,6 +8,7 @@ import { View, ActivityIndicator, Platform } from 'react-native';
 import config from '../tamagui.config';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { AuthProvider, useAuth } from '@/providers/AuthProvider';
+import { TamaguiProvider } from 'tamagui';
 
 export {
   ErrorBoundary,
@@ -41,6 +42,7 @@ function AppContent() {
   }
 
   return (
+    <TamaguiProvider config={config}>
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen 
         name="(auth)" 
@@ -69,6 +71,7 @@ function AppContent() {
         }} 
       />
     </Stack>
+    </TamaguiProvider>
   );
 }
 
