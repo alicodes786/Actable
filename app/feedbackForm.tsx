@@ -25,21 +25,27 @@ const FeedbackForm = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.heading}>We value your feedback</Text>
+      <Text style={styles.heading}>We Value Your Feedback</Text>
+
+      <Text style={styles.label}>How is the app?</Text>
       <TextInput
         style={styles.input}
-        placeholder="How is the app?"
+        placeholder="Share your thoughts about the app"
         value={feedback}
         onChangeText={setFeedback}
         multiline
       />
+
+      
+      <Text style={styles.label}>What can be improved?</Text>
       <TextInput
         style={[styles.input, styles.textArea]}
-        placeholder="What can be improved?"
+        placeholder="Suggest improvements for the app"
         value={improvements}
         onChangeText={setImprovements}
         multiline
       />
+
       <TouchableOpacity style={styles.button} onPress={handleSubmit}>
         <Text style={styles.buttonText}>Submit</Text>
       </TouchableOpacity>
@@ -59,6 +65,12 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 20,
     textAlign: "center",
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: "500",
+    marginBottom: 5,
+    color: "#333",
   },
   input: {
     borderWidth: 1,

@@ -70,6 +70,13 @@ function AppContent() {
           headerShown: true,
         }} 
       />
+      <Stack.Screen 
+        name="feedbackform"
+        options={{
+          title: '',
+          headerShown: true,
+        }} 
+      />
     </Stack>
     </TamaguiProvider>
   );
