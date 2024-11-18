@@ -31,6 +31,7 @@ const FeedbackForm = () => {
       <TextInput
         style={styles.input}
         placeholder="Share your thoughts about the app"
+        placeholderTextColor="#555"
         value={feedback}
         onChangeText={setFeedback}
         multiline
@@ -41,6 +42,7 @@ const FeedbackForm = () => {
       <TextInput
         style={[styles.input, styles.textArea]}
         placeholder="Suggest improvements for the app"
+        placeholderTextColor="#555"
         value={improvements}
         onChangeText={setImprovements}
         multiline
