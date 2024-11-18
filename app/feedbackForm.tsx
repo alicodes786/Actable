@@ -33,7 +33,13 @@ const FeedbackForm = () => {
         onChangeText={setFeedback}
         multiline
       />
-      
+      <TextInput
+        style={[styles.input, styles.textArea]}
+        placeholder="What can be improved?"
+        value={improvements}
+        onChangeText={setImprovements}
+        multiline
+      />
       <TouchableOpacity style={styles.button} onPress={handleSubmit}>
         <Text style={styles.buttonText}>Submit</Text>
       </TouchableOpacity>
