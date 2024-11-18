@@ -61,6 +61,7 @@ function AppContent() {
         options={{
           title: 'Settings',
           headerShown: true,
+          
         }} 
       />
       <Stack.Screen 
@@ -71,7 +72,7 @@ function AppContent() {
         }} 
       />
       <Stack.Screen 
-        name="feedbackform"
+        name="feedbackForm"
         options={{
           title: '',
           headerShown: true,
