@@ -59,7 +59,7 @@ export default function Settings() {
       <View style={styles.settingsGroup}>
         <Text style={styles.groupTitle}>About App</Text>
         <View style={styles.settingsBox}>
-          {renderSettingItem('star-outline', 'Feedback')}
+          {renderSettingItem('star-outline', 'Feedback', () => router.push('/feedbackForm'))}
           {renderSettingItem('person-outline', 'Coach')}
           {renderSettingItem('card-outline', 'Billing & Payment')}
           {renderSettingItem('log-out-outline', 'Sign Out', handleSignOut)}

@@ -61,10 +61,18 @@ function AppContent() {
         options={{
           title: 'Settings',
           headerShown: true,
+          
         }} 
       />
       <Stack.Screen 
         name="notifications"
+        options={{
+          title: '',
+          headerShown: true,
+        }} 
+      />
+      <Stack.Screen 
+        name="feedbackForm"
         options={{
           title: '',
           headerShown: true,
