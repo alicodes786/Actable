@@ -51,6 +51,7 @@ export default function Settings() {
         <Text style={styles.groupTitle}>General</Text>
         <View style={styles.settingsBox}>
           {renderSettingItem('notifications-outline', 'Notifications', () => router.push('/notifications'))}
+          {renderSettingItem('mail-outline', 'Email Subscription', () => router.push('/subscriptions'))}
           {renderSettingItem('alarm-outline', 'Alarm')}
           {renderSettingItem('chatbubbles-outline', 'Chat')}
         </View>
