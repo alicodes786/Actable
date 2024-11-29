@@ -93,7 +93,7 @@ const SubscriptionSettings = () => {
   return (
     <SafeAreaView className="flex-1 px-4 py-6 bg-white">
       <Text className="text-2xl font-bold text-gray-800 mb-4">
-        Subscription Settings
+        Email Subscribers
       </Text>
 
       <View className="mb-4">
