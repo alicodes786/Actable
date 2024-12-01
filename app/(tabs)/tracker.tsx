@@ -2,27 +2,39 @@ import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, View, Text, Dimensions } from 'react-native';
 import { fetchDeadlineStats } from '@/db/deadlinesTracker';
-import { LineChart } from 'react-native-chart-kit';
+import { getLast30DaysDeadlines } from '@/db/deadlines';
+import { Ideadline } from '@/lib/interfaces';
+import ChartComponent from '@/components/ChartComponent'; // Ensure this is the correct path for ChartComponent
 
 const windowWidth = Dimensions.get('window').width;
 const windowHeight = Dimensions.get('window').height;
 
 export default function TrackerScreen() {
-    const [metDeadlinesCount, setMetDeadlinesCount] = useState(0);
-    const [missedDeadlinesCount, setMissedDeadlinesCount] = useState(0);
-  
-    useEffect(() => {
-      const getDeadlineStats = async () => {
+  const [metDeadlinesCount, setMetDeadlinesCount] = useState(0);
+  const [missedDeadlinesCount, setMissedDeadlinesCount] = useState(0);
+  const [last30DaysDeadlines, setLast30DaysDeadlines] = useState<Ideadline[] | null>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Fetch deadline stats
         const { metCount, missedCount } = await fetchDeadlineStats();
         setMetDeadlinesCount(metCount);
         setMissedDeadlinesCount(missedCount);
-      };
-  
-      getDeadlineStats();
-    }, []);
 
-    const blueGradient: [string, string, ...string[]] = ['#66b3ff', '#007FFF', '#0066cc'];
-    const blackGradient: [string, string, ...string[]] = ['#333333', '#111111', '#000000'];    
+        // Fetch last 30 days' deadlines
+        const deadlines = await getLast30DaysDeadlines();
+        setLast30DaysDeadlines(deadlines || []);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const blueGradient: [string, string, ...string[]] = ['#66b3ff', '#007FFF', '#0066cc'];
+  const blackGradient: [string, string, ...string[]] = ['#333333', '#111111', '#000000'];
 
   return (
     <View style={styles.container}>
@@ -57,41 +69,18 @@ export default function TrackerScreen() {
           </LinearGradient>
         </View>
         <View style={styles.graphicalData}>
-          <LineChart
-        data={{
-          labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-          datasets: [
-            {
-              data: [20, 45, 28, 80, 99, 43],
-            },
-          ],
-        }}
-        width={Dimensions.get('window').width - 32} // Width of the chart
-        height={220} // Height of the chart
-        yAxisLabel="$"
-        yAxisSuffix="k"
-        chartConfig={{
-          backgroundColor: '#1cc910',
-          backgroundGradientFrom: '#eff3ff',
-          backgroundGradientTo: '#efefef',
-          decimalPlaces: 2,
-          color: (opacity = 1) => `rgba(0, 0, 255, ${opacity})`,
-          labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-          style: {
-            borderRadius: 16,
-          },
-          propsForDots: {
-            r: '6',
-            strokeWidth: '2',
-            stroke: '#ffa726',
-          },
-        }}
-        bezier // Optional: Smooths out the line
-        style={{
-          marginVertical: 8,
-          borderRadius: 16,
-        }}
-      />
+          <ChartComponent
+            data={{
+              labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+              datasets: [
+                {
+                  data: [20, 45, 28, 80, 99, 43],
+                },
+              ],
+            }}
+            width={windowWidth - 32}
+            height={220}
+          />
         </View>
         <View style={styles.moreDeadlineData}>
           <LinearGradient
@@ -144,7 +133,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     maxHeight: '25%',
     justifyContent: 'space-around',
-    alignItems:'center',
+    alignItems: 'center',
     maxWidth: '100%',
   },
   deadlinesCardGradient: {
@@ -188,27 +177,20 @@ const styles = StyleSheet.create({
     marginTop: 40,
   },
   graphicalData: {
-    flex:1,
-    flexDirection:'row',
-    position: 'absolute', // Make the element positioned absolutely within its parent
-    top: 0,
-    bottom: 0,
-    left: 0,
-    right: 0,
-    alignItems: 'center', 
+    flex: 1,
     justifyContent: 'center',
-    maxWidth: '100%', 
-    marginLeft:35,
-    marginTop:10,
+    alignItems: 'center',
+    maxWidth: '100%',
+    marginTop: 10,
   },
   moreDeadlineData: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    alignItems:'center',
+    alignItems: 'center',
     position: 'absolute',
     bottom: 0,
-    width: '100%', 
+    width: '100%',
     alignSelf: 'center',
-    paddingBottom: 20,  
-  }
+    paddingBottom: 20,
+  },
 });

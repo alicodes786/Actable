@@ -166,3 +166,21 @@ export const deleteDeadline = async (
     };
   }
 };
+
+export const getLast30DaysDeadlines = async (userId: string): Promise<Ideadline[] | null> => {
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  const { data: deadlines, error } = await supabase
+    .from('deadlines')
+    .select('id, name, description, lastsubmissionid, userid, date')  // Select only the necessary fields
+    .eq('userid', userId)
+    .gte('date', thirtyDaysAgo.toISOString());
+
+  if (error) {
+    console.error('Error fetching last 30 days deadlines:', error);
+    return null;
+  }
+
+  return deadlines || null;  // This should now match the Ideadline[] structure
+};
