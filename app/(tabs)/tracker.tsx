@@ -4,6 +4,7 @@ import { StyleSheet, View, Text, Dimensions } from 'react-native';
 import { fetchDeadlineStats } from '@/db/deadlinesTracker';
 import { getLast30DaysDeadlines } from '@/db/deadlines';
 import { Ideadline } from '@/lib/interfaces';
+import { useAuth } from '@/providers/AuthProvider';
 import ChartComponent from '@/components/ChartComponent'; // Ensure this is the correct path for ChartComponent
 
 const windowWidth = Dimensions.get('window').width;
@@ -13,6 +14,7 @@ export default function TrackerScreen() {
   const [metDeadlinesCount, setMetDeadlinesCount] = useState(0);
   const [missedDeadlinesCount, setMissedDeadlinesCount] = useState(0);
   const [last30DaysDeadlines, setLast30DaysDeadlines] = useState<Ideadline[] | null>(null);
+  const { user } = useAuth();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -23,7 +25,7 @@ export default function TrackerScreen() {
         setMissedDeadlinesCount(missedCount);
 
         // Fetch last 30 days' deadlines
-        const deadlines = await getLast30DaysDeadlines();
+        const deadlines = await getLast30DaysDeadlines(String(user));
         setLast30DaysDeadlines(deadlines || []);
       } catch (error) {
         console.error('Error fetching data:', error);

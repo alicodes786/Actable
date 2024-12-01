@@ -1,49 +1,37 @@
 import React from 'react';
-import { Dimensions, StyleSheet, View, Text } from 'react-native';
-import { BarChart } from 'react-native-chart-kit';
+import { LineChart } from 'react-native-chart-kit';
+import { View, Text } from 'react-native';
 
-interface ChartProps {
+type ChartData = {
   labels: string[];
-  data: number[];
-}
+  datasets: {
+    data: number[];
+  }[];
+};
 
-const ChartComponent: React.FC<ChartProps> = ({ labels, data }) => {
+type ChartProps = {
+  data: ChartData;
+  width: number;
+  height: number;
+};
+
+const ChartComponent: React.FC<ChartProps> = ({ data, width, height }) => {
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Deadlines in Last 30 Days</Text>
-      <BarChart
-        data={{
-          labels,
-          datasets: [{ data }],
-        }}
-        width={Dimensions.get('window').width - 32}
-        height={220}
+    <View>
+      <LineChart
+        data={data}
+        width={width}
+        height={height}
         chartConfig={{
-          backgroundGradientFrom: '#eff3ff',
-          backgroundGradientTo: '#efefef',
-          color: (opacity = 1) => `rgba(0, 0, 255, ${opacity})`,
-          labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-          barPercentage: 0.5,
+          backgroundColor: '#000',
+          backgroundGradientFrom: '#000',
+          backgroundGradientTo: '#000',
+          decimalPlaces: 2,
+          color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
         }}
-        style={styles.chart}
       />
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    marginVertical: 20,
-  },
-  title: {
-    fontSize: 18,
-    textAlign: 'center',
-    marginBottom: 10,
-    fontWeight: 'bold',
-  },
-  chart: {
-    borderRadius: 16,
-  },
-});
 
 export default ChartComponent;
