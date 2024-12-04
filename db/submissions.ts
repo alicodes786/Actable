@@ -134,3 +134,92 @@ export async function createNewSubmission(
     );
   }
 }
+
+export interface Submission {
+  id: number;
+  deadlineid: number;
+  imageurl: string;
+  userid: string;
+  isapproved: boolean;
+  submitteddate: string;
+}
+
+export interface DeadlineWithSubmission {
+  id: number;
+  name: string;
+  description: string;
+  date: string;
+  lastsubmissionid: number;
+  submission: Submission;
+}
+
+export async function fetchUnapprovedSubmissions(userId: string): Promise<DeadlineWithSubmission[]> {
+  try {
+    console.log('Fetching submissions for user:', userId);
+    
+    const { data, error } = await supabase
+      .from('deadlines')
+      .select(`
+        id,
+        name,
+        description,
+        date,
+        lastsubmissionid,
+        submission:submissions!deadlines_lastsubmissionid_fkey (
+          id,
+          deadlineid,
+          imageurl,
+          userid,
+          isapproved,
+          submitteddate
+        )
+      `)
+      .eq('userid', userId)
+      .not('lastsubmissionid', 'is', null);
+
+    console.log('Raw data from query:', data);
+
+    if (error) {
+      console.error('Query error:', error);
+      throw new SubmissionError('Failed to fetch unapproved submissions', error);
+    }
+
+    const filtered = data?.filter(item => 
+      !item.submission.isapproved
+    );
+
+    console.log('Filtered data:', filtered);
+
+    const mapped = filtered?.map(item => ({
+      ...item,
+      submission: item.submission
+    })) || [];
+
+    console.log('Final result:', mapped);
+    return mapped;
+  } catch (error) {
+    console.error('Unexpected error:', error);
+    throw new SubmissionError(
+      'Unexpected error fetching unapproved submissions',
+      error as DatabaseError
+    );
+  }
+}
+
+export async function approveSubmission(submissionId: number): Promise<void> {
+  try {
+    const { error } = await supabase
+      .from('submissions')
+      .update({ isapproved: true })
+      .eq('id', submissionId);
+
+    if (error) {
+      throw new SubmissionError('Failed to approve submission', error);
+    }
+  } catch (error) {
+    throw new SubmissionError(
+      'Unexpected error approving submission',
+      error as DatabaseError
+    );
+  }
+}
