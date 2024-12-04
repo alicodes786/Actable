@@ -166,6 +166,7 @@ export async function fetchUnapprovedSubmissions(userId: string): Promise<Deadli
       `)
       .eq('userid', userId)
       .not('lastsubmissionid', 'is', null)
+      .order('submission(submitteddate)', { ascending: false })
       .returns<(Omit<DeadlineWithSubmission, 'submission'> & { submission: Submission })[]>();
 
     if (error) {
@@ -196,6 +197,26 @@ export async function approveSubmission(submissionId: number): Promise<void> {
   } catch (error) {
     throw new SubmissionError(
       'Unexpected error approving submission',
+      error as DatabaseError
+    );
+  }
+}
+
+export async function fetchSubmissionById(submissionId: number): Promise<Submission> {
+  try {
+    const { data, error } = await supabase
+      .from('submissions')
+      .select('*')
+      .eq('id', submissionId)
+      .single();
+
+    if (error) throw error;
+    if (!data) throw new Error('Submission not found');
+    
+    return data;
+  } catch (error) {
+    throw new SubmissionError(
+      'Failed to fetch submission',
       error as DatabaseError
     );
   }

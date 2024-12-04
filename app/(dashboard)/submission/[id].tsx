@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, Image, ScrollView, Alert } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
-import { approveSubmission, Submission } from '@/db/submissions';
-import Toast from 'react-native-toast-message';
-import { supabase } from '@/lib/db';
+import { approveSubmission, Submission, fetchSubmissionById } from '@/db/submissions';
 import LoadingSpinner from '@/components/LoadingSpinner';
 
 export default function SubmissionReviewScreen() {
@@ -18,22 +16,10 @@ export default function SubmissionReviewScreen() {
 
   const loadSubmission = async () => {
     try {
-      const { data, error } = await supabase
-        .from('submissions')
-        .select('*')
-        .eq('id', submissionId)
-        .single();
-
-      if (error) throw error;
+      const data = await fetchSubmissionById(submissionId);
       setSubmission(data);
     } catch (error) {
-      console.error('Error loading submission:', error);
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: 'Failed to load submission',
-        position: 'bottom',
-      });
+      Alert.alert('Error', 'Failed to load submission');
     } finally {
       setIsLoading(false);
     }
@@ -43,21 +29,11 @@ export default function SubmissionReviewScreen() {
     try {
       setIsLoading(true);
       await approveSubmission(submissionId);
-      Toast.show({
-        type: 'success',
-        text1: 'Success',
-        text2: 'Submission approved successfully',
-        position: 'bottom',
-      });
-      router.back();
+      Alert.alert('Success', 'Submission approved successfully', [
+        { text: 'OK', onPress: () => router.back() }
+      ]);
     } catch (error) {
-      console.error('Error approving submission:', error);
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: 'Failed to approve submission',
-        position: 'bottom',
-      });
+      Alert.alert('Error', 'Failed to approve submission');
     } finally {
       setIsLoading(false);
     }
@@ -69,68 +45,36 @@ export default function SubmissionReviewScreen() {
 
   if (!submission) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.errorText}>Submission not found</Text>
+      <View className="flex-1 bg-white">
+        <Text className="text-base text-gray-600 text-center mt-5">
+          Submission not found
+        </Text>
       </View>
     );
   }
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.imageContainer}>
-        <Image
-          source={{ uri: submission.imageurl }}
-          style={styles.image}
-          resizeMode="contain"
-        />
+    <ScrollView className="flex-1 bg-white">
+      <View className="p-5">
+        <View className="bg-gray-50 rounded-2xl overflow-hidden shadow-sm">
+          <Image
+            source={{ uri: submission.imageurl }}
+            className="w-full h-96"
+            resizeMode="contain"
+          />
+        </View>
+
+        <TouchableOpacity 
+          className={`mt-6 bg-green-500 py-4 px-6 rounded-xl 
+            ${isLoading ? 'opacity-50' : 'opacity-100'}`}
+          onPress={handleApprove}
+          disabled={isLoading}
+        >
+          <Text className="text-white text-center font-semibold text-base">
+            {isLoading ? 'Approving...' : 'Approve Submission'}
+          </Text>
+        </TouchableOpacity>
       </View>
-
-      <TouchableOpacity 
-        style={styles.approveButton}
-        onPress={handleApprove}
-        disabled={isLoading}
-      >
-        <Text style={styles.buttonText}>
-          {isLoading ? 'Approving...' : 'Approve Submission'}
-        </Text>
-      </TouchableOpacity>
-
-      <Toast />
     </ScrollView>
   );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  imageContainer: {
-    padding: 20,
-    alignItems: 'center',
-  },
-  image: {
-    width: '100%',
-    height: 400,
-    borderRadius: 12,
-  },
-  approveButton: {
-    backgroundColor: '#34C759',
-    margin: 20,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  errorText: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    marginTop: 20,
-  },
-}); 
+} 
