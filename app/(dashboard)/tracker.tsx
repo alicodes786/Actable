@@ -37,8 +37,11 @@ export default function TrackerScreen() {
     cutoffDate.setDate(now.getDate() - parseInt(period));
 
     const filteredDeadlines = deadlines.deadlineList.filter(deadline => {
-      const deadlineDate = new Date(deadline.date);
-      return deadlineDate >= cutoffDate && deadlineDate <= now;
+      const submission = deadline.submissions?.[0];
+      if (!submission) return false;
+      
+      const submissionDate = new Date(submission.submitteddate);
+      return submissionDate >= cutoffDate && submissionDate <= now;
     });
 
     const newStats = {
