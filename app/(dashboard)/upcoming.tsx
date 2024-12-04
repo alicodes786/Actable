@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
-import { StyleSheet, View, ScrollView, TouchableOpacity } from 'react-native';
+import { View, ScrollView } from 'react-native';
 import { Text } from 'tamagui';
 import { LinearGradient } from 'expo-linear-gradient';
 import { getDeadlines } from '@/db/deadlines';
@@ -57,25 +57,25 @@ export default function UpcomingScreen() {
   const redGradient: [string, string, ...string[]] = ['#ff6666', '#ff1a1a', '#cc0000'];
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Upcoming Deadlines</Text>
+    <View className="flex-1 bg-white p-4">
+      <Text className="text-2xl font-bold mb-5">Upcoming Deadlines</Text>
       
-      <ScrollView style={styles.scrollView}>
+      <ScrollView className="flex-1">
         {getUpcomingDeadlines().map((deadline) => {
           const deadlinePassed = new Date(deadline.date).getTime() >= Date.now();
           
           return (
-            <View key={deadline.id}>
+            <View key={deadline.id} className="mb-4">
               <LinearGradient
                 colors={deadlinePassed ? blueGradient : redGradient}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
-                style={styles.deadlineCard}
+                className="rounded-xl p-4 shadow-md"
               >
-                <View style={styles.deadlineContent}>
-                  <Text style={styles.deadlineName}>{deadline.name}</Text>
-                  <Text style={styles.deadlineDescription}>{deadline.description}</Text>
-                  <Text style={styles.deadlineDate}>
+                <View className="flex-1">
+                  <Text className="text-lg font-bold text-white mb-2">{deadline.name}</Text>
+                  <Text className="text-sm text-white mb-2">{deadline.description}</Text>
+                  <Text className="text-sm text-white font-medium">
                     {deadlinePassed ?
                       <CountDownTimer deadlineDate={new Date(deadline.date)} />
                       :
@@ -90,52 +90,4 @@ export default function UpcomingScreen() {
       </ScrollView>
     </View>
   );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: 'white',
-    padding: 16,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  deadlineCard: {
-    marginBottom: 16,
-    borderRadius: 15,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  deadlineContent: {
-    flex: 1,
-  },
-  deadlineName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: 'white',
-    marginBottom: 8,
-  },
-  deadlineDescription: {
-    fontSize: 14,
-    color: 'white',
-    marginBottom: 8,
-  },
-  deadlineDate: {
-    fontSize: 14,
-    color: 'white',
-    fontWeight: '500',
-  },
-}); 
+} 

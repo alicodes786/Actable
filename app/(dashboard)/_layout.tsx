@@ -10,7 +10,7 @@ import { useAuth } from '@/providers/AuthProvider';
 import { ModUser } from '@/db/mod';
 
 export default function DashboardLayout() {
-  const { user, loadAssignedUser } = useAuth();
+  const { user, loadAssignedUser, logout } = useAuth();
   const router = useRouter();
   const [notifications, setNotifications] = useState<{ message: string }[]>([]);
   const [isDropdownOpen, setDropdownOpen] = useState<boolean>(false);
@@ -38,6 +38,14 @@ export default function DashboardLayout() {
     loadUser();
   }, [user]);
 
+  const handleSignOut = async () => {
+    try {
+      await logout();
+      router.replace('/(auth)/sign-in');
+    } catch (error) {
+      console.error('Failed to sign out:', error);
+    }
+  };
 
   if (!user?.isMod) {
     return null;
@@ -55,11 +63,11 @@ export default function DashboardLayout() {
             <Ionicons name="notifications-outline" size={24} color="black" className="ml-4" />
           </TouchableOpacity>
           <Ionicons
-            name="person-circle-outline"
+            name="log-out-outline"
             size={24}
             color="black"
             className="ml-4"
-            onPress={() => router.push('/settings')}
+            onPress={handleSignOut}
           />
         </View>
         {isDropdownOpen && (
