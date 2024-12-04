@@ -21,7 +21,7 @@ export default function SignIn() {
     if (!isReady) return;
     
     if (user) {
-      const route: Href = user.role === 'mod' ? '/dashboard' : '/(user)';
+      const route: Href = user.isMod ? '/dashboard' : '/(user)';
       router.replace(route);
     }
   }, [user, isReady]);
@@ -52,7 +52,7 @@ export default function SignIn() {
       if (userAuth.success && userAuth.user) {
         await login({
           id: userAuth.user.id,
-          role: userAuth.user.role
+          isMod: userAuth.user.isMod
         });
 
         Toast.show({

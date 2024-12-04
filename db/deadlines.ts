@@ -12,8 +12,18 @@ interface DeadlineResult {
 export const getDeadlines = async (userId: string): Promise<IdeadlineList | null> => {
   const { data: deadlines, error } = await supabase
     .from('deadlines')
-    .select('*')
-    .eq('userid', userId);
+    .select(`
+      *,
+      submissions!fk_deadline (
+        id,
+        submitteddate,
+        isapproved
+      )
+    `)
+    .eq('userid', userId)
+    .order('date', { ascending: false })
+    .limit(20);
+
   if (error) {
     console.error('Error fetching deadlines for user:', error);
     return null;

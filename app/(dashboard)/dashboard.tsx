@@ -34,10 +34,6 @@ export default function Dashboard() {
         <Text fontSize={24} fontWeight="bold">
           Dashboard
         </Text>
-        
-        <Text fontSize={16}>
-          Welcome, {user?.role || 'User'}!
-        </Text>
 
         <Button 
           onPress={handleSignOut}

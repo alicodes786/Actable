@@ -35,7 +35,7 @@ function AppContent() {
 
   useEffect(() => {
     if (isAppReady && user) {
-      const route = user.role === 'mod' ? '/dashboard' : '/(user)';
+      const route = user.isMod ? '/dashboard' : '/(user)';
       router.replace(route);
     }
   }, [isAppReady, user]);
