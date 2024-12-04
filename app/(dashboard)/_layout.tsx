@@ -119,6 +119,12 @@ export default function DashboardLayout() {
             ),
           }}
         />
+        <Tabs.Screen
+          name="submission/[id]"
+          options={{
+            href: null,  // This prevents the tab from showing
+          }}
+        />
       </Tabs>
     </SafeAreaView>
   );
