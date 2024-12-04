@@ -1,10 +1,16 @@
+interface Submission {
+  id: number;
+  submitteddate: string;
+  isapproved: boolean;
+}
+
 export interface Ideadline {
   id: number;
   name: string;
-  date: Date;
   description: string;
-  lastsubmissionid: number | null;
-  userid: number;
+  date: string;
+  userid: string;
+  submissions?: Submission[];
 }
   
 export interface IdeadlineList {
