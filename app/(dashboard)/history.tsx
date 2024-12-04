@@ -79,11 +79,19 @@ export default function HistoryScreen() {
     };
   };
 
-  const getPastDeadlines = () => {
+  const getCompletedDeadlines = () => {
     if (!deadlines?.deadlineList) return [];
 
     return deadlines.deadlineList
-      .filter(item => new Date(item.date).getTime() < Date.now())
+      .filter(item => {
+        // Include deadlines that either:
+        // 1. Are in the past, OR
+        // 2. Have an approved submission
+        const isPastDeadline = new Date(item.date).getTime() < Date.now();
+        const hasApprovedSubmission = item.submissions?.[0]?.isapproved === true;
+        
+        return isPastDeadline || hasApprovedSubmission;
+      })
       .map(categorizeDeadline)
       .sort((a, b) => {
         // Sort by due date (most recent first)
@@ -124,9 +132,9 @@ export default function HistoryScreen() {
     <SafeAreaView className="flex-1 bg-white">
       <ScrollView className="flex-1" bounces={false}>
         <View className="px-5 pt-2 pb-10 flex-1">
-          <Text className="text-2xl font-bold mb-3">Past Deadlines</Text>
+          <Text className="text-2xl font-bold mb-3">Completed Deadlines</Text>
 
-          {getPastDeadlines().map(({ item, status }, idx) => (
+          {getCompletedDeadlines().map(({ item, status }, idx) => (
             <LinearGradient
               key={item.id || idx}
               colors={STATUS_COLORS[status]}
@@ -146,9 +154,9 @@ export default function HistoryScreen() {
             </LinearGradient>
           ))}
 
-          {getPastDeadlines().length === 0 && (
+          {getCompletedDeadlines().length === 0 && (
             <Text className="text-gray-500 text-center mt-10">
-              No past deadlines found
+              No completed deadlines found
             </Text>
           )}
         </View>
