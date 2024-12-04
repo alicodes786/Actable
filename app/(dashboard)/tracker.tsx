@@ -36,7 +36,15 @@ export default function TrackerScreen() {
     const cutoffDate = new Date();
     cutoffDate.setDate(now.getDate() - parseInt(period));
 
-    const filteredDeadlines = deadlines.deadlineList.filter(deadline => {
+    // First, find all deadlines in the period that were missed
+    const missedDeadlines = deadlines.deadlineList.filter(deadline => {
+      const deadlineDate = new Date(deadline.date);
+      const isInPeriod = deadlineDate >= cutoffDate && deadlineDate <= now;
+      return isInPeriod && !deadline.submissions?.[0];
+    });
+
+    // Then find all submissions in the period
+    const submittedDeadlines = deadlines.deadlineList.filter(deadline => {
       const submission = deadline.submissions?.[0];
       if (!submission) return false;
       
@@ -45,19 +53,17 @@ export default function TrackerScreen() {
     });
 
     const newStats = {
-      total: filteredDeadlines.length,
+      total: missedDeadlines.length + submittedDeadlines.length,
       onTime: 0,
       late: 0,
-      missed: 0,
+      missed: missedDeadlines.length,
       invalid: 0,
     };
 
-    filteredDeadlines.forEach(deadline => {
+    // Calculate stats for submitted deadlines
+    submittedDeadlines.forEach(deadline => {
       const submission = deadline.submissions?.[0];
-      if (!submission) {
-        newStats.missed++;
-        return;
-      }
+      if (!submission) return; // This shouldn't happen due to our filter
 
       if (!submission.isapproved) {
         newStats.invalid++;
