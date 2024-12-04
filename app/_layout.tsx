@@ -1,12 +1,11 @@
 import { useFonts } from 'expo-font';
 import { SplashScreen, Stack } from 'expo-router';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import * as Notifications from 'expo-notifications';
 import 'react-native-reanimated';
 import { View, ActivityIndicator, Platform } from 'react-native';
-
+import { router } from 'expo-router';
 import config from '../tamagui.config';
-import { useColorScheme } from '@/hooks/useColorScheme';
 import { AuthProvider, useAuth } from '@/providers/AuthProvider';
 import { TamaguiProvider } from 'tamagui';
 
@@ -15,23 +14,31 @@ export {
 } from 'expo-router';
 
 export const unstable_settings = {
-  initialRouteName: '(tabs)',
+  initialRouteName: '(auth)',
 };
 
 SplashScreen.preventAutoHideAsync();
 
 function AppContent() {
-  const { isLoading } = useAuth();
-  const colorScheme = useColorScheme();
+  const { isLoading, user } = useAuth();
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
+  const [isAppReady, setAppReady] = useState(false);
 
   useEffect(() => {
     if (loaded && !isLoading) {
       SplashScreen.hideAsync();
+      setAppReady(true);
     }
   }, [loaded, isLoading]);
+
+  useEffect(() => {
+    if (isAppReady && user) {
+      const route = user.role === 'mod' ? '/dashboard' : '/(user)';
+      router.replace(route);
+    }
+  }, [isAppReady, user]);
 
   if (!loaded || isLoading) {
     return (
@@ -43,42 +50,47 @@ function AppContent() {
 
   return (
     <TamaguiProvider config={config}>
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen 
-        name="(auth)" 
-        options={{ 
-          headerShown: false,
-        }} 
-      />
-      <Stack.Screen 
-        name="(tabs)" 
-        options={{ 
-          headerShown: false,
-        }} 
-      />
-      <Stack.Screen 
-        name="settings"
-        options={{
-          title: 'Settings',
-          headerShown: true,
-          
-        }} 
-      />
-      <Stack.Screen 
-        name="notifications"
-        options={{
-          title: '',
-          headerShown: true,
-        }} 
-      />
-      <Stack.Screen 
-        name="feedbackForm"
-        options={{
-          title: '',
-          headerShown: true,
-        }} 
-      />
-    </Stack>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen 
+          name="(auth)" 
+          options={{ 
+            headerShown: false,
+          }} 
+        />
+        <Stack.Screen 
+          name="(user)" 
+          options={{ 
+            headerShown: false,
+          }} 
+        />
+        <Stack.Screen 
+          name="(dashboard)" 
+          options={{ 
+            headerShown: false,
+          }} 
+        />
+        <Stack.Screen 
+          name="settings"
+          options={{
+            title: 'Settings',
+            headerShown: true,
+          }} 
+        />
+        <Stack.Screen 
+          name="notifications"
+          options={{
+            title: '',
+            headerShown: true,
+          }} 
+        />
+        <Stack.Screen 
+          name="feedbackForm"
+          options={{
+            title: '',
+            headerShown: true,
+          }} 
+        />
+      </Stack>
     </TamaguiProvider>
   );
 }

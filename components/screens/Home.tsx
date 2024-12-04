@@ -8,7 +8,7 @@ import CountDownTimer from '../CountDownTimer';
 import { useAuth } from '@/providers/AuthProvider';
 import { getUserName } from '@/db/users'; // Assuming you have this function to fetch user name
 
-const GRADIENT_COLORS = [
+const GRADIENT_COLORS: [string, string][] = [
   ['#87CEEB', '#00BFFF'],
   ['#ff7a63', '#FF6347'],
   ['#8f75ff', '#5d3ce8'],
@@ -25,7 +25,7 @@ export default function Home() {
 
     const fetchUserName = async () => {
       try {
-        const name = await getUserName(user); // Fetch name using the user ID
+        const name = await getUserName(user?.id); // Fetch name using the user ID
         setUserName(name);
       } catch (error) {
         console.error('Error fetching user name:', error);
@@ -41,7 +41,7 @@ export default function Home() {
 
       const fetchDeadlines = async () => {
         try {
-          const fetchedDeadlines = await getDeadlines(String(user)); // Pass user.id to get deadlines
+          const fetchedDeadlines = await getDeadlines(String(user?.id)); // Pass user.id to get deadlines
           setDeadlines(fetchedDeadlines);
         } catch (error) {
           console.error('Error fetching deadlines:', error);
@@ -55,7 +55,7 @@ export default function Home() {
 
   const handleSubmission = (item: any) => {
     router.push({
-      pathname: "/(tabs)/submission",
+      pathname: "/(user)/submission",
       params: {
         deadlineId: item.id,
         name: item.name,

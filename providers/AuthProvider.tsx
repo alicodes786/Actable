@@ -1,9 +1,14 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import * as SecureStore from 'expo-secure-store';
 
+interface User {
+    id: number;
+    role: 'user' | 'mod';
+}
+
 interface AuthContextType {
-    user: number | null;
-    login: (user: number) => Promise<void>;
+    user: User | null;
+    login: (userData: User) => Promise<void>;
     logout: () => Promise<void>;
     isLoading: boolean;
 }
@@ -11,7 +16,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-    const [user, setUser] = useState<number | null>(null);
+    const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -23,10 +28,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setIsLoading(true);
             const storedUser = await SecureStore.getItemAsync('user');
             if (storedUser) {
-                const userId = parseInt(storedUser);
-                if (!isNaN(userId)) {
-                    setUser(userId);
-                }
+                const userData = JSON.parse(storedUser);
+                setUser(userData);
             }
         } catch (error) {
             console.error('Error loading user:', error);
@@ -35,10 +38,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
-    const login = async (userId: number) => {
+    const login = async (userData: User) => {
         try {
-            await SecureStore.setItemAsync('user', String(userId));
-            setUser(userId);
+            await SecureStore.setItemAsync('user', JSON.stringify(userData));
+            setUser(userData);
         } catch (error) {
             console.error('Error storing user:', error);
             throw error;
@@ -50,7 +53,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             await SecureStore.deleteItemAsync('user');
             setUser(null);
         } catch (error) {
-            console.error('Error removing user:', error);
+            console.error('Logout error:', error);
             throw error;
         }
     };

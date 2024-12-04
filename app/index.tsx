@@ -8,8 +8,8 @@ export default function Index() {
     const isAuthenticated = skipAuth || user;
     
     if (!isAuthenticated) {
-        const path = "/(auth)/sign-in" as Href<any>;
+        const path: Href = "/(auth)/sign-in";
         return <Redirect href={path} />;
     }
-    return <Redirect href="/(tabs)" />;
+    return <Redirect href="/(user)" />;
 }
