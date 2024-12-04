@@ -1,14 +1,6 @@
 import { supabase } from '@/lib/db';
 import { PostgrestError } from '@supabase/supabase-js';
 
-interface SubmissionImage {
-  imageurl: string;
-}
-
-interface DeadlineLastSubmission {
-  lastsubmissionid: string;
-}
-
 interface SubmissionData {
   id: string;
   deadlineid: string;
@@ -155,8 +147,6 @@ export interface DeadlineWithSubmission {
 
 export async function fetchUnapprovedSubmissions(userId: string): Promise<DeadlineWithSubmission[]> {
   try {
-    console.log('Fetching submissions for user:', userId);
-    
     const { data, error } = await supabase
       .from('deadlines')
       .select(`
@@ -175,30 +165,17 @@ export async function fetchUnapprovedSubmissions(userId: string): Promise<Deadli
         )
       `)
       .eq('userid', userId)
-      .not('lastsubmissionid', 'is', null);
-
-    console.log('Raw data from query:', data);
+      .not('lastsubmissionid', 'is', null)
+      .returns<(Omit<DeadlineWithSubmission, 'submission'> & { submission: Submission })[]>();
 
     if (error) {
-      console.error('Query error:', error);
       throw new SubmissionError('Failed to fetch unapproved submissions', error);
     }
 
-    const filtered = data?.filter(item => 
-      !item.submission.isapproved
-    );
-
-    console.log('Filtered data:', filtered);
-
-    const mapped = filtered?.map(item => ({
-      ...item,
-      submission: item.submission
-    })) || [];
-
-    console.log('Final result:', mapped);
-    return mapped;
+    const filtered = data?.filter(item => !item.submission.isapproved);
+    
+    return filtered || [];
   } catch (error) {
-    console.error('Unexpected error:', error);
     throw new SubmissionError(
       'Unexpected error fetching unapproved submissions',
       error as DatabaseError

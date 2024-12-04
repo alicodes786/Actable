@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from 'react-native';
 import { useAuth } from '@/providers/AuthProvider';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import Toast from 'react-native-toast-message';
 import { DeadlineWithSubmission, fetchUnapprovedSubmissions } from '@/db/submissions';
 
@@ -10,9 +10,23 @@ export default function Dashboard() {
   const [submissions, setSubmissions] = useState<DeadlineWithSubmission[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadSubmissions();
-  }, [assignedUser]);
+  useFocusEffect(
+    React.useCallback(() => {
+      let isActive = true;
+      const refreshInterval = setInterval(() => {
+        if (isActive) {
+          loadSubmissions();
+        }
+      }, 5000);
+
+      loadSubmissions();
+
+      return () => {
+        isActive = false;
+        clearInterval(refreshInterval);
+      };
+    }, [assignedUser])
+  );
 
   const loadSubmissions = async () => {
     if (!assignedUser?.id) return;
