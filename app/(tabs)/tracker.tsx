@@ -1,12 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, View, Text, Dimensions, ScrollView } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, useWindowDimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BarChart } from 'react-native-chart-kit';
 import { getLast30DaysDeadlines } from '@/db/deadlines'; // Ensure this function fetches the correct data
 import { Ideadline } from '@/lib/interfaces';
 import { useAuth } from '@/providers/AuthProvider';
-
-const windowWidth = Dimensions.get('window').width;
 
 export default function TrackerScreen() {
   const [metDeadlinesCount, setMetDeadlinesCount] = useState(0);
@@ -15,6 +13,7 @@ export default function TrackerScreen() {
   const [bestDeadlinesCount, setBestDeadlinesCount] = useState(0);
   const [last30DaysDeadlines, setLast30DaysDeadlines] = useState<Ideadline[] | null>(null);
   const { user } = useAuth();
+  const { width } = useWindowDimensions(); // Dynamically fetch screen width
 
   useEffect(() => {
     const fetchData = async () => {
@@ -96,7 +95,7 @@ export default function TrackerScreen() {
         <View style={styles.graphicalData}>
           <BarChart
             data={chartData}
-            width={windowWidth - 32}
+            width={width - 32} // Use dynamic width from window
             height={220}
             fromZero
             yAxisLabel=""
@@ -159,6 +158,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     marginVertical: 20,
+    flexWrap: 'wrap',
   },
   deadlinesCardGradient: {
     padding: 20,
@@ -169,10 +169,11 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5,
     width: '45%',
-    maxWidth: 400,
+    maxWidth: 200, // Adjust for smaller screens
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 16,
   },
   topLeftContainer: {
     position: 'absolute',
@@ -203,5 +204,6 @@ const styles = StyleSheet.create({
     marginTop: 30,
     flexDirection: 'row',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
   },
 });
