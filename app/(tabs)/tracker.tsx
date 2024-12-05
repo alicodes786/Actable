@@ -82,6 +82,7 @@ export default function TrackerScreen() {
 
   return (
     <View style={styles.container}>
+      {/* Only one ScrollView wrapping all content */}
       <ScrollView contentContainerStyle={styles.scrollViewContent}>
         <Text style={styles.title}>Tracker</Text>
 
@@ -147,6 +148,8 @@ const styles = StyleSheet.create({
   },
   scrollViewContent: {
     padding: 16,
+    // Ensure content within ScrollView has space and no overflow
+    flexGrow: 1,
   },
   title: {
     fontSize: 25,
