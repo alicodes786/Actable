@@ -1,12 +1,30 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, View, Text, Dimensions, ScrollView } from 'react-native';
+import { StyleSheet, View, Text, Dimensions, ScrollView, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BarChart } from 'react-native-chart-kit';
-import { getLast30DaysDeadlines } from '@/db/deadlines'; // Ensure this function fetches the correct data
+import { getLast30DaysDeadlines } from '@/db/deadlines'; // Ensure this import matches your project structure
 import { Ideadline } from '@/lib/interfaces';
 import { useAuth } from '@/providers/AuthProvider';
 
-const windowWidth = Dimensions.get('window').width;
+// Get window dimensions
+const { width: windowWidth, height: windowHeight } = Dimensions.get('window');
+
+// Reusable Deadline Card component
+const DeadlineCard = ({ title, count }: { title: string; count: number }) => (
+  <LinearGradient
+    colors={['#66b3ff', '#007FFF', '#0066cc']}
+    start={{ x: 0, y: 0 }}
+    end={{ x: 1, y: 0 }}
+    style={styles.deadlinesCardGradient}
+  >
+    <View style={styles.topLeftContainer}>
+      <Text style={styles.text}>{title}</Text>
+    </View>
+    <View style={styles.numberContainer}>
+      <Text style={styles.number}>{count}</Text>
+    </View>
+  </LinearGradient>
+);
 
 export default function TrackerScreen() {
   const [metDeadlinesCount, setMetDeadlinesCount] = useState(0);
@@ -26,8 +44,8 @@ export default function TrackerScreen() {
         // Calculate the counts
         const metCount = deadlines?.filter((d) => d.lastsubmissionid !== null).length || 0;
         const missedCount = deadlines?.filter((d) => d.lastsubmissionid === null).length || 0;
-        const lateCount = deadlines?.filter((d) => d.isLate === true).length || 0; // Assuming we have a `isLate` field
-        const bestCount = deadlines?.filter((d) => d.isBest === true).length || 0; // Assuming we have a `isBest` field
+        const lateCount = deadlines?.filter((d) => d.isLate === true).length || 0;
+        const bestCount = deadlines?.filter((d) => d.isBest === true).length || 0;
 
         // Update the state
         setMetDeadlinesCount(metCount);
@@ -42,36 +60,40 @@ export default function TrackerScreen() {
     fetchData();
   }, [user]);
 
-  // Group deadlines into weeks
+  // Group deadlines into weeks with more robust calculation
   const groupDeadlinesIntoWeeks = (deadlines: Ideadline[]) => {
-    const weeks: { [key: string]: number } = {};
-    let weekIndex = 1; // Start with Week 1
-    let currentWeek = getWeekNumber(new Date(deadlines[0]?.date || Date.now()));
+    if (!deadlines || deadlines.length === 0) return [];
 
-    deadlines.forEach((deadline) => {
-      const weekNumber = getWeekNumber(new Date(deadline.date));
-      if (weekNumber !== currentWeek) {
-        currentWeek = weekNumber;
-        weekIndex++;
-      }
-      const weekLabel = `Week ${weekIndex}`;
+    const weeks: { [key: string]: number } = {};
+    
+    // Sort deadlines chronologically
+    const sortedDeadlines = [...deadlines].sort((a, b) => 
+      new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
+
+    // Find the earliest date to use as a reference point
+    const startDate = new Date(sortedDeadlines[0].date);
+
+    sortedDeadlines.forEach((deadline) => {
+      const currentDate = new Date(deadline.date);
+      const daysDifference = Math.floor(
+        (currentDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24)
+      );
+
+      // Group by 7-day intervals
+      const currentWeekIndex = Math.floor(daysDifference / 7) + 1;
+      const weekLabel = `Week ${currentWeekIndex}`;
+
       weeks[weekLabel] = (weeks[weekLabel] || 0) + (deadline.lastsubmissionid !== null ? 1 : 0);
     });
 
     return Object.entries(weeks).map(([week, count]) => ({ week, count }));
   };
 
-  // Calculate the week number for a given date
-  const getWeekNumber = (date: Date): number => {
-    const firstDay = new Date(date.getFullYear(), 0, 1);
-    const dayOfYear = ((date.getTime() - firstDay.getTime()) / 86400000) + 1;
-    return Math.ceil(dayOfYear / 7);
-  };
-
-  // Weekly data for the chart
+  // Weekly data for the chart with responsive label generation
   const weeklyData = groupDeadlinesIntoWeeks(last30DaysDeadlines || []);
   const chartData = {
-    labels: weeklyData.map((data) => data.week), // Week 1, Week 2, etc.
+    labels: weeklyData.map((data) => data.week),
     datasets: [
       {
         data: weeklyData.map((data) => data.count),
@@ -81,9 +103,34 @@ export default function TrackerScreen() {
     ],
   };
 
+  // Improved chart configuration
+  const chartConfig = {
+    backgroundColor: '#fff',
+    backgroundGradientFrom: '#e3f2fd',
+    backgroundGradientTo: '#90caf9',
+    decimalPlaces: 0,
+    color: (opacity = 1) => `rgba(0, 123, 255, ${opacity})`,
+    labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+    style: { 
+      borderRadius: 16 
+    },
+    barPercentage: 0.6,  // Increased bar width
+    propsForLabels: {
+      fontSize: 10,  // Smaller font size
+      fontWeight: 'bold',
+    },
+    propsForBackgroundLines: {
+      strokeWidth: 1,
+      stroke: '#e3e3e3',
+    },
+  };
+
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollViewContent}>
+      <ScrollView 
+        contentContainerStyle={styles.scrollViewContent}
+        keyboardShouldPersistTaps="handled"
+      >
         <Text style={styles.title}>Tracker</Text>
 
         {/* Deadlines Stats */}
@@ -96,21 +143,19 @@ export default function TrackerScreen() {
         <View style={styles.graphicalData}>
           <BarChart
             data={chartData}
-            width={windowWidth - 32}
-            height={220}
-            fromZero
+            width={windowWidth - 40}  // Slightly reduced width
+            height={275}  // Increased height to accommodate labels
             yAxisLabel=""
-            chartConfig={{
-              backgroundColor: '#fff',
-              backgroundGradientFrom: '#e3f2fd',
-              backgroundGradientTo: '#90caf9',
-              decimalPlaces: 0,
-              color: (opacity = 1) => `rgba(0, 123, 255, ${opacity})`,
-              labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-              style: { borderRadius: 16 },
-              barPercentage: 0.7,
+            chartConfig={chartConfig}
+            fromZero
+            showValuesOnTopOfBars
+            verticalLabelRotation={45}
+            horizontalLabelRotation={45}
+            style={{
+              marginVertical: 10,
+              marginHorizontal: 20,
+              borderRadius: 16,
             }}
-            style={{ marginVertical: 10, borderRadius: 16 }}
           />
         </View>
 
@@ -123,23 +168,6 @@ export default function TrackerScreen() {
     </View>
   );
 }
-
-// Reusable Deadline Card component
-const DeadlineCard = ({ title, count }: { title: string; count: number }) => (
-  <LinearGradient
-    colors={['#66b3ff', '#007FFF', '#0066cc']}
-    start={{ x: 0, y: 0 }}
-    end={{ x: 1, y: 0 }}
-    style={styles.deadlinesCardGradient}
-  >
-    <View style={styles.topLeftContainer}>
-      <Text style={styles.text}>{title}</Text>
-    </View>
-    <View style={styles.numberContainer}>
-      <Text style={styles.number}>{count}</Text>
-    </View>
-  </LinearGradient>
-);
 
 const styles = StyleSheet.create({
   container: {
