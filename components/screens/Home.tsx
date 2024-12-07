@@ -20,6 +20,11 @@ const STATUS_COLORS = {
     text: '#FFFFFF',   // White text
     badge: '#696969',  // Gray 700
   },
+  PENDING: {
+    bg: '#FFA500',    // Orange
+    text: '#FFFFFF',   // White text
+    badge: '#FF8C00',  // Dark Orange
+  },
 };
 
 export default function Home() {
@@ -89,7 +94,6 @@ export default function Home() {
     <SafeAreaView className="flex-1 bg-white">
       <ScrollView className="flex-1" bounces={false}>
         <View className="px-5 pt-2 pb-10 flex-1">
-          {/* Display Welcome Message with User's Name */}
           <Text className="text-lg font-medium">Welcome {userName || 'Loading...'}</Text>
 
           <View className="mt-10">
@@ -100,6 +104,8 @@ export default function Home() {
                 sub => sub.id === item.lastsubmissionid
               );
               const isInvalid = submission?.status === 'invalid';
+              const isPending = submission?.status === 'pending';
+              const hasSubmission = !!submission;
 
               return (
                 <LinearGradient
@@ -109,16 +115,24 @@ export default function Home() {
                   end={{ x: 1, y: 0 }}
                   className="mt-4 p-5 rounded-2xl shadow-md relative"
                 >
-                  {isInvalid && (
+                  {(isInvalid || isPending) && (
                     <View 
                       className="absolute top-2 right-2 rounded-full px-3 py-1"
-                      style={{ backgroundColor: STATUS_COLORS.INVALID.badge }}
+                      style={{ 
+                        backgroundColor: isInvalid 
+                          ? STATUS_COLORS.INVALID.badge 
+                          : STATUS_COLORS.PENDING.badge 
+                      }}
                     >
                       <Text 
                         className="text-xs font-medium"
-                        style={{ color: STATUS_COLORS.INVALID.text }}
+                        style={{ 
+                          color: isInvalid 
+                            ? STATUS_COLORS.INVALID.text 
+                            : STATUS_COLORS.PENDING.text 
+                        }}
                       >
-                        Invalid Submission
+                        {isInvalid ? 'Invalid Submission' : 'Pending Review'}
                       </Text>
                     </View>
                   )}
@@ -133,7 +147,7 @@ export default function Home() {
                     onPress={() => handleSubmission(item)}
                   >
                     <Text className="text-white text-lg font-semibold">
-                      Submit
+                      {hasSubmission ? 'Resubmit' : 'Submit'}
                     </Text>
                   </TouchableOpacity>
                 </LinearGradient>
