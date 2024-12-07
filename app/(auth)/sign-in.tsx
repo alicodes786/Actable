@@ -21,10 +21,17 @@ export default function SignIn() {
     if (!isReady) return;
     
     if (user) {
-      const route: Href = user.isMod ? '/dashboard' : '/(user)';
+      const route = user.isMod ? '/(dashboard)/dashboard' : '/(user)';
       router.replace(route);
     }
   }, [user, isReady]);
+
+  // Separate effect to handle back navigation prevention
+  useEffect(() => {
+    if (!user && router.canGoBack()) {
+      router.back();
+    }
+  }, []);
 
   const validateInputs = () => {
     if (!username.trim() || !password.trim()) {

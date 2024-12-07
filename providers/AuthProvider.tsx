@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import * as SecureStore from 'expo-secure-store';
 import { getAssignedUser, ModUser } from '@/db/mod';
+import { useRouter } from 'expo-router';
 
 interface User {
     id: number;
@@ -23,6 +24,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [user, setUser] = useState<User | null>(null);
     const [assignedUser, setAssignedUser] = useState<ModUser | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const router = useRouter();
 
     useEffect(() => {
         loadUser();
@@ -68,6 +70,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         try {
             await SecureStore.deleteItemAsync('user');
             setUser(null);
+            router.replace('/(auth)/sign-in');
+            router.dismissAll();
         } catch (error) {
             console.error('Logout error:', error);
             throw error;

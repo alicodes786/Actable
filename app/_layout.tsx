@@ -14,7 +14,8 @@ export {
 } from 'expo-router';
 
 export const unstable_settings = {
-  initialRouteName: '(auth)',
+  // Remove the fixed initialRouteName
+  // initialRouteName: '(auth)',
 };
 
 SplashScreen.preventAutoHideAsync();
@@ -34,9 +35,13 @@ function AppContent() {
   }, [loaded, isLoading]);
 
   useEffect(() => {
-    if (isAppReady && user) {
-      const route = user.isMod ? '/dashboard' : '/(user)';
-      router.replace(route);
+    if (isAppReady) {
+      if (user) {
+        const route = user.isMod ? '/(dashboard)/dashboard' : '/(user)';
+        router.replace(route);
+      } else {
+        router.replace('/(auth)/sign-in');
+      }
     }
   }, [isAppReady, user]);
 

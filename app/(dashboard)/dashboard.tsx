@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Image, ScrollView } from 'react-native';
 import { useAuth } from '@/providers/AuthProvider';
 import { router, useFocusEffect } from 'expo-router';
@@ -19,9 +19,19 @@ const STATUS_TEXT_COLORS = {
 };
 
 export default function Dashboard() {
-  const { logout, assignedUser } = useAuth();
+  const { user, logout, assignedUser } = useAuth();
   const [submissions, setSubmissions] = useState<DeadlineWithSubmission[]>([]);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user?.isMod) {
+      // Redirect non-moderators to user home if they somehow end up here
+      router.replace('/(user)');
+    }
+  }, [user]);
+
+  // Only render dashboard content for moderators
+  if (!user?.isMod) return null;
 
   useFocusEffect(
     React.useCallback(() => {
