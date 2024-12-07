@@ -61,17 +61,19 @@ export default function HistoryScreen() {
       })
       .map(deadline => {
         const dueDate = new Date(deadline.date);
-        const submission = deadline.submissions?.[0];
-
         let status: DeadlineStatus;
         let completedDate: Date | undefined;
+
+        const submission = deadline.submissions?.find(
+          sub => sub.id === deadline.lastsubmissionid
+        );
 
         // If there's no submission and deadline is past, it's missed
         if (!deadline.lastsubmissionid && dueDate < now) {
           status = 'MISSED';
-        } 
+        }
         // If there's a submission, determine its status
-        else if (deadline.lastsubmissionid && submission) {
+        else if (submission) {
           completedDate = new Date(submission.submitteddate);
           if (submission.status === 'approved') {
             status = completedDate <= dueDate ? 'VALID' : 'LATE';
