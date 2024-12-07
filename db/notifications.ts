@@ -35,8 +35,8 @@ export const createNotification = async (
 
 export const fetchNotifications = async (id: number): Promise<Notification[]> => {
   const { data, error } = await supabase
-    .from('notifications') // Your notifications table name
-    .select('message') // Assuming the message column contains the notification text
+    .from('notifications')
+    .select('message')
     .eq('id', id)
 
   if (error) {

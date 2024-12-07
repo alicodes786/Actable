@@ -44,7 +44,7 @@ export default function AddDeadlineScreen() {
   
     try {
       const { success, error } = await addDeadline(
-        String(user), 
+        String(user?.id), 
         deadlineName, 
         deadlineDescription, 
         deadlineDate!

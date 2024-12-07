@@ -249,7 +249,7 @@ function SubmissionContent() {
         />
       </View>
 
-      <ImageCapture deadlineId={params.deadlineId as string} userId={String(user)} />
+      <ImageCapture deadlineId={params.deadlineId as string} userId={String(user?.id)} />
     </View>
   );
 }

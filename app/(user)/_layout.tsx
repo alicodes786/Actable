@@ -1,7 +1,7 @@
 import { Tabs, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { TabBarIcon } from '@/components/navigation/TabBarIcon';
-import { View, TouchableOpacity } from 'react-native';
+import { View, TouchableOpacity, StyleProp, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { fetchNotifications } from '@/db/notifications';
@@ -16,7 +16,7 @@ const TabLayout: React.FC = () => {
 
   const loadNotifications = async () => {
     if (!user) return;
-    const notificationsData = await fetchNotifications(user);
+    const notificationsData = await fetchNotifications(user?.id);
     setNotifications(notificationsData);
   };
 
@@ -89,9 +89,18 @@ const TabLayout: React.FC = () => {
               </View>
             ),
             tabBarItemStyle: { height: 60, marginTop: -20 },
-            tabBarButton: (props) => (
-              <TouchableOpacity {...props} style={props.style} activeOpacity={0.7} />
-            ),
+            tabBarButton: (props) => {
+              const { style, onPress, children } = props;
+              return (
+                <TouchableOpacity 
+                  style={style as StyleProp<ViewStyle>}
+                  onPress={onPress}
+                  activeOpacity={0.7}
+                >
+                  {children}
+                </TouchableOpacity>
+              );
+            },
           }}
         />
         <Tabs.Screen

@@ -9,14 +9,29 @@ export default function SignIn() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const signUpPath = "/(auth)/sign-up" as Href<any>;
+  const signUpPath: Href = "/(auth)/sign-up";
   const { login, user } = useAuth();
+  const [isReady, setIsReady] = useState(false);
 
-    useEffect(() => {
-      if (user) {
-          router.replace('/(tabs)');
-      }
-  }, [user]);
+  useEffect(() => {
+    setIsReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isReady) return;
+    
+    if (user) {
+      const route = user.isMod ? '/(dashboard)/dashboard' : '/(user)';
+      router.replace(route);
+    }
+  }, [user, isReady]);
+
+  // Separate effect to handle back navigation prevention
+  useEffect(() => {
+    if (!user && router.canGoBack()) {
+      router.back();
+    }
+  }, []);
 
   const validateInputs = () => {
     if (!username.trim() || !password.trim()) {
@@ -42,7 +57,10 @@ export default function SignIn() {
       const userAuth = await authenticateUser(username, password);
 
       if (userAuth.success && userAuth.user) {
-        await login(userAuth.user.id);  // Store session with login function
+        await login({
+          id: userAuth.user.id,
+          isMod: userAuth.user.isMod
+        });
 
         Toast.show({
           type: 'success',
@@ -51,13 +69,7 @@ export default function SignIn() {
           position: 'bottom',
           visibilityTime: 2000,
         });
-
-        // setTimeout(() => {
-        //   router.replace("/(tabs)");
-        // }, 2000);
-
       } else {
-
         Toast.show({
           type: 'error',
           text1: 'Login Failed',

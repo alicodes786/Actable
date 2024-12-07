@@ -81,7 +81,7 @@ export default function EditDeadlineScreen() {
 
       const { success, error } = await updateDeadline(
         deadlineId,
-        String(user),
+        String(user?.id),
         {
           name: deadlineName,
           description: deadlineDescription,
@@ -114,7 +114,7 @@ export default function EditDeadlineScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              const { success, error } = await deleteDeadline(deadlineId, String(user));
+              const { success, error } = await deleteDeadline(deadlineId, String(user?.id));
 
               if (!success) {
                 throw new Error(error);

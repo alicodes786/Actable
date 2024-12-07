@@ -18,7 +18,7 @@ export default function ViewDeadlinesScreen() {
     useCallback(() => {
       const fetchDeadlines = async () => {
         if (user) {  
-          const result = await getDeadlines(String(user)); // Convert number to string for the DB call
+          const result = await getDeadlines(String(user?.id)); // Convert number to string for the DB call
           if (result?.deadlineList) {
             setDeadlines(result.deadlineList);
           }
@@ -31,7 +31,7 @@ export default function ViewDeadlinesScreen() {
 
   const handleSubmission = (item: any) => {
     router.push({
-        pathname: "/(tabs)/submission",
+        pathname: "/(user)/submission",
         params: {
             deadlineId: item.id,
             name: item.name,

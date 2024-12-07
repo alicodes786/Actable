@@ -1,20 +1,12 @@
 import { supabase } from '@/lib/db';
 import { PostgrestError } from '@supabase/supabase-js';
 
-interface SubmissionImage {
-  imageurl: string;
-}
-
-interface DeadlineLastSubmission {
-  lastsubmissionid: string;
-}
-
 interface SubmissionData {
   id: string;
   deadlineid: string;
   imageurl: string;
   userid: string;
-  isapproved: boolean;
+  status: 'pending' | 'approved' | 'invalid';
   submitteddate: string;
 }
 
@@ -92,7 +84,7 @@ export async function createNewSubmission(
         deadlineid: deadlineId,
         imageurl: imageUrl,
         userid: userId,
-        isapproved: false,
+        status: 'pending',
         submitteddate: new Date().toISOString()
       })
       .select()
@@ -130,6 +122,120 @@ export async function createNewSubmission(
     }
     throw new SubmissionError(
       'Unexpected error creating submission',
+      error as DatabaseError
+    );
+  }
+}
+
+export interface Submission {
+  id: number;
+  deadlineid: number;
+  imageurl: string;
+  userid: string;
+  // Status can be pending, approved, or invalid
+  status: 'pending' | 'approved' | 'invalid';
+  submitteddate: string;
+}
+
+export interface DeadlineWithSubmission {
+  id: number;
+  name: string;
+  description: string;
+  date: string;
+  lastsubmissionid: number;
+  submission: Submission;
+}
+
+export async function fetchUnapprovedSubmissions(userId: string): Promise<DeadlineWithSubmission[]> {
+  try {
+    const { data, error } = await supabase
+      .from('deadlines')
+      .select(`
+        id,
+        name,
+        description,
+        date,
+        lastsubmissionid,
+        submission:submissions!deadlines_lastsubmissionid_fkey (
+          id,
+          deadlineid,
+          imageurl,
+          userid,
+          status,
+          submitteddate
+        )
+      `)
+      .eq('userid', userId)
+      .not('lastsubmissionid', 'is', null)
+      .order('submission(submitteddate)', { ascending: false })
+      .returns<(Omit<DeadlineWithSubmission, 'submission'> & { submission: Submission })[]>();
+
+    if (error) {
+      throw new SubmissionError('Failed to fetch unapproved submissions', error);
+    }
+
+    const filtered = data?.filter(item => item.submission.status === 'pending');
+    
+    return filtered || [];
+  } catch (error) {
+    throw new SubmissionError(
+      'Unexpected error fetching unapproved submissions',
+      error as DatabaseError
+    );
+  }
+}
+
+export async function approveSubmission(submissionId: number): Promise<void> {
+  try {
+    const { error } = await supabase
+      .from('submissions')
+      .update({ status: 'approved' })
+      .eq('id', submissionId);
+
+    if (error) {
+      throw new SubmissionError('Failed to approve submission', error);
+    }
+  } catch (error) {
+    throw new SubmissionError(
+      'Unexpected error approving submission',
+      error as DatabaseError
+    );
+  }
+}
+
+export async function invalidateSubmission(submissionId: number): Promise<void> {
+  try {
+    const { error } = await supabase
+      .from('submissions')
+      .update({ status: 'invalid' })
+      .eq('id', submissionId);
+
+    if (error) {
+      throw new SubmissionError('Failed to invalidate submission', error);
+    }
+  } catch (error) {
+    throw new SubmissionError(
+      'Unexpected error invalidating submission',
+      error as DatabaseError
+    );
+  }
+}
+
+export async function fetchSubmissionById(submissionId: number): Promise<Submission> {
+  try {
+    const { data, error } = await supabase
+      .from('submissions')
+      .select('*')
+      .eq('id', submissionId)
+      .single();
+
+    if (error) throw error;
+    if (!data) throw new Error('Submission not found');
+    
+    return data;
+  } catch (error) {
+    throw new SubmissionError(
+      'Failed to fetch submission',
       error as DatabaseError
     );
   }

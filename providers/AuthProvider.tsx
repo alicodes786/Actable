@@ -1,32 +1,53 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import * as SecureStore from 'expo-secure-store';
+import { getAssignedUser, ModUser } from '@/db/mod';
+import { useRouter } from 'expo-router';
+
+interface User {
+    id: number;
+    isMod?: boolean;
+    assignedUsers?: number[];
+}
 
 interface AuthContextType {
-    user: number | null;
-    login: (user: number) => Promise<void>;
+    user: User | null;
+    assignedUser: ModUser | null;
+    login: (userData: User) => Promise<void>;
     logout: () => Promise<void>;
     isLoading: boolean;
+    loadAssignedUser: (modId: number) => Promise<ModUser | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-    const [user, setUser] = useState<number | null>(null);
+    const [user, setUser] = useState<User | null>(null);
+    const [assignedUser, setAssignedUser] = useState<ModUser | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const router = useRouter();
 
     useEffect(() => {
         loadUser();
     }, []);
+
+    useEffect(() => {
+        const loadModAssignedUser = async () => {
+            if (user?.isMod && user.id) {
+                const assigned = await loadAssignedUser(user.id);
+                setAssignedUser(assigned);
+            }
+        };
+
+        loadModAssignedUser();
+    }, [user]);
 
     const loadUser = async () => {
         try {
             setIsLoading(true);
             const storedUser = await SecureStore.getItemAsync('user');
             if (storedUser) {
-                const userId = parseInt(storedUser);
-                if (!isNaN(userId)) {
-                    setUser(userId);
-                }
+                const userData = JSON.parse(storedUser);
+                setUser(userData);
             }
         } catch (error) {
             console.error('Error loading user:', error);
@@ -35,10 +56,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
-    const login = async (userId: number) => {
+    const login = async (userData: User) => {
         try {
-            await SecureStore.setItemAsync('user', String(userId));
-            setUser(userId);
+            await SecureStore.setItemAsync('user', JSON.stringify(userData));
+            setUser(userData);
         } catch (error) {
             console.error('Error storing user:', error);
             throw error;
@@ -49,14 +70,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         try {
             await SecureStore.deleteItemAsync('user');
             setUser(null);
+            router.replace('/(auth)/sign-in');
+            router.dismissAll();
         } catch (error) {
-            console.error('Error removing user:', error);
+            console.error('Logout error:', error);
             throw error;
         }
     };
 
+    const loadAssignedUser = async (modId: number) => {
+        try {
+            return await getAssignedUser(modId);
+        } catch (error) {
+            console.error('Error loading user:', error);
+            return null;
+        }
+    };
+
     return (
-        <AuthContext.Provider value={{ user, login, logout, isLoading }}>
+        <AuthContext.Provider value={{ 
+            user, 
+            assignedUser, 
+            login, 
+            logout, 
+            isLoading, 
+            loadAssignedUser 
+        }}>
             {children}
         </AuthContext.Provider>
     );

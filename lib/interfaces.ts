@@ -1,10 +1,18 @@
+interface Submission {
+  id: number;
+  submitteddate: string;
+  status: 'pending' | 'approved' | 'invalid';
+}
+
 export interface Ideadline {
   id: number;
   name: string;
-  date: Date;
   description: string;
-  lastsubmissionid: number | null;
-  userid: number;
+  date: string;
+  userid: string;
+  completed: boolean;
+  submissions?: Submission[];
+  lastsubmissionid: null | number;
 }
   
 export interface IdeadlineList {

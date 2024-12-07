@@ -8,8 +8,11 @@ export default function Index() {
     const isAuthenticated = skipAuth || user;
     
     if (!isAuthenticated) {
-        const path = "/(auth)/sign-in" as Href<any>;
+        const path: Href = "/(auth)/sign-in";
         return <Redirect href={path} />;
     }
-    return <Redirect href="/(tabs)" />;
+
+    // Redirect based on user's mod status
+    const path: Href = user?.isMod ? '/dashboard' : '/(user)';
+    return <Redirect href={path} />;
 }

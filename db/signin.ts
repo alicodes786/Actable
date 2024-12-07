@@ -3,6 +3,7 @@ import { supabase } from '@/lib/db';
 interface User {
   id: number;
   name: string;
+  isMod: boolean;
 }
 
 // Separate function to get user by credentials
@@ -10,14 +11,20 @@ export const getUserByCredentials = async (
   username: string, 
   password: string
 ): Promise<User | null> => {
-    const { data: user } = await supabase
+    const { data } = await supabase
         .from('users')
-        .select('id, name') // Only select fields you need, avoid selecting password
+        .select('id, name, role')
         .eq('name', username)
-        .eq('password', password) // Again, this should use proper password hashing
+        .eq('password', password)
         .maybeSingle();
 
-    return user;
+    if (!data) return null;
+
+    return {
+        id: data.id,
+        name: data.name,
+        isMod: data.role === 'mod'
+    };
 };
 
 // Authentication function that returns more meaningful result
