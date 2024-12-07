@@ -70,8 +70,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         try {
             await SecureStore.deleteItemAsync('user');
             setUser(null);
-            router.replace('/(auth)/sign-in');
-            router.dismissAll();
+            setAssignedUser(null);
+            setTimeout(() => {
+                router.replace({
+                    pathname: '/(auth)/sign-in',
+                    params: {
+                        from: 'logout'
+                    }
+                });
+            }, 0);
         } catch (error) {
             console.error('Logout error:', error);
             throw error;

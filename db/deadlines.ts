@@ -35,7 +35,14 @@ export const getDeadlines = async (userId: string): Promise<IdeadlineList | null
 export const getSingleDeadline = async (id: number): Promise<Ideadline | null> => {
   const { data: deadline, error } = await supabase
     .from('deadlines')
-    .select(`*`)
+    .select(`
+      *,
+      submissions!fk_deadline (
+        id,
+        submitteddate,
+        status
+      )
+    `)
     .eq('id', id)
     .single();
 

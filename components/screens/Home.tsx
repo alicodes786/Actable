@@ -14,6 +14,14 @@ const GRADIENT_COLORS: [string, string][] = [
   ['#8f75ff', '#5d3ce8'],
 ];
 
+const STATUS_COLORS = {
+  INVALID: {
+    bg: '#808080',    // Gray 600
+    text: '#FFFFFF',   // White text
+    badge: '#696969',  // Gray 700
+  },
+};
+
 export default function Home() {
   const [deadlines, setDeadlines] = useState<IdeadlineList | null>(null);
   const [userName, setUserName] = useState<string | null>(null); // State to store user name
@@ -84,30 +92,50 @@ export default function Home() {
           <View className="mt-10">
             <Text className="text-2xl font-bold mb-3">Upcoming</Text>
 
-            {getUpcomingDeadlines().map((item, idx) => (
-              <LinearGradient
-                key={item.id || idx}
-                colors={GRADIENT_COLORS[idx]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                className="mt-4 p-5 rounded-2xl shadow-md"
-              >
-                <Text className="text-white text-base font-medium mb-1">
-                  {item.name}
-                </Text>
-                <Text className="text-white text-base font-medium">
-                  <CountDownTimer deadlineDate={item.date} />
-                </Text>
-                <TouchableOpacity
-                  className="bg-black p-2.5 rounded mt-2.5 self-start min-w-[100px] items-center"
-                  onPress={() => handleSubmission(item)}
+            {getUpcomingDeadlines().map((item, idx) => {
+              const submission = item.submissions?.find(
+                sub => sub.id === item.lastsubmissionid
+              );
+              const isInvalid = submission?.status === 'invalid';
+
+              return (
+                <LinearGradient
+                  key={item.id || idx}
+                  colors={GRADIENT_COLORS[idx]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  className="mt-4 p-5 rounded-2xl shadow-md relative"
                 >
-                  <Text className="text-white text-lg font-semibold">
-                    Submit
+                  {isInvalid && (
+                    <View 
+                      className="absolute top-2 right-2 rounded-full px-3 py-1"
+                      style={{ backgroundColor: STATUS_COLORS.INVALID.badge }}
+                    >
+                      <Text 
+                        className="text-xs font-medium"
+                        style={{ color: STATUS_COLORS.INVALID.text }}
+                      >
+                        Invalid Submission
+                      </Text>
+                    </View>
+                  )}
+                  <Text className="text-white text-base font-medium mb-1">
+                    {item.name}
                   </Text>
-                </TouchableOpacity>
-              </LinearGradient>
-            ))}
+                  <Text className="text-white text-base font-medium">
+                    <CountDownTimer deadlineDate={new Date(item.date)} />
+                  </Text>
+                  <TouchableOpacity
+                    className="bg-black p-2.5 rounded mt-2.5 self-start min-w-[100px] items-center"
+                    onPress={() => handleSubmission(item)}
+                  >
+                    <Text className="text-white text-lg font-semibold">
+                      Submit
+                    </Text>
+                  </TouchableOpacity>
+                </LinearGradient>
+              );
+            })}
           </View>
         </View>
       </ScrollView>
