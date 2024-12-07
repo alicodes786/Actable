@@ -10,7 +10,9 @@ export interface Ideadline {
   description: string;
   date: string;
   userid: string;
+  completed: boolean;
   submissions?: Submission[];
+  lastsubmissionid: boolean;
 }
   
 export interface IdeadlineList {
