@@ -22,7 +22,7 @@ export const getDeadlines = async (userId: string): Promise<IdeadlineList | null
     `)
     .eq('userid', userId)
     .order('date', { ascending: false })
-    .limit(20);
+    .limit(50);
 
   if (error) {
     console.error('Error fetching deadlines for user:', error);

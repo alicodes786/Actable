@@ -9,15 +9,15 @@ import CountDownTimer from '@/components/CountDownTimer';
 
 // Define status colors like dashboard
 const STATUS_COLORS = {
-  PENDING: {
-    bg: '#2563EB',    // Blue 600 - lighter, vibrant blue
+  AWAITING: {
+    bg: '#2563EB',    // Blue 600
     text: '#FFFFFF',   // White text
-    badge: '#1D4ED8',  // Blue 700 - slightly darker for badge
+    badge: '#1D4ED8',  // Blue 700
   },
-  SUBMITTED: {
-    bg: '#02ba4f',    // Emerald 600 - lighter green to match blue intensity
+  PENDING_REVIEW: {
+    bg: '#F59E0B',    // Amber 600 - for pending review
     text: '#FFFFFF',   // White text
-    badge: '#047857',  // Emerald 700 - slightly darker for badge
+    badge: '#B45309',  // Amber 700
   },
   INVALID: {
     bg: '#808080',    // Gray 600
@@ -73,20 +73,19 @@ export default function UpcomingScreen() {
       
       <ScrollView className="flex-1">
         {getUpcomingDeadlines().map((deadline) => {
-          const submission = deadline.submissions?.[0];
-          let status = STATUS_COLORS.PENDING;
-          let statusText = 'Pending Submission';
+          const submission = deadline.submissions?.find(
+            sub => sub.id === deadline.lastsubmissionid
+          );
+          let status = STATUS_COLORS.AWAITING;
+          let statusText = 'Awaiting Submission';
 
           if (submission) {
-            if (submission.status === 'approved') {
-              status = STATUS_COLORS.SUBMITTED;
-              statusText = 'Submitted';
+            if (submission.status === 'pending') {
+              status = STATUS_COLORS.PENDING_REVIEW;
+              statusText = 'Pending Review';
             } else if (submission.status === 'invalid') {
               status = STATUS_COLORS.INVALID;
               statusText = 'Invalid Submission';
-            } else {
-              status = STATUS_COLORS.PENDING;
-              statusText = 'Pending Approval';
             }
           }
           

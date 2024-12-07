@@ -12,7 +12,7 @@ export interface Ideadline {
   userid: string;
   completed: boolean;
   submissions?: Submission[];
-  lastsubmissionid: boolean;
+  lastsubmissionid: null | number;
 }
   
 export interface IdeadlineList {
