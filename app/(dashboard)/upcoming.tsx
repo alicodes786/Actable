@@ -1,7 +1,6 @@
 import React, { useCallback, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
-import { View, ScrollView } from 'react-native';
-import { Text } from 'tamagui';
+import { View, ScrollView, Text } from 'react-native';
 import { getDeadlines } from '@/db/deadlines';
 import { useAuth } from '@/providers/AuthProvider';
 import { Ideadline } from '@/lib/interfaces';
@@ -107,10 +106,16 @@ export default function UpcomingScreen() {
                     {statusText}
                   </Text>
                 </View>
-                <Text className="text-lg font-bold mb-2" style={{ color: status.text }}>
+                <Text 
+                  className="text-lg font-bold mb-2" 
+                  style={{ color: status.text }}
+                >
                   {deadline.name}
                 </Text>
-                <Text className="text-sm mb-3" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                <Text 
+                  className="text-sm mb-3" 
+                  style={{ color: 'rgba(255, 255, 255, 0.7)' }}
+                >
                   {deadline.description}
                 </Text>
                 <CountDownTimer 

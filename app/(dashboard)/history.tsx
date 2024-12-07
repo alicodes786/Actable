@@ -1,8 +1,7 @@
 import React, { useCallback, useState } from 'react';
-import { View, ScrollView, SafeAreaView, TouchableOpacity } from 'react-native';
-import { Text } from 'tamagui';
+import { View, ScrollView, SafeAreaView, Text } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useFocusEffect, router } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
 import { IdeadlineList } from '@/lib/interfaces';
 import { getDeadlines } from '@/db/deadlines';
 import { useAuth } from '@/providers/AuthProvider';
@@ -21,7 +20,7 @@ type DeadlineStatus = 'VALID' | 'LATE' | 'MISSED' | 'INVALID' | 'PENDING';
 interface HistoryEntry {
   deadline: any;
   status: DeadlineStatus;
-  completedDate?: Date;  // Date when the deadline was completed (if applicable)
+  completedDate?: Date;
   dueDate: Date;
 }
 
@@ -107,18 +106,6 @@ export default function HistoryScreen() {
     }
   };
 
-  const handleViewSubmission = (item: any) => {
-    router.push({
-      pathname: "/(user)/submission",
-      params: {
-        deadlineId: item.id,
-        name: item.name,
-        description: item.description,
-        date: item.date instanceof Date ? item.date.toISOString() : item.date,
-      }
-    });
-  };
-
   const formatDate = (date: string | Date) => {
     return new Date(date).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -134,10 +121,7 @@ export default function HistoryScreen() {
           <Text className="text-2xl font-bold mb-3">History</Text>
 
           {getHistoryEntries().map(({ deadline, status, completedDate, dueDate }, idx) => (
-            <TouchableOpacity
-              key={deadline.id || idx}
-              onPress={() => handleViewSubmission(deadline)}
-            >
+            <View key={deadline.id || idx}>
               <LinearGradient
                 colors={STATUS_COLORS[status]}
                 start={{ x: 0, y: 0 }}
@@ -159,7 +143,7 @@ export default function HistoryScreen() {
                   {getStatusLabel(status)}
                 </Text>
               </LinearGradient>
-            </TouchableOpacity>
+            </View>
           ))}
 
           {getHistoryEntries().length === 0 && (
