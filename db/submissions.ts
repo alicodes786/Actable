@@ -6,7 +6,7 @@ interface SubmissionData {
   deadlineid: string;
   imageurl: string;
   userid: string;
-  isapproved: boolean;
+  status: 'pending' | 'approved' | 'invalid';
   submitteddate: string;
 }
 
@@ -84,7 +84,7 @@ export async function createNewSubmission(
         deadlineid: deadlineId,
         imageurl: imageUrl,
         userid: userId,
-        isapproved: false,
+        status: 'pending',
         submitteddate: new Date().toISOString()
       })
       .select()
@@ -132,7 +132,8 @@ export interface Submission {
   deadlineid: number;
   imageurl: string;
   userid: string;
-  isapproved: boolean;
+  // Status can be pending, approved, or invalid
+  status: 'pending' | 'approved' | 'invalid';
   submitteddate: string;
 }
 
@@ -160,7 +161,7 @@ export async function fetchUnapprovedSubmissions(userId: string): Promise<Deadli
           deadlineid,
           imageurl,
           userid,
-          isapproved,
+          status,
           submitteddate
         )
       `)
@@ -173,7 +174,7 @@ export async function fetchUnapprovedSubmissions(userId: string): Promise<Deadli
       throw new SubmissionError('Failed to fetch unapproved submissions', error);
     }
 
-    const filtered = data?.filter(item => !item.submission.isapproved);
+    const filtered = data?.filter(item => item.submission.status === 'pending');
     
     return filtered || [];
   } catch (error) {
@@ -188,7 +189,7 @@ export async function approveSubmission(submissionId: number): Promise<void> {
   try {
     const { error } = await supabase
       .from('submissions')
-      .update({ isapproved: true })
+      .update({ status: 'approved' })
       .eq('id', submissionId);
 
     if (error) {
@@ -197,6 +198,24 @@ export async function approveSubmission(submissionId: number): Promise<void> {
   } catch (error) {
     throw new SubmissionError(
       'Unexpected error approving submission',
+      error as DatabaseError
+    );
+  }
+}
+
+export async function invalidateSubmission(submissionId: number): Promise<void> {
+  try {
+    const { error } = await supabase
+      .from('submissions')
+      .update({ status: 'invalid' })
+      .eq('id', submissionId);
+
+    if (error) {
+      throw new SubmissionError('Failed to invalidate submission', error);
+    }
+  } catch (error) {
+    throw new SubmissionError(
+      'Unexpected error invalidating submission',
       error as DatabaseError
     );
   }

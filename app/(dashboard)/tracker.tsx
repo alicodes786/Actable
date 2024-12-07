@@ -65,7 +65,7 @@ export default function TrackerScreen() {
       const submission = deadline.submissions?.[0];
       if (!submission) return; // This shouldn't happen due to our filter
 
-      if (!submission.isapproved) {
+      if (submission.status === "invalid") {
         newStats.invalid++;
         return;
       }

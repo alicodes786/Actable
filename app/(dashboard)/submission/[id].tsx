@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Image, ScrollView, Alert } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
-import { approveSubmission, Submission, fetchSubmissionById } from '@/db/submissions';
+import { approveSubmission, invalidateSubmission, Submission, fetchSubmissionById } from '@/db/submissions';
 import LoadingSpinner from '@/components/LoadingSpinner';
 
 export default function SubmissionReviewScreen() {
@@ -39,6 +39,20 @@ export default function SubmissionReviewScreen() {
     }
   };
 
+  const handleInvalidate = async () => {
+    try {
+      setIsLoading(true);
+      await invalidateSubmission(submissionId);
+      Alert.alert('Success', 'Submission marked as invalid', [
+        { text: 'OK', onPress: () => router.back() }
+      ]);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to invalidate submission');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   if (isLoading) {
     return <LoadingSpinner />;
   }
@@ -53,6 +67,9 @@ export default function SubmissionReviewScreen() {
     );
   }
 
+  // Don't show action buttons if submission is already processed
+  const showActions = submission.status === 'pending';
+
   return (
     <ScrollView className="flex-1 bg-white">
       <View className="p-5">
@@ -64,16 +81,39 @@ export default function SubmissionReviewScreen() {
           />
         </View>
 
-        <TouchableOpacity 
-          className={`mt-6 bg-green-500 py-4 px-6 rounded-xl 
-            ${isLoading ? 'opacity-50' : 'opacity-100'}`}
-          onPress={handleApprove}
-          disabled={isLoading}
-        >
-          <Text className="text-white text-center font-semibold text-base">
-            {isLoading ? 'Approving...' : 'Approve Submission'}
-          </Text>
-        </TouchableOpacity>
+        {showActions && (
+          <View className="flex-row space-x-4 mt-6">
+            <TouchableOpacity 
+              className={`flex-1 bg-green-500 py-4 px-6 rounded-xl 
+                ${isLoading ? 'opacity-50' : 'opacity-100'}`}
+              onPress={handleApprove}
+              disabled={isLoading}
+            >
+              <Text className="text-white text-center font-semibold text-base">
+                {isLoading ? 'Processing...' : 'Approve'}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              className={`flex-1 bg-red-500 py-4 px-6 rounded-xl 
+                ${isLoading ? 'opacity-50' : 'opacity-100'}`}
+              onPress={handleInvalidate}
+              disabled={isLoading}
+            >
+              <Text className="text-white text-center font-semibold text-base">
+                {isLoading ? 'Processing...' : 'Mark Invalid'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {!showActions && (
+          <View className="mt-6 py-4 px-6 rounded-xl bg-gray-100">
+            <Text className="text-center font-semibold text-base capitalize">
+              Status: {submission.status}
+            </Text>
+          </View>
+        )}
       </View>
     </ScrollView>
   );

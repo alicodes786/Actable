@@ -13,9 +13,10 @@ const STATUS_COLORS: Record<DeadlineStatus, readonly [string, string]> = {
   LATE: ['#FFA500', '#FF8C00'] as const,       // Orange
   MISSED: ['#FF6347', '#DC143C'] as const,     // Red
   INVALID: ['#808080', '#696969'] as const,    // Grey
+  PENDING: ['#2563EB', '#1D4ED8'] as const,    // Blue
 };
 
-type DeadlineStatus = 'VALID' | 'LATE' | 'MISSED' | 'INVALID';
+type DeadlineStatus = 'VALID' | 'LATE' | 'MISSED' | 'INVALID' | 'PENDING';
 
 interface HistoryEntry {
   deadline: any;
@@ -56,12 +57,8 @@ export default function HistoryScreen() {
     return deadlines.deadlineList
       .filter(deadline => {
         const dueDate = new Date(deadline.date);
-        const submission = deadline.submissions?.[0];
-        
-        // Include if:
-        // 1. Has an approved submission (completed) OR
-        // 2. Due date has passed and no approved submission (missed)
-        return submission?.isapproved || (!submission?.isapproved && dueDate < now);
+        // Include if deadline is completed OR if it's in the past
+        return deadline.completed || dueDate < now;
       })
       .map(deadline => {
         const dueDate = new Date(deadline.date);
@@ -70,12 +67,24 @@ export default function HistoryScreen() {
         let status: DeadlineStatus;
         let completedDate: Date | undefined;
 
-        if (submission?.isapproved) {
+        // If there's no submission and deadline is past, it's missed
+        if (!deadline.lastsubmissionid && dueDate < now) {
+          status = 'MISSED';
+        } 
+        // If there's a submission, determine its status
+        else if (deadline.lastsubmissionid && submission) {
           completedDate = new Date(submission.submitteddate);
-          status = completedDate <= dueDate ? 'VALID' : 'LATE';
-        } else {
-          // Check if there's a lastsubmission ID
-          status = deadline.lastsubmissionid ? 'INVALID' : 'MISSED';
+          if (submission.status === 'approved') {
+            status = completedDate <= dueDate ? 'VALID' : 'LATE';
+          } else if (submission.status === 'invalid') {
+            status = 'INVALID';
+          } else {
+            status = 'PENDING';
+          }
+        }
+        // Fallback (shouldn't happen given our filter)
+        else {
+          status = 'PENDING';
         }
 
         return {
@@ -85,10 +94,7 @@ export default function HistoryScreen() {
           dueDate,
         };
       })
-      .sort((a, b) => {
-        // Sort by due date
-        return b.dueDate.getTime() - a.dueDate.getTime();
-      });
+      .sort((a, b) => b.dueDate.getTime() - a.dueDate.getTime());
   };
 
   const getStatusLabel = (status: DeadlineStatus): string => {
@@ -96,7 +102,8 @@ export default function HistoryScreen() {
       case 'VALID': return 'Submitted on time';
       case 'LATE': return 'Submitted late';
       case 'MISSED': return 'Not submitted';
-      case 'INVALID': return 'Pending';
+      case 'INVALID': return 'Submission invalid';
+      case 'PENDING': return 'Pending approval';
     }
   };
 

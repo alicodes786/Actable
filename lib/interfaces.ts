@@ -1,7 +1,7 @@
 interface Submission {
   id: number;
   submitteddate: string;
-  isapproved: boolean;
+  status: 'pending' | 'approved' | 'invalid';
 }
 
 export interface Ideadline {

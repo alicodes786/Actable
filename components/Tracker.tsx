@@ -53,7 +53,7 @@ export default function Tracker({ userId }: TrackerProps) {
         return;
       }
 
-      if (!submission.isapproved) {
+      if (submission.status === 'invalid') {
         newStats.invalid++;
         return;
       }

@@ -17,7 +17,7 @@ export const getDeadlines = async (userId: string): Promise<IdeadlineList | null
       submissions!fk_deadline (
         id,
         submitteddate,
-        isapproved
+        status
       )
     `)
     .eq('userid', userId)

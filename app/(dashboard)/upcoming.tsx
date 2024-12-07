@@ -19,6 +19,11 @@ const STATUS_COLORS = {
     text: '#FFFFFF',   // White text
     badge: '#047857',  // Emerald 700 - slightly darker for badge
   },
+  INVALID: {
+    bg: '#808080',    // Gray 600
+    text: '#FFFFFF',   // White text
+    badge: '#696969',  // Gray 700
+  },
 };
 
 export default function UpcomingScreen() {
@@ -68,8 +73,22 @@ export default function UpcomingScreen() {
       
       <ScrollView className="flex-1">
         {getUpcomingDeadlines().map((deadline) => {
-          const hasSubmission = deadline.lastsubmissionid
-          const status = hasSubmission ? STATUS_COLORS.SUBMITTED : STATUS_COLORS.PENDING;
+          const submission = deadline.submissions?.[0];
+          let status = STATUS_COLORS.PENDING;
+          let statusText = 'Pending Submission';
+
+          if (submission) {
+            if (submission.status === 'approved') {
+              status = STATUS_COLORS.SUBMITTED;
+              statusText = 'Submitted';
+            } else if (submission.status === 'invalid') {
+              status = STATUS_COLORS.INVALID;
+              statusText = 'Invalid Submission';
+            } else {
+              status = STATUS_COLORS.PENDING;
+              statusText = 'Pending Approval';
+            }
+          }
           
           return (
             <View 
@@ -86,7 +105,7 @@ export default function UpcomingScreen() {
                     className="text-xs font-medium"
                     style={{ color: status.text }}
                   >
-                    {hasSubmission ? 'Submitted' : 'Pending'}
+                    {statusText}
                   </Text>
                 </View>
                 <Text className="text-lg font-bold mb-2" style={{ color: status.text }}>
