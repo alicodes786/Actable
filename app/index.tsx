@@ -11,5 +11,8 @@ export default function Index() {
         const path: Href = "/(auth)/sign-in";
         return <Redirect href={path} />;
     }
-    return <Redirect href="/(user)" />;
+
+    // Redirect based on user's mod status
+    const path: Href = user?.isMod ? '/dashboard' : '/(user)';
+    return <Redirect href={path} />;
 }
