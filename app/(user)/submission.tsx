@@ -212,11 +212,6 @@ function SubmissionContent() {
           const deadline = await getSingleDeadline(deadlineId);
           
           if (deadline) {
-            console.log('Deadline data:', {
-              id: deadline.id,
-              lastsubmissionid: deadline.lastsubmissionid,
-              submissions: deadline.submissions
-            });
             
             setSubmissionData({
               name: deadline.name,
@@ -228,8 +223,6 @@ function SubmissionContent() {
             const lastSubmission = deadline.submissions?.find(
               sub => sub.id === deadline.lastsubmissionid
             );
-            
-            console.log('Last submission:', lastSubmission);
             
             // Only set to true if we have a submission and its status is 'invalid'
             setIsInvalidSubmission(!!lastSubmission && lastSubmission.status === 'invalid');

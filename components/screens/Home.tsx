@@ -77,7 +77,10 @@ export default function Home() {
     if (!deadlines?.deadlineList) return [];
 
     return deadlines.deadlineList
-      .filter(item => new Date(item.date).getTime() >= Date.now())
+      .filter(item => 
+        new Date(item.date).getTime() >= Date.now() && 
+        !item.completed
+      )
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
       .slice(0, 3);
   };
