@@ -8,24 +8,31 @@ export interface ModUser {
 }
 
 export async function getAssignedMod(userId: number): Promise<ModUser | null> {
-  const { data, error } = await supabase
+  // First get the relationship
+  const { data: relationships, error: relError } = await supabase
     .from('mod_user_relationships')
-    .select(`
-      users:mod_id (
-        id,
-        email,
-        name
-      )
-    `)
-    .eq('user_id', userId)
-    .single();
+    .select('mod_id')
+    .eq('user_id', userId);
 
-  if (error || !data?.users?.[0]) {
-    console.error('Error fetching mod:', error);
+  // If no relationship found or error, return null
+  if (relError || !relationships || relationships.length === 0) {
+    console.log('No mod relationship found for user:', userId);
     return null;
   }
 
-  return data.users[0] as ModUser;
+  // Then get the mod's user details
+  const { data: modUser, error: userError } = await supabase
+    .from('users')
+    .select('id, email, name')
+    .eq('id', relationships[0].mod_id)
+    .single();
+
+  if (userError || !modUser) {
+    console.error('Error fetching mod user:', userError);
+    return null;
+  }
+
+  return modUser as ModUser;
 }
 
 export async function addModToUser(userId: number, modId: number) {

@@ -1,7 +1,7 @@
 import { Stack } from 'expo-router';
-import { View, Text, StyleSheet, ActivityIndicator, Image, TouchableOpacity, Alert } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { View, Text, ActivityIndicator, Image, TouchableOpacity, Alert } from 'react-native';
+import { useLocalSearchParams, useFocusEffect } from 'expo-router';
+import { useEffect, useState, useCallback } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import CountDownTimer from '@/components/CountDownTimer';
 import { uploadSubmissionImage } from '@/db/imageUpload';
@@ -148,39 +148,35 @@ function ImageCapture({ deadlineId, userId }: { deadlineId: string; userId: stri
   };
 
   return (
-    <View style={styles.imageSection}>
+    <View className="items-center mt-5">
       {image ? (
-        <View style={styles.previewContainer}>
+        <View className="w-full items-center">
           <Image 
             source={{ uri: image }} 
-            style={styles.preview}
+            className="w-[300px] h-[225px] rounded-lg mb-4"
             onError={(error) => console.error('Image preview error:', error)}
           />
-          <View style={styles.buttonRow}>
+          <View className="flex-row justify-around w-full">
             <TouchableOpacity 
-              style={[styles.button, styles.retakeButton]} 
+              className={`bg-red-500 px-5 py-3 rounded-lg min-w-[120px] items-center ${uploading ? 'opacity-50' : ''}`}
               onPress={takePhoto}
               disabled={uploading}
             >
-              <Text style={styles.buttonText}>Retake Photo</Text>
+              <Text className="text-white text-base font-semibold">Retake Photo</Text>
             </TouchableOpacity>
             <TouchableOpacity 
-              style={[
-                styles.button, 
-                styles.uploadButton,
-                (!isNewPhoto || uploading) && styles.disabledButton
-              ]}
+              className={`bg-green-500 px-5 py-3 rounded-lg min-w-[120px] items-center ${(!isNewPhoto || uploading) ? 'opacity-50' : ''}`}
               onPress={handleUpload}
               disabled={!isNewPhoto || uploading}
             >
-              <Text style={styles.buttonText}>
+              <Text className="text-white text-base font-semibold">
                 {uploading ? 'Uploading...' : 'Submit'}
               </Text>
             </TouchableOpacity>
           </View>
           {uploading && (
             <ActivityIndicator 
-              style={styles.loadingIndicator} 
+              className="mt-2.5"
               size="large" 
               color="#0000ff" 
             />
@@ -188,10 +184,10 @@ function ImageCapture({ deadlineId, userId }: { deadlineId: string; userId: stri
         </View>
       ) : (
         <TouchableOpacity 
-          style={[styles.button, styles.photoButton]} 
+          className="bg-blue-500 px-5 py-3 rounded-lg w-full items-center"
           onPress={takePhoto}
         >
-          <Text style={styles.buttonText}>Take Photo</Text>
+          <Text className="text-white text-base font-semibold">Take Photo</Text>
         </TouchableOpacity>
       )}
     </View>
@@ -202,50 +198,73 @@ function SubmissionContent() {
   const params = useLocalSearchParams();
   const [isLoading, setIsLoading] = useState(true);
   const [submissionData, setSubmissionData] = useState<SubmissionData | null>(null);
+  const [isInvalidSubmission, setIsInvalidSubmission] = useState(false);
   const { user } = useAuth();
-  const deadlineId = Number(params.deadlineId); // Assumes `deadlineId` is in params
+  const deadlineId = Number(params.deadlineId);
 
-  useEffect(() => {
-    setIsLoading(true);
-    setSubmissionData(null);
+  useFocusEffect(
+    useCallback(() => {
+      setIsLoading(true);
+      setSubmissionData(null);
 
-    const fetchSubmissionData = async () => {
-      try {
-        const deadline = await getSingleDeadline(deadlineId);
-        
-        if (deadline) {
-          setSubmissionData({
-            name: deadline.name,
-            description: deadline.description,
-            date: new Date(deadline.date),
-          });
+      const fetchSubmissionData = async () => {
+        try {
+          const deadline = await getSingleDeadline(deadlineId);
+          
+          if (deadline) {
+            
+            setSubmissionData({
+              name: deadline.name,
+              description: deadline.description,
+              date: new Date(deadline.date),
+            });
+            
+            // Only set invalid if there's a last submission and it's specifically invalid
+            const lastSubmission = deadline.submissions?.find(
+              sub => sub.id === deadline.lastsubmissionid
+            );
+            
+            // Only set to true if we have a submission and its status is 'invalid'
+            setIsInvalidSubmission(!!lastSubmission && lastSubmission.status === 'invalid');
+          }
+        } catch (error) {
+          console.error('Error fetching submission data:', error);
+        } finally {
+          setIsLoading(false);
         }
-      } catch (error) {
-        console.error('Error fetching submission data:', error);
-      } finally {
-        setIsLoading(false);
+      };
+
+      if (deadlineId) {
+        fetchSubmissionData();
       }
-    };
 
-    if (deadlineId) {
-      fetchSubmissionData();
-    }
-  }, [deadlineId]); // Refetches if `deadlineId` changes
-
+      return () => {
+        // Cleanup if needed
+      };
+    }, [deadlineId])
+  );
 
   if (isLoading || !submissionData) {
     return <LoadingSpinner />;
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>{submissionData.name}</Text>
-      <Text style={styles.description}>{submissionData.description}</Text>
+    <View className="flex-1 p-6 bg-white">
+      <Text className="text-lg font-bold mb-2.5">{submissionData.name}</Text>
+      <Text className="text-sm mb-2.5">{submissionData.description}</Text>
 
-      <View style={styles.timer}>      
+      {isInvalidSubmission && (
+        <View className="bg-red-50 p-3 rounded-lg mt-2.5 mb-2.5">
+          <Text className="text-red-600 text-sm font-medium">
+            Your last submission was marked as invalid. Please submit a new photo.
+          </Text>
+        </View>
+      )}
+
+      <View className="w-full items-center mt-8">      
         <CountDownTimer 
-            deadlineDate={submissionData.date} 
-            textColour='black'
+          deadlineDate={submissionData.date} 
+          textColour='black'
         />
       </View>
 
@@ -253,82 +272,3 @@ function SubmissionContent() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 24,
-    backgroundColor: "#fff",
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: "#fff"
-  },
-  loadingText: {
-    marginTop: 10,
-    color: '#666'
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  description: {
-    fontSize: 14,
-    marginBottom: 10,
-  },
-  timer: {
-    width: '100%',
-    alignItems: 'center',
-    marginTop: 50
-  },
-  imageSection: {
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  previewContainer: {
-    width: '100%',
-    alignItems: 'center',
-  },
-  preview: {
-    width: 300,
-    height: 225,
-    borderRadius: 8,
-    marginBottom: 16,
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%',
-  },
-  button: {
-    backgroundColor: '#007AFF',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 8,
-    minWidth: 120,
-    alignItems: 'center',
-  },
-  photoButton: {
-    minWidth: '100%'
-  },
-  retakeButton: {
-    backgroundColor: '#FF3B30',
-  },
-  uploadButton: {
-    backgroundColor: '#34C759',
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  disabledButton: {
-    opacity: 0.5,
-  },
-  loadingIndicator: {
-    marginTop: 10,
-  },
-});

@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/db';
 import { PostgrestError } from '@supabase/supabase-js';
+import { getAssignedMod } from './mod';
 
 interface SubmissionData {
   id: string;
@@ -77,7 +78,7 @@ export async function createNewSubmission(
   imageUrl: string
 ): Promise<SubmissionData> {
   try {
-    // Insert new submission
+    // Insert new submission with pending status initially
     const { data: newSubmission, error: submissionError } = await supabase
       .from('submissions')
       .insert({
@@ -114,6 +115,9 @@ export async function createNewSubmission(
       );
     }
 
+    // Check if user has an assigned mod and auto-approve if not
+    await handleSubmissionApproval(newSubmission.id, userId, deadlineId);
+
     return newSubmission;
 
   } catch (error) {
@@ -122,6 +126,43 @@ export async function createNewSubmission(
     }
     throw new SubmissionError(
       'Unexpected error creating submission',
+      error as DatabaseError
+    );
+  }
+}
+
+async function handleSubmissionApproval(
+  submissionId: string,
+  userId: string,
+  deadlineId: string
+): Promise<void> {
+  try {
+    const assignedMod = await getAssignedMod(Number(userId));
+    
+    // If no mod is assigned, auto-approve the submission
+    if (assignedMod === null) {
+      const { error: approvalError } = await supabase
+        .from('submissions')
+        .update({ status: 'approved' })
+        .eq('id', submissionId);
+
+      if (approvalError) {
+        throw new SubmissionError('Failed to auto-approve submission', approvalError);
+      }
+
+      // Update deadline completion status
+      const { error: completionError } = await supabase
+        .from('deadlines')
+        .update({ completed: true })
+        .eq('id', deadlineId);
+
+      if (completionError) {
+        throw new SubmissionError('Failed to update deadline completion status', completionError);
+      }
+    }
+  } catch (error) {
+    throw new SubmissionError(
+      'Error handling submission approval',
       error as DatabaseError
     );
   }
