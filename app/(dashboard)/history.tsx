@@ -17,9 +17,11 @@ const STATUS_COLORS: Record<DeadlineStatus, readonly [string, string]> = {
 
 type DeadlineStatus = 'VALID' | 'LATE' | 'MISSED' | 'INVALID';
 
-interface CategorizedDeadline {
-  item: any;
+interface HistoryEntry {
+  deadline: any;
   status: DeadlineStatus;
+  completedDate?: Date;  // Date when the deadline was completed (if applicable)
+  dueDate: Date;
 }
 
 export default function HistoryScreen() {
@@ -46,56 +48,46 @@ export default function HistoryScreen() {
     }, [isLoading, user, assignedUser])
   );
 
-  const categorizeDeadline = (deadline: any): CategorizedDeadline => {
-    const deadlineDate = new Date(deadline.date);
-    const submission = deadline.submissions?.[0];
-    
-    if (!submission) {
-      return {
-        item: deadline,
-        status: 'MISSED'
-      };
-    }
-
-    const submittedDate = new Date(submission.submitteddate);
-
-    if (!submission.isapproved) {
-      return {
-        item: deadline,
-        status: 'INVALID'
-      };
-    }
-
-    if (submittedDate <= deadlineDate) {
-      return {
-        item: deadline,
-        status: 'VALID'
-      };
-    }
-
-    return {
-      item: deadline,
-      status: 'LATE'
-    };
-  };
-
-  const getCompletedDeadlines = () => {
+  const getHistoryEntries = (): HistoryEntry[] => {
     if (!deadlines?.deadlineList) return [];
 
+    const now = new Date();
+    
     return deadlines.deadlineList
-      .filter(item => {
-        // Include deadlines that either:
-        // 1. Are in the past, OR
-        // 2. Have an approved submission
-        const isPastDeadline = new Date(item.date).getTime() < Date.now();
-        const hasApprovedSubmission = item.submissions?.[0]?.isapproved === true;
+      .filter(deadline => {
+        const dueDate = new Date(deadline.date);
+        const submission = deadline.submissions?.[0];
         
-        return isPastDeadline || hasApprovedSubmission;
+        // Include if:
+        // 1. Has an approved submission (completed) OR
+        // 2. Due date has passed and no approved submission (missed)
+        return submission?.isapproved || (!submission?.isapproved && dueDate < now);
       })
-      .map(categorizeDeadline)
+      .map(deadline => {
+        const dueDate = new Date(deadline.date);
+        const submission = deadline.submissions?.[0];
+
+        let status: DeadlineStatus;
+        let completedDate: Date | undefined;
+
+        if (submission?.isapproved) {
+          completedDate = new Date(submission.submitteddate);
+          status = completedDate <= dueDate ? 'VALID' : 'LATE';
+        } else {
+          // Check if there's a lastsubmission ID
+          status = deadline.lastsubmissionid ? 'INVALID' : 'MISSED';
+        }
+
+        return {
+          deadline,
+          status,
+          completedDate,
+          dueDate,
+        };
+      })
       .sort((a, b) => {
-        // Sort by due date (most recent first)
-        return new Date(b.item.date).getTime() - new Date(a.item.date).getTime();
+        // Sort by due date
+        return b.dueDate.getTime() - a.dueDate.getTime();
       });
   };
 
@@ -104,7 +96,7 @@ export default function HistoryScreen() {
       case 'VALID': return 'Submitted on time';
       case 'LATE': return 'Submitted late';
       case 'MISSED': return 'Not submitted';
-      case 'INVALID': return 'Invalid submission';
+      case 'INVALID': return 'Pending';
     }
   };
 
@@ -132,31 +124,40 @@ export default function HistoryScreen() {
     <SafeAreaView className="flex-1 bg-white">
       <ScrollView className="flex-1" bounces={false}>
         <View className="px-5 pt-2 pb-10 flex-1">
-          <Text className="text-2xl font-bold mb-3">Completed Deadlines</Text>
+          <Text className="text-2xl font-bold mb-3">History</Text>
 
-          {getCompletedDeadlines().map(({ item, status }, idx) => (
-            <LinearGradient
-              key={item.id || idx}
-              colors={STATUS_COLORS[status]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              className="mt-4 p-5 rounded-2xl shadow-md"
+          {getHistoryEntries().map(({ deadline, status, completedDate, dueDate }, idx) => (
+            <TouchableOpacity
+              key={deadline.id || idx}
+              onPress={() => handleViewSubmission(deadline)}
             >
-              <Text className="text-white text-base font-medium mb-1">
-                {item.name}
-              </Text>
-              <Text className="text-white text-sm mb-1">
-                Due: {formatDate(item.date)}
-              </Text>
-              <Text className="text-white text-sm mb-2 italic">
-                Status: {getStatusLabel(status)}
-              </Text>
-            </LinearGradient>
+              <LinearGradient
+                colors={STATUS_COLORS[status]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                className="mt-4 p-5 rounded-2xl shadow-md"
+              >
+                <Text className="text-white text-base font-medium mb-1">
+                  {deadline.name}
+                </Text>
+                {completedDate && (
+                  <Text className="text-white text-sm mb-1">
+                    Completed: {formatDate(completedDate)}
+                  </Text>
+                )}
+                <Text className="text-white text-sm mb-1">
+                  Due: {formatDate(dueDate)}
+                </Text>
+                <Text className="text-white text-sm mb-2 italic">
+                  {getStatusLabel(status)}
+                </Text>
+              </LinearGradient>
+            </TouchableOpacity>
           ))}
 
-          {getCompletedDeadlines().length === 0 && (
+          {getHistoryEntries().length === 0 && (
             <Text className="text-gray-500 text-center mt-10">
-              No completed deadlines found
+              No deadline history found
             </Text>
           )}
         </View>
