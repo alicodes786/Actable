@@ -38,6 +38,38 @@ const CATEGORIES = {
   },
 };
 
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffTime = Math.abs(now.getTime() - date.getTime());
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  
+  // If less than 24 hours ago, show relative time
+  if (diffDays === 0) {
+    const hours = Math.floor(diffTime / (1000 * 60 * 60));
+    if (hours === 0) {
+      const minutes = Math.floor(diffTime / (1000 * 60));
+      return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
+    }
+    return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
+  }
+  
+  // If within 7 days, show day of week
+  if (diffDays < 7) {
+    return date.toLocaleDateString('en-US', { weekday: 'long' }) + 
+           ' at ' + 
+           date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  }
+  
+  // Otherwise show date
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit'
+  });
+};
+
 export default function ViewDeadlinesScreen() {
   const [deadlines, setDeadlines] = useState<Ideadline[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('UPCOMING');
@@ -237,6 +269,7 @@ export default function ViewDeadlinesScreen() {
       <ScrollView className="flex-1">
         {filterDeadlines().map((deadline) => {
           const colors = CATEGORIES[selectedCategory as keyof typeof CATEGORIES].colors as [string, string, string];
+          const showActions = !['COMPLETED', 'LATE', 'MISSED'].includes(selectedCategory);
           
           return(
             <View key={deadline.id} className="mb-4">
@@ -254,30 +287,74 @@ export default function ViewDeadlinesScreen() {
                     {deadline.description}
                   </Text>
                   
-                  <Text className="text-white text-base font-medium">
-                    {new Date(deadline.date).getTime() >= Date.now() ?
-                      <CountDownTimer deadlineDate={new Date(deadline.date)} />
-                      :
-                      "Deadline Passed"
-                    }
-                  </Text>
+                  {selectedCategory === 'MISSED' ? (
+                    <View>
+                      <View className="flex-row justify-end items-center mt-2">
+                        <View>
+                          <Text className="text-white text-xs uppercase mb-1 opacity-80">
+                            Due Date
+                          </Text>
+                          <Text className="text-white text-sm font-medium">
+                            {formatDate(deadline.date)}
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+                  ) : ['COMPLETED', 'LATE'].includes(selectedCategory) ? (
+                    <View>
+                      <View className="flex-row justify-between items-center mt-2">
+                        <View>
+                          <Text className="text-white text-xs uppercase mb-1 opacity-80">
+                            Submitted
+                          </Text>
+                          <Text className="text-white text-sm font-medium">
+                            {formatDate(deadline.submissions?.find(
+                              sub => sub.id === deadline.lastsubmissionid
+                            )?.submitteddate || '')}
+                          </Text>
+                        </View>
+                        <View>
+                          <Text className="text-white text-xs uppercase mb-1 opacity-80">
+                            Due Date
+                          </Text>
+                          <Text className="text-white text-sm font-medium">
+                            {formatDate(deadline.date)}
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+                  ) : (
+                    <Text className="text-white text-base font-medium">
+                      {new Date(deadline.date).getTime() >= Date.now() ?
+                        <CountDownTimer deadlineDate={new Date(deadline.date)} />
+                        :
+                        "Deadline Passed"
+                      }
+                    </Text>
+                  )}
                 </View>
 
-                <View className="flex-row items-center justify-end mt-2.5">
-                  <TouchableOpacity
-                    className="flex-1 flex-row gap-2.5"
-                    onPress={() => handleEdit(deadline)}
-                  >
-                    <Ionicons name="create" size={24} color="#fff" />
-                  </TouchableOpacity>
-                  
-                  <TouchableOpacity 
-                    className="bg-white px-2 py-2 rounded-lg"
-                    onPress={() => handleSubmission(deadline)}
-                  >
-                    <Text>Submit</Text>
-                  </TouchableOpacity>
-                </View>
+                {showActions && (
+                  <View className="flex-row items-center justify-end mt-2.5">
+                    {selectedCategory === 'UPCOMING' && (
+                      <TouchableOpacity
+                        className="flex-1 flex-row gap-2.5"
+                        onPress={() => handleEdit(deadline)}
+                      >
+                        <Ionicons name="create" size={24} color="#fff" />
+                      </TouchableOpacity>
+                    )}
+                    
+                    <TouchableOpacity 
+                      className="bg-white px-2 py-2 rounded-lg"
+                      onPress={() => handleSubmission(deadline)}
+                    >
+                      <Text>
+                        {selectedCategory === 'UPCOMING' ? 'Submit' : 'Resubmit'}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
               </LinearGradient>
             </View>
           );
