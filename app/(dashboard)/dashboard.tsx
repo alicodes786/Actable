@@ -56,7 +56,6 @@ export default function Dashboard() {
     
     try {
       const data = await fetchUnapprovedSubmissions(String(assignedUser.id));
-      console.log('Fetched submissions:', data);
       setSubmissions(data);
     } catch (error) {
       Toast.show({

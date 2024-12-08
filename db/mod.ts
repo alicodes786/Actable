@@ -59,8 +59,6 @@ export async function removeModFromUser(uuid: string) {
 }
 
 export async function getAssignedUser(modUuid: string): Promise<ModUser | null> {
-  console.log('Current mod UUID:', modUuid);
-
   // Find the user that this mod is managing
   const { data: relationship, error: relError } = await supabase
     .from('mod_user_relationships')
@@ -72,9 +70,6 @@ export async function getAssignedUser(modUuid: string): Promise<ModUser | null> 
     console.error('Error or no relationship found:', relError);
     return null;
   }
-
-  console.log('Found user UUID that mod is managing:', relationship.user_uuid);
-
   // Get the managed user's information
   const { data: managedUser, error: userError } = await supabase
     .from('user_profiles')
@@ -87,6 +82,6 @@ export async function getAssignedUser(modUuid: string): Promise<ModUser | null> 
     return null;
   }
 
-  console.log('Found managed user:', managedUser);
+  console.log('Found managed user:', managedUser.name);
   return managedUser as ModUser;
 } 
