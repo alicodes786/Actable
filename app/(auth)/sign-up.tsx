@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, Keyboard, TouchableWithoutFeedback } from 'react-native';
 import { router } from "expo-router";
-import { supabase } from "@/lib/db";
+import { handleSignUp } from '@/lib/auth';
 
 export default function SignUp() {
   const [username, setUsername] = useState('');
@@ -9,112 +9,6 @@ export default function SignUp() {
   const [password, setPassword] = useState('');
   const [repeatPassword, setRepeatPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-
-  const validateEmail = (email: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
-
-  const validatePassword = (password: string) => {
-    // At least 8 characters, 1 uppercase, 1 lowercase, 1 number
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
-    return passwordRegex.test(password);
-  };
-
-  const handleSignUp = async () => {
-    try {
-      Keyboard.dismiss();  // Dismiss keyboard before processing
-      setIsLoading(true);
-
-      // Check for empty fields
-      if (!username || !email || !password || !repeatPassword) {
-        Alert.alert(
-          'Missing Information',
-          'Please fill in all fields'
-        );
-        return;
-      }
-
-      // Username validation
-      if (username.length < 3) {
-        Alert.alert(
-          'Invalid Username',
-          'Username must be at least 3 characters long'
-        );
-        return;
-      }
-
-      // Email validation
-      if (!validateEmail(email)) {
-        Alert.alert(
-          'Invalid Email',
-          'Please enter a valid email address'
-        );
-        return;
-      }
-
-      // Password validation
-      if (!validatePassword(password)) {
-        Alert.alert(
-          'Weak Password',
-          'Password must be at least 8 characters long and contain uppercase, lowercase, and numbers'
-        );
-        return;
-      }
-
-      // Password match validation
-      if (password !== repeatPassword) {
-        Alert.alert(
-          'Password Mismatch',
-          'Passwords do not match. Please try again.'
-        );
-        return;
-      }
-
-      // 1. Create auth user
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            name: username
-          }
-        }
-      });
-
-      if (authError) throw authError;
-
-      // 2. Create user profile
-      const { error: profileError } = await supabase
-        .from('user_profiles')
-        .insert({
-          id: authData.user!.id,
-          name: username,
-          role: 'user'
-        });
-
-      if (profileError) throw profileError;
-
-      Alert.alert(
-        'Success',
-        'Registration successful',
-        [
-          {
-            text: 'OK',
-            onPress: () => router.replace("/(auth)/sign-in")
-          }
-        ]
-      );
-
-    } catch (error: any) {
-      Alert.alert(
-        'Registration Failed',
-        error.message || 'An error occurred. Please try again.'
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -162,7 +56,7 @@ export default function SignUp() {
             />
 
             <TouchableOpacity
-              onPress={handleSignUp}
+              onPress={() => handleSignUp(username, email, password, repeatPassword, setIsLoading)}
               disabled={isLoading}
               className="w-full mb-3 p-4 bg-[#443399] rounded-lg"
             >

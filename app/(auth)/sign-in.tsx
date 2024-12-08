@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, Keyboard, T
 import { router, Href } from "expo-router";
 import { useAuth } from '@/providers/AuthProvider';
 import { supabase } from '@/lib/db';
+import { handleSignIn, handleGoogleSignIn } from '@/lib/auth';
 
 export default function SignIn() {
   const [email, setEmail] = useState('');
@@ -43,71 +44,6 @@ export default function SignIn() {
     return true;
   };
 
-  const handleSignIn = async () => {
-    try {
-      if (!validateInputs()) {
-        return;
-      }
-
-      Keyboard.dismiss();
-      setIsLoading(true);
-
-      // Sign in with Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (authError) throw authError;
-
-      // Fetch user profile
-      const { data: profile, error: profileError } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', authData.user.id)
-        .single();
-
-      if (profileError) throw profileError;
-
-      // Login with AuthProvider
-      await login({
-        id: authData.user.id,
-        email: authData.user.email || '',
-        role: profile.role,
-        name: profile.name
-      });
-
-    } catch (error: any) {
-      Alert.alert(
-        'Login Failed',
-        error.message || 'Unable to sign in. Please try again.'
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleGoogleSignIn = async () => {
-    try {
-      Keyboard.dismiss();
-      setIsLoading(true);
-      
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-      });
-
-      if (error) throw error;
-
-    } catch (error: any) {
-      Alert.alert(
-        'Google Sign In Failed',
-        error.message || 'Unable to sign in with Google. Please try again.'
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <ScrollView className="flex-1 bg-white">
@@ -140,7 +76,7 @@ export default function SignIn() {
             />
 
             <TouchableOpacity 
-              onPress={handleSignIn}
+              onPress={() => handleSignIn(email, password, login, setIsLoading)}
               disabled={isLoading}
               className="w-full mb-3 p-4 bg-[#443399] rounded-lg"
             >
@@ -150,7 +86,7 @@ export default function SignIn() {
             </TouchableOpacity>
 
             <TouchableOpacity 
-              onPress={handleGoogleSignIn}
+              onPress={() => handleGoogleSignIn(setIsLoading)}
               disabled={isLoading}
               className="w-full mb-3 p-4 bg-white border border-gray-300 rounded-lg"
             >
