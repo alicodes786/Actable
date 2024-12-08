@@ -1,17 +1,16 @@
 import { supabase } from '@/lib/db';
 
-
-
-export async function fetchDeadlineStats() {
+export async function fetchDeadlineStats(uuid: string) {
     try {
-      
       const { data: deadlines, error: deadlinesError } = await supabase
         .from('deadlines')
-        .select('id, date');
+        .select('id, date')
+        .eq('uuid', uuid);
   
       const { data: submissions, error: submissionsError } = await supabase
         .from('submissions')
-        .select('deadlineid, submitteddate');
+        .select('deadlineid, submitteddate')
+        .eq('uuid', uuid);
   
       if (deadlinesError) throw deadlinesError;
       if (submissionsError) throw submissionsError;
@@ -19,25 +18,21 @@ export async function fetchDeadlineStats() {
       let metCount = 0;
       let missedCount = 0;
   
-      
       const latestSubmissionsMap = new Map<number, Date>();
   
       submissions.forEach((submission) => {
         const submissionDate = new Date(submission.submitteddate);
         const existingDate = latestSubmissionsMap.get(submission.deadlineid);
   
-        // If no date exists or if the new date is more recent, update the map
         if (!existingDate || submissionDate > existingDate) {
           latestSubmissionsMap.set(submission.deadlineid, submissionDate);
         }
       });
   
-      // Compare each deadline's date with the latest submission date in the map
       deadlines.forEach((deadline) => {
         const deadlineDate = new Date(deadline.date);
         const latestSubmissionDate = latestSubmissionsMap.get(deadline.id);
   
-        // If there's a submission date for this deadline, check if it was on time
         if (latestSubmissionDate) {
           if (latestSubmissionDate <= deadlineDate) {
             metCount++;

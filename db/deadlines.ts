@@ -9,7 +9,7 @@ interface DeadlineResult {
   error?: string;
 }
 
-export const getDeadlines = async (userId: string): Promise<IdeadlineList | null> => {
+export const getDeadlines = async (uuid: string): Promise<IdeadlineList | null> => {
   const { data: deadlines, error } = await supabase
     .from('deadlines')
     .select(`
@@ -20,7 +20,7 @@ export const getDeadlines = async (userId: string): Promise<IdeadlineList | null
         status
       )
     `)
-    .eq('userid', userId)
+    .eq('uuid', uuid)
     .order('date', { ascending: false })
     .limit(50);
 
@@ -32,7 +32,7 @@ export const getDeadlines = async (userId: string): Promise<IdeadlineList | null
   return { deadlineList: deadlines || null }; 
 };
 
-export const getSingleDeadline = async (id: number): Promise<Ideadline | null> => {
+export const getSingleDeadline = async (id: string): Promise<Ideadline | null> => {
   const { data: deadline, error } = await supabase
     .from('deadlines')
     .select(`
@@ -55,7 +55,7 @@ export const getSingleDeadline = async (id: number): Promise<Ideadline | null> =
 };
 
 export const addDeadline = async (
-  userId: string,
+  uuid: string,
   name: string,
   description: string,
   date: Date
@@ -67,7 +67,7 @@ export const addDeadline = async (
         name,
         description,
         date: date.toISOString(),
-        userid: userId,
+        uuid,
         lastsubmissionid: null,
       })
       .select()
@@ -77,22 +77,23 @@ export const addDeadline = async (
       throw new Error(error?.message || 'Failed to retrieve newly added deadline.');
     }
 
-    // Fetch user preferences from SecureStore
-    const notificationsEnabled = await getItemAsync('notificationsEnabled');
-    const notificationTime = await getItemAsync('notificationTime');
-    const notificationTimeValue = notificationTime ? JSON.parse(notificationTime) : 30;
+    try {
+      // Only schedule notifications after successful DB operation
+      const notificationsEnabled = await getItemAsync('notificationsEnabled');
+      const notificationTime = await getItemAsync('notificationTime');
+      const notificationTimeValue = notificationTime ? JSON.parse(notificationTime) : 30;
 
-    console.log(notificationsEnabled, notificationTime, notificationTimeValue)
-
-    // If notifications are enabled, schedule the notification
-    if (notificationsEnabled === 'true') {
-      await scheduleDeadlineNotification(
-        userId,
-        data.id,
-        name,
-        date,
-        notificationTimeValue // Pass the user's preferred notification time
-      );
+      if (notificationsEnabled === 'true') {
+        await scheduleDeadlineNotification(
+          uuid,
+          data.id,
+          name,
+          date,
+          notificationTimeValue
+        );
+      }
+    } catch (notificationError) {
+      console.warn('Failed to schedule notification:', notificationError);
     }
 
     return { success: true };
@@ -106,14 +107,11 @@ export const addDeadline = async (
 };
 
 export const updateDeadline = async (
-  deadlineId: number,
-  userId: string,
+  deadlineId: string,
+  uuid: string,
   updates: Partial<Ideadline>
 ): Promise<DeadlineResult> => {
   try {
-    // First, cancel existing notifications
-    await cancelDeadlineNotifications(deadlineId);
-
     const { data, error } = await supabase
       .from('deadlines')
       .update({
@@ -122,7 +120,7 @@ export const updateDeadline = async (
         date: updates.date ? new Date(updates.date).toISOString() : undefined,
       })
       .eq('id', deadlineId)
-      .eq('userid', userId)
+      .eq('uuid', uuid)
       .select()
       .single();
 
@@ -130,19 +128,24 @@ export const updateDeadline = async (
       throw new Error(error?.message || 'Failed to update deadline.');
     }
 
-    // Fetch user preferences from SecureStore (notificationTime)
-    const notificationTime = await getItemAsync('notificationTime');
-    const notificationTimeValue = notificationTime ? JSON.parse(notificationTime) : 30; // Default to 30 minutes
+    try {
+      // Cancel and reschedule notifications only after successful DB update
+      await cancelDeadlineNotifications(Number(deadlineId));
+      
+      const notificationTime = await getItemAsync('notificationTime');
+      const notificationTimeValue = notificationTime ? JSON.parse(notificationTime) : 30;
 
-    // If the date or name was updated, schedule new notification
-    if (updates.date || updates.name) {
-      await scheduleDeadlineNotification(
-        userId,
-        deadlineId,
-        updates.name || data.name,
-        updates.date ? new Date(updates.date) : new Date(data.date),
-        notificationTimeValue // Pass the user's preferred notification time
-      );
+      if (updates.date || updates.name) {
+        await scheduleDeadlineNotification(
+          uuid,
+          Number(deadlineId),
+          updates.name || data.name,
+          updates.date ? new Date(updates.date) : new Date(data.date),
+          notificationTimeValue
+        );
+      }
+    } catch (notificationError) {
+      console.warn('Failed to update notifications:', notificationError);
     }
 
     return { success: true };
@@ -156,22 +159,24 @@ export const updateDeadline = async (
 };
 
 export const deleteDeadline = async (
-  deadlineId: number,
-  userId: string
+  deadlineId: string,
+  uuid: string
 ): Promise<DeadlineResult> => {
   try {
-    // First, cancel notifications
-    await cancelDeadlineNotifications(deadlineId);
-
-    // Delete the deadline
     const { error } = await supabase
       .from('deadlines')
       .delete()
       .eq('id', deadlineId)
-      .eq('userid', userId);
+      .eq('uuid', uuid);
 
     if (error) {
       throw new Error(error.message);
+    }
+
+    try {
+      await cancelDeadlineNotifications(Number(deadlineId));
+    } catch (notificationError) {
+      console.warn('Failed to cancel notifications:', notificationError);
     }
 
     return { success: true };
@@ -184,14 +189,14 @@ export const deleteDeadline = async (
   }
 };
 
-export const getLast30DaysDeadlines = async (userId: string): Promise<Ideadline[] | null> => {
+export const getLast30DaysDeadlines = async (uuid: string): Promise<Ideadline[] | null> => {
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
   const { data: deadlines, error } = await supabase
     .from('deadlines')
-    .select('id, name, description, lastsubmissionid, userid, date, completed')
-    .eq('userid', userId)
+    .select('id, name, description, lastsubmissionid, uuid, date, completed')
+    .eq('uuid', uuid)
     .gte('date', thirtyDaysAgo.toISOString());
 
   if (error) {
@@ -199,5 +204,9 @@ export const getLast30DaysDeadlines = async (userId: string): Promise<Ideadline[
     return null;
   }
 
-  return deadlines || null;
+  return deadlines?.map(deadline => ({
+    ...deadline,
+    userid: deadline.uuid,
+    lastsubmissionid: deadline.lastsubmissionid
+  })) || null;
 };

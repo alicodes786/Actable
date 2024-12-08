@@ -19,30 +19,30 @@ const STATUS_TEXT_COLORS = {
 };
 
 export default function Dashboard() {
-  const { user, logout, assignedUser } = useAuth();
+  const { user, assignedUser } = useAuth();
   const [submissions, setSubmissions] = useState<DeadlineWithSubmission[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user?.isMod) {
+    if (user?.role !== 'mod') {
       // Redirect non-moderators to user home if they somehow end up here
       router.replace('/(user)');
     }
   }, [user]);
 
   // Only render dashboard content for moderators
-  if (!user?.isMod) return null;
+  if (user?.role !== 'mod') return null;
 
   useFocusEffect(
     React.useCallback(() => {
       let isActive = true;
       const refreshInterval = setInterval(() => {
         if (isActive) {
-          loadSubmissions();
-        }
-      }, 5000);
+            loadSubmissions();
+          }
+        }, 5000);
 
-      loadSubmissions();
+        loadSubmissions();
 
       return () => {
         isActive = false;

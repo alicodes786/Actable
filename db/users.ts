@@ -6,8 +6,8 @@ import { IUser } from '@/lib/interfaces';
 export const getUsers = async (): Promise<IUser[] | null> => {
   try {
     const { data: users, error } = await supabase
-      .from('users')
-      .select('id, name'); // You can add more fields as needed
+      .from('user_profiles')
+      .select('id, name, role');
 
     if (error) {
       console.error('Error fetching users:', error);
@@ -25,8 +25,8 @@ export const getUsers = async (): Promise<IUser[] | null> => {
 export const getUserById = async (userId: string): Promise<IUser | null> => {
   try {
     const { data: user, error } = await supabase
-      .from('users')
-      .select('id, name') // Adjust fields as necessary
+      .from('user_profiles')
+      .select('id, name, role')
       .eq('id', userId)
       .single();
 
@@ -42,36 +42,11 @@ export const getUserById = async (userId: string): Promise<IUser | null> => {
   }
 };
 
-// Function to get user by credentials (username and password)
-export const getUserByCredentials = async (
-  username: string,
-  password: string
-): Promise<IUser | null> => {
-  try {
-    const { data: user, error } = await supabase
-      .from('users')
-      .select('id, name') // You can select more fields as necessary
-      .eq('name', username)
-      .eq('password', password) // Make sure passwords are hashed
-      .maybeSingle();
-
-    if (error) {
-      console.error('Error fetching user by credentials:', error);
-      return null;
-    }
-
-    return user || null;
-  } catch (error) {
-    console.error('Unexpected error fetching user by credentials:', error);
-    return null;
-  }
-};
-
 // Function to get user's name by their ID
-export const getUserName = async (userId: number): Promise<string | null> => {
+export const getUserName = async (userId: string): Promise<string | null> => {
   try {
     const { data: user, error } = await supabase
-      .from('users')
+      .from('user_profiles')
       .select('name')
       .eq('id', userId)
       .single();

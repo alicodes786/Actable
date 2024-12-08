@@ -89,7 +89,7 @@ export default function TrackerScreen() {
 
       const fetchDeadlines = async () => {
         try {
-          const userId = user.isMod ? String(assignedUser?.id) : String(user.id);
+          const userId = user.role === 'mod' ? String(assignedUser?.id) : String(user.id);
           const fetchedDeadlines = await getDeadlines(userId);
           setDeadlines(fetchedDeadlines);
           calculateStats(fetchedDeadlines);

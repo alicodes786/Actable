@@ -29,7 +29,7 @@ export default function DashboardLayout() {
   // Load managed user when the component mounts
   useEffect(() => {
     const loadUser = async () => {
-      if (user?.isMod) {
+      if (user?.role === 'mod') {
         const assignedUser = await loadAssignedUser(user.id);
         setManagedUser(assignedUser);
       }
@@ -47,7 +47,7 @@ export default function DashboardLayout() {
     }
   };
 
-  if (!user?.isMod) {
+  if (user?.role !== 'mod') {
     return null;
   }
 

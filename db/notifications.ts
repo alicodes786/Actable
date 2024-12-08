@@ -5,7 +5,7 @@ interface Notification {
 }
 
 export const createNotification = async (
-  userId: string, 
+  uuid: string, 
   deadlineId: number, 
   message: string, 
   scheduledFor: Date
@@ -14,7 +14,7 @@ export const createNotification = async (
     const { error } = await supabase
       .from('notifications')
       .insert({
-        userid: userId,
+        uuid,
         type: 'reminder',
         scheduledfor: scheduledFor.toISOString(),
         message,
@@ -32,12 +32,11 @@ export const createNotification = async (
   }
 };
 
-
-export const fetchNotifications = async (id: number): Promise<Notification[]> => {
+export const fetchNotifications = async (uuid: string): Promise<Notification[]> => {
   const { data, error } = await supabase
     .from('notifications')
     .select('message')
-    .eq('id', id)
+    .eq('uuid', uuid)
 
   if (error) {
     console.error('Error fetching notifications:', error);

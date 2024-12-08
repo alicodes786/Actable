@@ -84,7 +84,7 @@ export async function createNewSubmission(
       .insert({
         deadlineid: deadlineId,
         imageurl: imageUrl,
-        userid: userId,
+        uuid: userId,
         status: 'pending',
         submitteddate: new Date().toISOString()
       })
@@ -137,7 +137,7 @@ async function handleSubmissionApproval(
   deadlineId: string
 ): Promise<void> {
   try {
-    const assignedMod = await getAssignedMod(Number(userId));
+    const assignedMod = await getAssignedMod(userId);
     
     // If no mod is assigned, auto-approve the submission
     if (assignedMod === null) {
@@ -172,7 +172,7 @@ export interface Submission {
   id: number;
   deadlineid: number;
   imageurl: string;
-  userid: string;
+  uuid: string;
   // Status can be pending, approved, or invalid
   status: 'pending' | 'approved' | 'invalid';
   submitteddate: string;
@@ -201,12 +201,12 @@ export async function fetchUnapprovedSubmissions(userId: string): Promise<Deadli
           id,
           deadlineid,
           imageurl,
-          userid,
+          uuid,
           status,
           submitteddate
         )
       `)
-      .eq('userid', userId)
+      .eq('uuid', userId)
       .not('lastsubmissionid', 'is', null)
       .order('submission(submitteddate)', { ascending: false })
       .returns<(Omit<DeadlineWithSubmission, 'submission'> & { submission: Submission })[]>();

@@ -3,23 +3,26 @@ import React, { useEffect, useState } from 'react';
 import { StyleSheet, View, Text, Dimensions } from 'react-native';
 import { fetchDeadlineStats } from '@/db/deadlinesTracker';
 import { LineChart } from 'react-native-chart-kit';
+import { useAuth } from '@/providers/AuthProvider';
 
 const windowWidth = Dimensions.get('window').width;
 const windowHeight = Dimensions.get('window').height;
 
 export default function TrackerScreen() {
+    const { user } = useAuth();
     const [metDeadlinesCount, setMetDeadlinesCount] = useState(0);
     const [missedDeadlinesCount, setMissedDeadlinesCount] = useState(0);
   
     useEffect(() => {
       const getDeadlineStats = async () => {
-        const { metCount, missedCount } = await fetchDeadlineStats();
+        if (!user) return;
+        const { metCount, missedCount } = await fetchDeadlineStats(user.id);
         setMetDeadlinesCount(metCount);
         setMissedDeadlinesCount(missedCount);
       };
   
       getDeadlineStats();
-    }, []);
+    }, [user]);
 
     const blueGradient: [string, string, ...string[]] = ['#66b3ff', '#007FFF', '#0066cc'];
     const blackGradient: [string, string, ...string[]] = ['#333333', '#111111', '#000000'];    
