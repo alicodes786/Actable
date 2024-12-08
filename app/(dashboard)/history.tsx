@@ -34,7 +34,7 @@ export default function HistoryScreen() {
 
       const fetchDeadlines = async () => {
         try {
-          const userId = user?.isMod ? String(assignedUser?.id) : String(user?.id);
+          const userId = user?.role === 'mod' ? String(assignedUser?.id) : String(user?.id);
           if (!userId) return;
 
           const fetchedDeadlines = await getDeadlines(userId);

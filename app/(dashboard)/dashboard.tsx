@@ -19,7 +19,7 @@ const STATUS_TEXT_COLORS = {
 };
 
 export default function Dashboard() {
-  const { user, logout, assignedUser } = useAuth();
+  const { user, assignedUser } = useAuth();
   const [submissions, setSubmissions] = useState<DeadlineWithSubmission[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -38,11 +38,11 @@ export default function Dashboard() {
       let isActive = true;
       const refreshInterval = setInterval(() => {
         if (isActive) {
-          loadSubmissions();
-        }
-      }, 5000);
+            loadSubmissions();
+          }
+        }, 5000);
 
-      loadSubmissions();
+        loadSubmissions();
 
       return () => {
         isActive = false;
@@ -56,6 +56,7 @@ export default function Dashboard() {
     
     try {
       const data = await fetchUnapprovedSubmissions(String(assignedUser.id));
+      console.log('Fetched submissions:', data);
       setSubmissions(data);
     } catch (error) {
       Toast.show({
