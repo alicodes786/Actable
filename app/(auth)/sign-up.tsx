@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { Separator, Text, Button, Input, YStack, View } from 'tamagui';
-import Toast from 'react-native-toast-message';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, Keyboard, TouchableWithoutFeedback } from 'react-native';
 import { router } from "expo-router";
 import { supabase } from "@/lib/db";
 
@@ -23,61 +22,52 @@ export default function SignUp() {
   };
 
   const handleSignUp = async () => {
-    setIsLoading(true);
-
     try {
+      Keyboard.dismiss();  // Dismiss keyboard before processing
+      setIsLoading(true);
+
       // Check for empty fields
       if (!username || !email || !password || !repeatPassword) {
-        Toast.show({
-          type: 'error',
-          text1: 'Missing Information',
-          text2: 'Please fill in all fields',
-          position: 'bottom',
-        });
+        Alert.alert(
+          'Missing Information',
+          'Please fill in all fields'
+        );
         return;
       }
 
       // Username validation
       if (username.length < 3) {
-        Toast.show({
-          type: 'error',
-          text1: 'Invalid Username',
-          text2: 'Username must be at least 3 characters long',
-          position: 'bottom',
-        });
+        Alert.alert(
+          'Invalid Username',
+          'Username must be at least 3 characters long'
+        );
         return;
       }
 
       // Email validation
       if (!validateEmail(email)) {
-        Toast.show({
-          type: 'error',
-          text1: 'Invalid Email',
-          text2: 'Please enter a valid email address',
-          position: 'bottom',
-        });
+        Alert.alert(
+          'Invalid Email',
+          'Please enter a valid email address'
+        );
         return;
       }
 
       // Password validation
       if (!validatePassword(password)) {
-        Toast.show({
-          type: 'error',
-          text1: 'Weak Password',
-          text2: 'Password must be at least 8 characters long and contain uppercase, lowercase, and numbers',
-          position: 'bottom',
-        });
+        Alert.alert(
+          'Weak Password',
+          'Password must be at least 8 characters long and contain uppercase, lowercase, and numbers'
+        );
         return;
       }
 
       // Password match validation
       if (password !== repeatPassword) {
-        Toast.show({
-          type: 'error',
-          text1: 'Password Mismatch',
-          text2: 'Passwords do not match. Please try again.',
-          position: 'bottom',
-        });
+        Alert.alert(
+          'Password Mismatch',
+          'Passwords do not match. Please try again.'
+        );
         return;
       }
 
@@ -105,115 +95,100 @@ export default function SignUp() {
 
       if (profileError) throw profileError;
 
-      Toast.show({
-        type: 'success',
-        text1: 'Registration Successful',
-        text2: 'Redirecting to sign in...',
-        position: 'bottom',
-        visibilityTime: 2000,
-      });
-      
-      // Delay redirect to allow toast to be visible
-      setTimeout(() => {
-        router.replace("/(auth)/sign-in");
-      }, 2000);
+      Alert.alert(
+        'Success',
+        'Registration successful',
+        [
+          {
+            text: 'OK',
+            onPress: () => router.replace("/(auth)/sign-in")
+          }
+        ]
+      );
 
     } catch (error: any) {
-      Toast.show({
-        type: 'error',
-        text1: 'Registration Failed',
-        text2: error.message || 'An error occurred. Please try again.',
-        position: 'bottom',
-      });
+      Alert.alert(
+        'Registration Failed',
+        error.message || 'An error occurred. Please try again.'
+      );
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <YStack
-        justifyContent="center"
-        alignItems="stretch"
-        padding={20}
-        width="100%"
-      >
-        <Text fontSize={24} marginBottom={64} fontWeight="bold" textAlign="center">
-          Sign Up
-        </Text>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <ScrollView className="flex-1 bg-white">
+        <View className="flex-1 justify-center items-center p-5">
+          <View className="w-full max-w-sm">
+            <Text className="text-2xl font-bold text-center mb-16">
+              Sign Up
+            </Text>
 
-        <Input
-          placeholder="Username"
-          value={username}
-          onChangeText={setUsername}
-          marginBottom={12}
-          fontSize={16}
-          width="100%"
-          disabled={isLoading}
-        />
+            <TextInput
+              placeholder="Username"
+              value={username}
+              onChangeText={setUsername}
+              className="w-full mb-3 p-4 border border-gray-300 rounded-lg text-base"
+              editable={!isLoading}
+            />
 
-        <Input
-          placeholder="Email Address"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          marginBottom={12}
-          fontSize={16}
-          width="100%"
-          disabled={isLoading}
-          autoCapitalize="none"
-        />
+            <TextInput
+              placeholder="Email Address"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              className="w-full mb-3 p-4 border border-gray-300 rounded-lg text-base"
+              editable={!isLoading}
+              autoCapitalize="none"
+            />
 
-        <Input
-          placeholder="Password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          marginBottom={12}
-          fontSize={16}
-          width="100%"
-          disabled={isLoading}
-        />
+            <TextInput
+              placeholder="Password"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              className="w-full mb-3 p-4 border border-gray-300 rounded-lg text-base"
+              editable={!isLoading}
+            />
 
-        <Input
-          placeholder="Repeat Password"
-          value={repeatPassword}
-          onChangeText={setRepeatPassword}
-          secureTextEntry
-          marginBottom={32}
-          fontSize={16}
-          width="100%"
-          disabled={isLoading}
-        />
+            <TextInput
+              placeholder="Repeat Password"
+              value={repeatPassword}
+              onChangeText={setRepeatPassword}
+              secureTextEntry
+              className="w-full mb-8 p-4 border border-gray-300 rounded-lg text-base"
+              editable={!isLoading}
+            />
 
-        <Button
-          onPress={handleSignUp}
-          width="100%"
-          marginBottom={12}
-          backgroundColor="#443399"
-          color="#fff"
-          disabled={isLoading}
-        >
-          {isLoading ? 'Signing up...' : 'Sign Up'}
-        </Button>
+            <TouchableOpacity
+              onPress={handleSignUp}
+              disabled={isLoading}
+              className="w-full mb-3 p-4 bg-[#443399] rounded-lg"
+            >
+              <Text className="text-white text-center text-base font-medium">
+                {isLoading ? 'Signing up...' : 'Sign Up'}
+              </Text>
+            </TouchableOpacity>
 
-        <Separator alignSelf="stretch" marginTop={12} marginBottom={12} />
+            <View className="w-full my-3 h-[1px] bg-gray-200" />
 
-        <Text textAlign="center" width="100%">
-          Already have an account?
-        </Text>
+            <Text className="text-center mb-2">
+              Already have an account?
+            </Text>
 
-        <Button
-          onPress={() => router.push("/(auth)/sign-in")}
-          width="100%"
-          marginTop={8}
-          disabled={isLoading}
-        >
-          Sign In
-        </Button>
-      </YStack>
-
-      <Toast />
-    </View>
+            <TouchableOpacity
+              onPress={() => router.push("/(auth)/sign-in")}
+              disabled={isLoading}
+              className="w-full p-4"
+            >
+              <Text className="text-center text-base font-medium">
+                Sign In
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </ScrollView>
+    </TouchableWithoutFeedback>
   );
 }

@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Separator, Text, Button, Input, YStack, View } from 'tamagui';
-import Toast from 'react-native-toast-message';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, Keyboard, TouchableWithoutFeedback } from 'react-native';
 import { router, Href } from "expo-router";
 import { useAuth } from '@/providers/AuthProvider';
 import { supabase } from '@/lib/db';
@@ -35,12 +34,10 @@ export default function SignIn() {
 
   const validateInputs = () => {
     if (!email.trim() || !password.trim()) {
-      Toast.show({
-        type: 'error',
-        text1: 'Missing Information',
-        text2: 'Please enter both email and password',
-        position: 'bottom',
-      });
+      Alert.alert(
+        'Missing Information',
+        'Please enter both email and password'
+      );
       return false;
     }
     return true;
@@ -52,6 +49,7 @@ export default function SignIn() {
         return;
       }
 
+      Keyboard.dismiss();
       setIsLoading(true);
 
       // Sign in with Supabase Auth
@@ -74,25 +72,16 @@ export default function SignIn() {
       // Login with AuthProvider
       await login({
         id: authData.user.id,
-        email: authData.user.email || '', // Add fallback empty string
+        email: authData.user.email || '',
         role: profile.role,
         name: profile.name
       });
 
-      Toast.show({
-        type: 'success',
-        text1: 'Login Successful',
-        text2: 'Redirecting to your dashboard...',
-        position: 'bottom',
-        visibilityTime: 2000,
-      });
     } catch (error: any) {
-      Toast.show({
-        type: 'error',
-        text1: 'Login Failed',
-        text2: error.message || 'Unable to sign in. Please try again.',
-        position: 'bottom',
-      });
+      Alert.alert(
+        'Login Failed',
+        error.message || 'Unable to sign in. Please try again.'
+      );
     } finally {
       setIsLoading(false);
     }
@@ -100,106 +89,94 @@ export default function SignIn() {
 
   const handleGoogleSignIn = async () => {
     try {
+      Keyboard.dismiss();
       setIsLoading(true);
+      
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
       });
 
       if (error) throw error;
 
-      Toast.show({
-        type: 'success',
-        text1: 'Google Sign In',
-        text2: 'Successfully signed in with Google',
-        position: 'bottom',
-      });
     } catch (error: any) {
-      Toast.show({
-        type: 'error',
-        text1: 'Google Sign In Failed',
-        text2: error.message || 'Unable to sign in with Google. Please try again.',
-        position: 'bottom',
-      });
+      Alert.alert(
+        'Google Sign In Failed',
+        error.message || 'Unable to sign in with Google. Please try again.'
+      );
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <YStack 
-        justifyContent="center" 
-        alignItems="stretch"
-        padding={20}
-        width="100%"
-      >
-        <Text fontSize={24} marginBottom={64} fontWeight="bold" textAlign="center">
-          Sign In
-        </Text>
-        
-        <Input
-          placeholder="Email" 
-          value={email}
-          onChangeText={setEmail}
-          marginBottom={12}
-          fontSize={16}
-          width="100%"
-          disabled={isLoading}
-          autoCapitalize="none"
-          autoCorrect={false}
-          keyboardType="email-address"
-        />
-        
-        <Input 
-          placeholder="Password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          marginBottom={32}
-          fontSize={16}
-          width="100%"
-          disabled={isLoading}
-          autoCapitalize="none"
-          autoCorrect={false}
-        />
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <ScrollView className="flex-1 bg-white">
+        <View className="flex-1 justify-center items-center p-5">
+          <View className="w-full max-w-sm">
+            <Text className="text-2xl font-bold text-center mb-16">
+              Sign In
+            </Text>
+            
+            <TextInput
+              placeholder="Email"
+              value={email}
+              onChangeText={setEmail}
+              className="w-full mb-3 p-4 border border-gray-300 rounded-lg text-base"
+              editable={!isLoading}
+              autoCapitalize="none"
+              autoCorrect={false}
+              keyboardType="email-address"
+            />
+            
+            <TextInput
+              placeholder="Password"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              className="w-full mb-8 p-4 border border-gray-300 rounded-lg text-base"
+              editable={!isLoading}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
 
-        <Button 
-          onPress={handleSignIn}
-          width="100%"
-          marginBottom={12}
-          backgroundColor="#443399"
-          color="#fff"
-          disabled={isLoading}
-        >
-          {isLoading ? 'Signing in...' : 'Sign In'}
-        </Button>
+            <TouchableOpacity 
+              onPress={handleSignIn}
+              disabled={isLoading}
+              className="w-full mb-3 p-4 bg-[#443399] rounded-lg"
+            >
+              <Text className="text-white text-center text-base font-medium">
+                {isLoading ? 'Signing in...' : 'Sign In'}
+              </Text>
+            </TouchableOpacity>
 
-        <Button 
-          onPress={handleGoogleSignIn}
-          width="100%"
-          disabled={isLoading}
-        >
-          Sign in with Google
-        </Button>
+            <TouchableOpacity 
+              onPress={handleGoogleSignIn}
+              disabled={isLoading}
+              className="w-full mb-3 p-4 bg-white border border-gray-300 rounded-lg"
+            >
+              <Text className="text-center text-base font-medium">
+                Sign in with Google
+              </Text>
+            </TouchableOpacity>
 
-        <Separator alignSelf="stretch" marginTop={12} marginBottom={12} />
+            <View className="w-full my-3 h-[1px] bg-gray-200" />
 
-        <Text textAlign="center" width="100%" marginBottom={8}>
-          Don't have an account?
-        </Text>
+            <Text className="text-center mb-2">
+              Don't have an account?
+            </Text>
 
-        <Button 
-          onPress={() => router.push(signUpPath)}
-          width="100%"
-          backgroundColor="transparent"
-          color="#443399"
-          disabled={isLoading}
-        >
-          Create an Account
-        </Button>
-      </YStack>
-
-      <Toast />
-    </View>
+            <TouchableOpacity 
+              onPress={() => router.push(signUpPath)}
+              disabled={isLoading}
+              className="w-full p-4"
+            >
+              <Text className="text-[#443399] text-center text-base font-medium">
+                Create an Account
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </ScrollView>
+    </TouchableWithoutFeedback>
   );
 }
