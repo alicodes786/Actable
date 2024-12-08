@@ -12,7 +12,7 @@ export async function getAssignedMod(uuid: string): Promise<ModUser | null> {
   const { data: relationships, error: relError } = await supabase
     .from('mod_user_relationships')
     .select('mod_uuid')
-    .eq('uuid', uuid);
+    .eq('user_uuid', uuid);
 
   // If no relationship found or error, return null
   if (relError || !relationships || relationships.length === 0) {
@@ -23,8 +23,8 @@ export async function getAssignedMod(uuid: string): Promise<ModUser | null> {
   // Then get the mod's user details
   const { data: modUser, error: userError } = await supabase
     .from('user_profiles')
-    .select('id, email, name, role')
-    .eq('uuid', relationships[0].mod_uuid)
+    .select('id, name, role')
+    .eq('id', relationships[0].mod_uuid)
     .single();
 
   if (userError || !modUser) {
