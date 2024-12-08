@@ -54,57 +54,32 @@ export const getSingleDeadline = async (id: string): Promise<Ideadline | null> =
   return deadline || null; 
 };
 
-export const addDeadline = async (
-  uuid: string,
+export async function addDeadline(
+  userId: string,
   name: string,
   description: string,
   date: Date
-): Promise<DeadlineResult> => {
+): Promise<{ success: boolean; error?: string }> {
   try {
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('deadlines')
       .insert({
+        uuid: userId,
         name,
         description,
-        date: date.toISOString(),
-        uuid,
-        lastsubmissionid: null,
-      })
-      .select()
-      .single();
+        date: date.toISOString(), // This will store the date in UTC format
+      });
 
-    if (error || !data) {
-      throw new Error(error?.message || 'Failed to retrieve newly added deadline.');
-    }
-
-    try {
-      // Only schedule notifications after successful DB operation
-      const notificationsEnabled = await getItemAsync('notificationsEnabled');
-      const notificationTime = await getItemAsync('notificationTime');
-      const notificationTimeValue = notificationTime ? JSON.parse(notificationTime) : 30;
-
-      if (notificationsEnabled === 'true') {
-        await scheduleDeadlineNotification(
-          uuid,
-          data.id,
-          name,
-          date,
-          notificationTimeValue
-        );
-      }
-    } catch (notificationError) {
-      console.warn('Failed to schedule notification:', notificationError);
-    }
-
+    if (error) throw error;
     return { success: true };
   } catch (error) {
     console.error('Error adding deadline:', error);
-    return {
-      success: false,
-      error: 'Failed to add deadline. Please try again.',
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Unknown error occurred' 
     };
   }
-};
+}
 
 export const updateDeadline = async (
   deadlineId: string,

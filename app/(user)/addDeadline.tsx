@@ -4,6 +4,7 @@ import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { useAuth } from '@/providers/AuthProvider';
 import { addDeadline } from '@/db/deadlines';
 import { useRouter } from 'expo-router';
+import { toUTC } from '@/lib/dateUtils';
 
 export default function AddDeadlineScreen() {
   const { user } = useAuth();
@@ -43,11 +44,13 @@ export default function AddDeadlineScreen() {
     setIsSubmitting(true);
   
     try {
+      const utcDate = toUTC(deadlineDate!);
+      
       const { success, error } = await addDeadline(
         String(user?.id), 
         deadlineName, 
         deadlineDescription, 
-        deadlineDate!
+        utcDate
       );
   
       if (!success) {

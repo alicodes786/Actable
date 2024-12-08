@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import CountDownTimer from '@/components/CountDownTimer';
 import { getAssignedMod } from '@/db/mod';
+import { fromUTC, formatLocalDate } from '@/lib/dateUtils';
 
 // Define categories and their colors
 const CATEGORIES = {
@@ -38,10 +39,16 @@ const CATEGORIES = {
   },
 };
 
-const formatDate = (dateString: string) => {
+const convertUTCToLocal = (dateString: string) => {
   const date = new Date(dateString);
+  // No conversion needed since the date is already in the correct timezone
+  return date;
+};
+
+const formatDate = (dateString: string) => {
+  const localDate = convertUTCToLocal(dateString);
   const now = new Date();
-  const diffTime = Math.abs(now.getTime() - date.getTime());
+  const diffTime = Math.abs(now.getTime() - localDate.getTime());
   const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
   
   // If less than 24 hours ago, show relative time
@@ -56,13 +63,13 @@ const formatDate = (dateString: string) => {
   
   // If within 7 days, show day of week
   if (diffDays < 7) {
-    return date.toLocaleDateString('en-US', { weekday: 'long' }) + 
+    return localDate.toLocaleDateString('en-US', { weekday: 'long' }) + 
            ' at ' + 
-           date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+           localDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
   }
   
   // Otherwise show date
-  return date.toLocaleDateString('en-US', {
+  return localDate.toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
     hour: 'numeric',
@@ -120,13 +127,13 @@ export default function ViewDeadlinesScreen() {
   const filterDeadlines = () => {
     if (!deadlines) return [];
     
-    const now = Date.now();
+    const now = new Date();
     let filteredDeadlines: Ideadline[] = [];
     
     switch (selectedCategory) {
       case 'UPCOMING':
         filteredDeadlines = deadlines.filter(deadline => {
-          const deadlineTime = new Date(deadline.date).getTime();
+          const deadlineTime = new Date(deadline.date);
           return deadlineTime > now && !deadline.completed;
         });
         break;
@@ -155,14 +162,14 @@ export default function ViewDeadlinesScreen() {
       
       case 'MISSED':
         filteredDeadlines = deadlines.filter(deadline => {
-          const deadlineTime = new Date(deadline.date).getTime();
+          const deadlineTime = new Date(deadline.date);
           return deadlineTime < now && !deadline.submissions?.length;
         });
         break;
       
       case 'LATE':
         filteredDeadlines = deadlines.filter(deadline => {
-          const deadlineTime = new Date(deadline.date).getTime();
+          const deadlineTime = new Date(deadline.date);
           return deadlineTime < now && deadline.submissions?.length && !deadline.completed;
         });
         break;
@@ -199,7 +206,7 @@ export default function ViewDeadlinesScreen() {
     };
     
     deadlines.forEach(deadline => {
-      const deadlineTime = new Date(deadline.date).getTime();
+      const localDeadlineTime = convertUTCToLocal(deadline.date).getTime();
       
       if (deadline.completed) {
         counts.COMPLETED++;
@@ -211,7 +218,7 @@ export default function ViewDeadlinesScreen() {
         sub.id === deadline.lastsubmissionid && sub.status === 'invalid'
       )) {
         counts.INVALID++;
-      } else if (deadlineTime > now) {
+      } else if (localDeadlineTime > now) {
         counts.UPCOMING++;
       } else if (!deadline.submissions?.length) {
         counts.MISSED++;

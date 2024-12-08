@@ -1,60 +1,38 @@
-import React, { useEffect, useState } from 'react';
-import { Text, View, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { Text } from 'react-native';
 
-type TimeLeft = {
-  days: number;
-  hours: number;
-  minutes: number;
-  seconds: number;
-};
-
-type CountdownTimerProps = {
+interface CountDownTimerProps {
   deadlineDate: Date;
-  textColour?: string;
-};
+}
 
-export default function CountDownTimer({ deadlineDate, textColour }: CountdownTimerProps) {
-  const [timeLeft, setTimeLeft] = useState<TimeLeft>(timeRemaining(deadlineDate));
-
-  const styles = StyleSheet.create({
-    taskText: {
-      color: textColour ? textColour : 'white',
-      fontSize: 25,
-      fontWeight: '500',
-    },
-  });
+const CountDownTimer: React.FC<CountDownTimerProps> = ({ deadlineDate }) => {
+  const [timeLeft, setTimeLeft] = useState<string>('');
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setTimeLeft(timeRemaining(deadlineDate));
+    const timer = setInterval(() => {
+      const now = new Date();
+      const deadline = new Date(deadlineDate);
+      const distance = deadline.getTime() - now.getTime();
+
+      const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+      if (distance < 0) {
+        setTimeLeft('EXPIRED');
+        clearInterval(timer);
+      } else {
+        setTimeLeft(
+          `${days}d ${hours}h ${minutes}m ${seconds}s`
+        );
+      }
     }, 1000);
 
-    return () => clearInterval(interval);
+    return () => clearInterval(timer);
   }, [deadlineDate]);
 
-  function timeRemaining(deadline: Date): TimeLeft {
-    const total = new Date(deadline).getTime() - new Date().getTime();
-    if (total <= 0) return { days: 0, hours: 0, minutes: 0, seconds: 0 }; // Ensure timeLeft stops at 0
-    
-    const days = Math.floor(total / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((total / (1000 * 60 * 60)) % 24);
-    const minutes = Math.floor((total / (1000 * 60)) % 60);
-    const seconds = Math.floor((total / 1000) % 60);
-    return { days, hours, minutes, seconds };
-}
+  return <Text>{timeLeft}</Text>;
+};
 
-  // Conditionally render the time parts
-  const timeParts: string[] = [];
-  if (timeLeft.days > 0) timeParts.push(`${timeLeft.days}d`);
-  if (timeLeft.hours > 0 || timeLeft.days > 0) timeParts.push(`${timeLeft.hours}h`);
-  if (timeLeft.minutes > 0 || timeLeft.hours > 0 || timeLeft.days > 0) timeParts.push(`${timeLeft.minutes}m`);
-  if (timeLeft.seconds >= 0) timeParts.push(`${timeLeft.seconds}s`);
-
-  return (
-    <View>
-      <Text style={styles.taskText}>
-        {timeParts.join(' ')}
-      </Text>
-    </View>
-  );
-}
+export default CountDownTimer;
