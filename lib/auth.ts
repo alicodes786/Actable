@@ -5,7 +5,7 @@ import { router } from 'expo-router';
 type LoginFunction = (user: {
   id: string;
   email: string;
-  role: "user" | "mod" | "admin";
+  role: string;
   name: string;
 }) => Promise<void>;
 
@@ -213,4 +213,4 @@ const validateEmail = (email: string) => {
 const validatePassword = (password: string) => {
   const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
   return passwordRegex.test(password);
-}; 
+};
