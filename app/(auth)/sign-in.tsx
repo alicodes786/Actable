@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { Separator, Text, Button, Input, YStack, View } from 'tamagui';
 import Toast from 'react-native-toast-message';
-import { authenticateUser } from '@/db/signin';
 import { router, Href } from "expo-router";
 import { useAuth } from '@/providers/AuthProvider';
+import { supabase } from '@/lib/db';
 
 export default function SignIn() {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const signUpPath: Href = "/(auth)/sign-up";
@@ -21,7 +21,7 @@ export default function SignIn() {
     if (!isReady) return;
     
     if (user) {
-      const route = user.isMod ? '/(dashboard)/dashboard' : '/(user)';
+      const route = user.role === 'mod' ? '/(dashboard)/dashboard' : '/(user)';
       router.replace(route);
     }
   }, [user, isReady]);
@@ -34,11 +34,11 @@ export default function SignIn() {
   }, []);
 
   const validateInputs = () => {
-    if (!username.trim() || !password.trim()) {
+    if (!email.trim() || !password.trim()) {
       Toast.show({
         type: 'error',
         text1: 'Missing Information',
-        text2: 'Please enter both username and password',
+        text2: 'Please enter both email and password',
         position: 'bottom',
       });
       return false;
@@ -54,34 +54,43 @@ export default function SignIn() {
 
       setIsLoading(true);
 
-      const userAuth = await authenticateUser(username, password);
+      // Sign in with Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-      if (userAuth.success && userAuth.user) {
-        await login({
-          id: userAuth.user.id,
-          isMod: userAuth.user.isMod
-        });
+      if (authError) throw authError;
 
-        Toast.show({
-          type: 'success',
-          text1: 'Login Successful',
-          text2: 'Redirecting to your dashboard...',
-          position: 'bottom',
-          visibilityTime: 2000,
-        });
-      } else {
-        Toast.show({
-          type: 'error',
-          text1: 'Login Failed',
-          text2: userAuth.error,
-          position: 'bottom',
-        });
-      }
-    } catch (error) {
+      // Fetch user profile
+      const { data: profile, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', authData.user.id)
+        .single();
+
+      if (profileError) throw profileError;
+
+      // Login with AuthProvider
+      await login({
+        id: authData.user.id,
+        email: authData.user.email || '', // Add fallback empty string
+        role: profile.role,
+        name: profile.name
+      });
+
+      Toast.show({
+        type: 'success',
+        text1: 'Login Successful',
+        text2: 'Redirecting to your dashboard...',
+        position: 'bottom',
+        visibilityTime: 2000,
+      });
+    } catch (error: any) {
       Toast.show({
         type: 'error',
-        text1: 'Connection Error',
-        text2: 'Unable to connect to the server. Please try again.',
+        text1: 'Login Failed',
+        text2: error.message || 'Unable to sign in. Please try again.',
         position: 'bottom',
       });
     } finally {
@@ -92,17 +101,23 @@ export default function SignIn() {
   const handleGoogleSignIn = async () => {
     try {
       setIsLoading(true);
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+      });
+
+      if (error) throw error;
+
       Toast.show({
-        type: 'info',
+        type: 'success',
         text1: 'Google Sign In',
-        text2: 'This feature is not yet implemented',
+        text2: 'Successfully signed in with Google',
         position: 'bottom',
       });
-    } catch (error) {
+    } catch (error: any) {
       Toast.show({
         type: 'error',
         text1: 'Google Sign In Failed',
-        text2: 'Unable to sign in with Google. Please try again.',
+        text2: error.message || 'Unable to sign in with Google. Please try again.',
         position: 'bottom',
       });
     } finally {
@@ -123,15 +138,16 @@ export default function SignIn() {
         </Text>
         
         <Input
-          placeholder="Username" 
-          value={username}
-          onChangeText={setUsername}
+          placeholder="Email" 
+          value={email}
+          onChangeText={setEmail}
           marginBottom={12}
           fontSize={16}
           width="100%"
           disabled={isLoading}
           autoCapitalize="none"
           autoCorrect={false}
+          keyboardType="email-address"
         />
         
         <Input 

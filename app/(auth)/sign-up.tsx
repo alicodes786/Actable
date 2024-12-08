@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Separator, Text, Button, Input, YStack, View } from 'tamagui';
 import Toast from 'react-native-toast-message';
 import { router } from "expo-router";
-import { createUser } from "@/db/signup";
+import { supabase } from "@/lib/db";
 
 export default function SignUp() {
   const [username, setUsername] = useState('');
@@ -81,34 +81,48 @@ export default function SignUp() {
         return;
       }
 
-      const isRegistered = await createUser(username, password, email);
+      // 1. Create auth user
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name: username
+          }
+        }
+      });
 
-      if (isRegistered) {
-        Toast.show({
-          type: 'success',
-          text1: 'Registration Successful',
-          text2: 'Redirecting to sign-in...',
-          position: 'bottom',
-          visibilityTime: 2000,
+      if (authError) throw authError;
+
+      // 2. Create user profile
+      const { error: profileError } = await supabase
+        .from('user_profiles')
+        .insert({
+          id: authData.user!.id,
+          name: username,
+          role: 'user'
         });
-        
-        // Delay redirect to allow toast to be visible
-        setTimeout(() => {
-          router.replace("/(auth)/sign-in");
-        }, 2000);
-      } else {
-        Toast.show({
-          type: 'error',
-          text1: 'Registration Failed',
-          text2: 'An error occurred. Please try again.',
-          position: 'bottom',
-        });
-      }
-    } catch (error) {
+
+      if (profileError) throw profileError;
+
+      Toast.show({
+        type: 'success',
+        text1: 'Registration Successful',
+        text2: 'Redirecting to sign in...',
+        position: 'bottom',
+        visibilityTime: 2000,
+      });
+      
+      // Delay redirect to allow toast to be visible
+      setTimeout(() => {
+        router.replace("/(auth)/sign-in");
+      }, 2000);
+
+    } catch (error: any) {
       Toast.show({
         type: 'error',
-        text1: 'Unexpected Error',
-        text2: 'Something went wrong. Please try again later.',
+        text1: 'Registration Failed',
+        text2: error.message || 'An error occurred. Please try again.',
         position: 'bottom',
       });
     } finally {

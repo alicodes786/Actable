@@ -13,6 +13,6 @@ export default function Index() {
     }
 
     // Redirect based on user's mod status
-    const path: Href = user?.isMod ? '/dashboard' : '/(user)';
+    const path: Href = user?.role === 'mod' ? '/(dashboard)/dashboard' : '/(user)';
     return <Redirect href={path} />;
 }

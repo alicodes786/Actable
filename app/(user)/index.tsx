@@ -9,12 +9,12 @@ export default function HomeScreen() {
   useEffect(() => {
     if (!user) {
       router.replace('/(auth)/sign-in');
-    } else if (user.isMod) {
+    } else if (user.role === 'mod') {
       // Redirect moderators to dashboard if they somehow end up here
       router.replace('/(dashboard)/dashboard');
     }
   }, [user]);
 
   // Only render Home component for non-moderator users
-  return user && !user.isMod ? <Home /> : null;
+  return user && user.role !== 'mod' ? <Home /> : null;
 }
