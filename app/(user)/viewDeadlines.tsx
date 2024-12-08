@@ -89,48 +89,68 @@ export default function ViewDeadlinesScreen() {
     if (!deadlines) return [];
     
     const now = Date.now();
+    let filteredDeadlines: Ideadline[] = [];
     
     switch (selectedCategory) {
       case 'UPCOMING':
-        return deadlines.filter(deadline => {
+        filteredDeadlines = deadlines.filter(deadline => {
           const deadlineTime = new Date(deadline.date).getTime();
           return deadlineTime > now && !deadline.completed;
         });
+        break;
       
       case 'PENDING':
         if (!hasMod) return [];
-        return deadlines.filter(deadline => 
+        filteredDeadlines = deadlines.filter(deadline => 
           deadline.submissions?.some(sub => 
             sub.id === deadline.lastsubmissionid && sub.status === 'pending'
           )
         );
+        break;
       
       case 'INVALID':
         if (!hasMod) return [];
-        return deadlines.filter(deadline => 
+        filteredDeadlines = deadlines.filter(deadline => 
           deadline.submissions?.some(sub => 
             sub.id === deadline.lastsubmissionid && sub.status === 'invalid'
           )
         );
+        break;
       
       case 'COMPLETED':
-        return deadlines.filter(deadline => deadline.completed);
+        filteredDeadlines = deadlines.filter(deadline => deadline.completed);
+        break;
       
       case 'MISSED':
-        return deadlines.filter(deadline => {
+        filteredDeadlines = deadlines.filter(deadline => {
           const deadlineTime = new Date(deadline.date).getTime();
           return deadlineTime < now && !deadline.submissions?.length;
         });
+        break;
       
       case 'LATE':
-        return deadlines.filter(deadline => {
+        filteredDeadlines = deadlines.filter(deadline => {
           const deadlineTime = new Date(deadline.date).getTime();
           return deadlineTime < now && deadline.submissions?.length && !deadline.completed;
         });
+        break;
       
       default:
         return [];
     }
+
+    // Sort deadlines by date
+    return filteredDeadlines.sort((a, b) => {
+      const dateA = new Date(a.date).getTime();
+      const dateB = new Date(b.date).getTime();
+      
+      // For upcoming deadlines, sort by closest first
+      if (selectedCategory === 'UPCOMING') {
+        return dateA - dateB;
+      }
+      // For all other categories, sort by most recent first
+      return dateB - dateA;
+    });
   };
 
   const getCategoryCounts = useCallback(() => {
