@@ -67,7 +67,7 @@ export async function addDeadline(
         uuid: userId,
         name,
         description,
-        date: date.toISOString(), // This will store the date in UTC format
+        date: date.toISOString()
       });
 
     if (error) throw error;

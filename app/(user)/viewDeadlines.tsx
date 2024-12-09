@@ -39,10 +39,8 @@ const CATEGORIES = {
   },
 };
 
-const convertUTCToLocal = (dateString: string) => {
-  const date = new Date(dateString);
-  // No conversion needed since the date is already in the correct timezone
-  return date;
+const convertUTCToLocal = (dateString: string, userTimezone: string) => {
+  return fromUTC(dateString, userTimezone);
 };
 
 const formatDate = (dateString: string) => {
@@ -81,7 +79,7 @@ export default function ViewDeadlinesScreen() {
   const [deadlines, setDeadlines] = useState<Ideadline[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('UPCOMING');
   const [hasMod, setHasMod] = useState<boolean | null>(null);
-  const { user } = useAuth();
+  const { user, userTimezone } = useAuth();
 
   useFocusEffect(
     useCallback(() => {
@@ -133,8 +131,8 @@ export default function ViewDeadlinesScreen() {
     switch (selectedCategory) {
       case 'UPCOMING':
         filteredDeadlines = deadlines.filter(deadline => {
-          const deadlineTime = new Date(deadline.date);
-          return deadlineTime > now && !deadline.completed;
+          const localDeadlineTime = convertUTCToLocal(deadline.date, userTimezone);
+          return localDeadlineTime > now && !deadline.completed;
         });
         break;
       
@@ -162,15 +160,15 @@ export default function ViewDeadlinesScreen() {
       
       case 'MISSED':
         filteredDeadlines = deadlines.filter(deadline => {
-          const deadlineTime = new Date(deadline.date);
-          return deadlineTime < now && !deadline.submissions?.length;
+          const localDeadlineTime = convertUTCToLocal(deadline.date, userTimezone);
+          return localDeadlineTime < now && !deadline.submissions?.length;
         });
         break;
       
       case 'LATE':
         filteredDeadlines = deadlines.filter(deadline => {
-          const deadlineTime = new Date(deadline.date);
-          return deadlineTime < now && deadline.submissions?.length && !deadline.completed;
+          const localDeadlineTime = convertUTCToLocal(deadline.date, userTimezone);
+          return localDeadlineTime < now && deadline.submissions?.length && !deadline.completed;
         });
         break;
       
@@ -206,7 +204,7 @@ export default function ViewDeadlinesScreen() {
     };
     
     deadlines.forEach(deadline => {
-      const localDeadlineTime = convertUTCToLocal(deadline.date).getTime();
+      const localDeadlineTime = convertUTCToLocal(deadline.date, userTimezone).getTime();
       
       if (deadline.completed) {
         counts.COMPLETED++;
@@ -228,7 +226,7 @@ export default function ViewDeadlinesScreen() {
     });
     
     return counts;
-  }, [deadlines, hasMod]);
+  }, [deadlines, hasMod, userTimezone]);
 
   return (
     <View className="flex-1 bg-white p-4">
