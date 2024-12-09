@@ -17,6 +17,10 @@ const CATEGORIES = {
     label: 'Upcoming',
     colors: ['#66b3ff', '#007FFF', '#0066cc'],
   },
+  LATE: {
+    label: 'Late',
+    colors: ['#F97316', '#EA580C', '#C2410C'],
+  },
   PENDING: {
     label: 'Pending',
     colors: ['#F59E0B', '#D97706', '#B45309'],
@@ -33,16 +37,10 @@ const CATEGORIES = {
     label: 'Missed',
     colors: ['#EF4444', '#DC2626', '#B91C1C'],
   },
-  LATE: {
-    label: 'Late',
-    colors: ['#F97316', '#EA580C', '#C2410C'],
-  },
 };
 
-const convertUTCToLocal = (dateString: string) => {
-  const date = new Date(dateString);
-  // No conversion needed since the date is already in the correct timezone
-  return date;
+const convertUTCToLocal = (dateString: string, userTimezone: string) => {
+  return fromUTC(dateString, userTimezone);
 };
 
 const formatDate = (dateString: string) => {
@@ -81,7 +79,7 @@ export default function ViewDeadlinesScreen() {
   const [deadlines, setDeadlines] = useState<Ideadline[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('UPCOMING');
   const [hasMod, setHasMod] = useState<boolean | null>(null);
-  const { user } = useAuth();
+  const { user, userTimezone } = useAuth();
 
   useFocusEffect(
     useCallback(() => {
@@ -133,18 +131,25 @@ export default function ViewDeadlinesScreen() {
     switch (selectedCategory) {
       case 'UPCOMING':
         filteredDeadlines = deadlines.filter(deadline => {
-          const deadlineTime = new Date(deadline.date);
-          return deadlineTime > now && !deadline.completed;
+          const localDeadlineTime = convertUTCToLocal(deadline.date, userTimezone);
+          return localDeadlineTime > now && !deadline.completed;
         });
         break;
       
       case 'PENDING':
         if (!hasMod) return [];
-        filteredDeadlines = deadlines.filter(deadline => 
-          deadline.submissions?.some(sub => 
+        filteredDeadlines = deadlines.filter(deadline => {
+          const submission = deadline.submissions?.[0];
+          if (submission) {
+            const submittedDate = new Date(submission.submitteddate);
+            const deadlineDate = new Date(deadline.date);
+            if (submittedDate > deadlineDate) return false;
+          }
+          
+          return deadline.submissions?.some(sub => 
             sub.id === deadline.lastsubmissionid && sub.status === 'pending'
-          )
-        );
+          );
+        });
         break;
       
       case 'INVALID':
@@ -162,15 +167,20 @@ export default function ViewDeadlinesScreen() {
       
       case 'MISSED':
         filteredDeadlines = deadlines.filter(deadline => {
-          const deadlineTime = new Date(deadline.date);
-          return deadlineTime < now && !deadline.submissions?.length;
+          const localDeadlineTime = convertUTCToLocal(deadline.date, userTimezone);
+          return localDeadlineTime < now && !deadline.submissions?.length;
         });
         break;
       
       case 'LATE':
         filteredDeadlines = deadlines.filter(deadline => {
-          const deadlineTime = new Date(deadline.date);
-          return deadlineTime < now && deadline.submissions?.length && !deadline.completed;
+          const submission = deadline.submissions?.[0];
+          if (!submission) return false;
+          
+          const submittedDate = new Date(submission.submitteddate);
+          const deadlineDate = new Date(deadline.date);
+          
+          return submittedDate > deadlineDate;
         });
         break;
       
@@ -195,40 +205,67 @@ export default function ViewDeadlinesScreen() {
   const getCategoryCounts = useCallback(() => {
     if (!deadlines) return {};
     
-    const now = Date.now();
+    const now = new Date();
     const counts = {
       UPCOMING: 0,
+      LATE: 0,
       PENDING: 0,
       INVALID: 0,
       COMPLETED: 0,
       MISSED: 0,
-      LATE: 0
     };
     
     deadlines.forEach(deadline => {
-      const localDeadlineTime = convertUTCToLocal(deadline.date).getTime();
-      
+      // COMPLETED
       if (deadline.completed) {
         counts.COMPLETED++;
-      } else if (hasMod && deadline.submissions?.some(sub => 
+        return;
+      }
+
+      const localDeadlineTime = convertUTCToLocal(deadline.date, userTimezone);
+      
+      // LATE
+      const submission = deadline.submissions?.[0];
+      if (submission) {
+        const submittedDate = new Date(submission.submitteddate);
+        const deadlineDate = new Date(deadline.date);
+        if (submittedDate > deadlineDate) {
+          counts.LATE++;
+          return;
+        }
+      }
+
+      // PENDING
+      if (hasMod && deadline.submissions?.some(sub => 
         sub.id === deadline.lastsubmissionid && sub.status === 'pending'
       )) {
         counts.PENDING++;
-      } else if (hasMod && deadline.submissions?.some(sub => 
+        return;
+      }
+
+      // INVALID
+      if (hasMod && deadline.submissions?.some(sub => 
         sub.id === deadline.lastsubmissionid && sub.status === 'invalid'
       )) {
         counts.INVALID++;
-      } else if (localDeadlineTime > now) {
+        return;
+      }
+
+      // UPCOMING
+      if (localDeadlineTime > now) {
         counts.UPCOMING++;
-      } else if (!deadline.submissions?.length) {
+        return;
+      }
+
+      // MISSED
+      if (!deadline.submissions?.length) {
         counts.MISSED++;
-      } else {
-        counts.LATE++;
+        return;
       }
     });
     
     return counts;
-  }, [deadlines, hasMod]);
+  }, [deadlines, hasMod, userTimezone]);
 
   return (
     <View className="flex-1 bg-white p-4">

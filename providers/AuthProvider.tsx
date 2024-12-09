@@ -13,6 +13,7 @@ export interface User {
 interface AuthContextType {
     user: User | null;
     assignedUser: User | null;
+    userTimezone: string;
     login: (userData: User) => Promise<void>;
     logout: () => Promise<void>;
     isLoading: boolean;
@@ -25,6 +26,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [user, setUser] = useState<User | null>(null);
     const [assignedUser, setAssignedUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [userTimezone, setUserTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone);
     const router = useRouter();
 
     useEffect(() => {
@@ -99,6 +101,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         <AuthContext.Provider value={{ 
             user, 
             assignedUser,
+            userTimezone,
             login, 
             logout, 
             isLoading,
