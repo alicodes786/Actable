@@ -8,17 +8,6 @@ import { getAssignedMod } from '@/db/mod';
 
 export default function Settings() {
   const { logout, user } = useAuth();
-  const [hasModerator, setHasModerator] = useState(false);
-
-  useEffect(() => {
-    const checkModerator = async () => {
-      if (user) {
-        const mod = await getAssignedMod(user.id);
-        setHasModerator(!!mod);
-      }
-    };
-    checkModerator();
-  }, [user]);
 
   const handleSignOut = async () => {
     try {
@@ -68,8 +57,7 @@ export default function Settings() {
           {renderSettingItem(
             'shield-outline', 
             'Moderator', 
-            () => router.push('/moderator'),
-            hasModerator ? styles.activeModText : undefined
+            () => router.push('/moderator')
           )}
         </View>
       </View>
