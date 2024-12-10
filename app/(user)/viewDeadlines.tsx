@@ -75,6 +75,25 @@ const formatDate = (dateString: string) => {
   });
 };
 
+const getLateDuration = (submittedDate: Date, deadlineDate: Date) => {
+  const diffTime = submittedDate.getTime() - deadlineDate.getTime();
+  const diffSeconds = Math.floor(diffTime / 1000);
+  const diffMinutes = Math.floor(diffSeconds / 60);
+  const diffHours = Math.floor(diffMinutes / 60);
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (diffDays > 0) {
+    return `${diffDays} day${diffDays !== 1 ? 's' : ''} late`;
+  }
+  if (diffHours > 0) {
+    return `${diffHours} hour${diffHours !== 1 ? 's' : ''} late`;
+  }
+  if (diffMinutes > 0) {
+    return `${diffMinutes} minute${diffMinutes !== 1 ? 's' : ''} late`;
+  }
+  return `${diffSeconds} second${diffSeconds !== 1 ? 's' : ''} late`;
+};
+
 export default function ViewDeadlinesScreen() {
   const [deadlines, setDeadlines] = useState<Ideadline[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('UPCOMING');
@@ -162,7 +181,17 @@ export default function ViewDeadlinesScreen() {
         break;
       
       case 'COMPLETED':
-        filteredDeadlines = deadlines.filter(deadline => deadline.completed);
+        filteredDeadlines = deadlines.filter(deadline => {
+          const submission = deadline.submissions?.[0];
+          if (!submission) return false;
+          
+          // Check if it's not late first
+          const submittedDate = convertUTCToLocal(submission.submitteddate, userTimezone);
+          const deadlineDate = convertUTCToLocal(deadline.date, userTimezone);
+          
+          // Only count as completed if it wasn't submitted late
+          return deadline.completed && submittedDate.getTime() <= deadlineDate.getTime();
+        });
         break;
       
       case 'MISSED':
@@ -177,10 +206,11 @@ export default function ViewDeadlinesScreen() {
           const submission = deadline.submissions?.[0];
           if (!submission) return false;
           
-          const submittedDate = new Date(submission.submitteddate);
-          const deadlineDate = new Date(deadline.date);
+          const submittedDate = convertUTCToLocal(submission.submitteddate, userTimezone);
+          const deadlineDate = convertUTCToLocal(deadline.date, userTimezone);
           
-          return submittedDate > deadlineDate;
+          // Any submission after deadline (even by seconds) is late
+          return submittedDate.getTime() > deadlineDate.getTime();
         });
         break;
       
@@ -214,33 +244,44 @@ export default function ViewDeadlinesScreen() {
       COMPLETED: 0,
       MISSED: 0,
     };
-    
+
     deadlines.forEach(deadline => {
-      // COMPLETED
-      if (deadline.completed) {
-        counts.COMPLETED++;
-        return;
+      const submission = deadline.submissions?.[0];
+      const localDeadlineTime = convertUTCToLocal(deadline.date, userTimezone);
+
+      // Check each category independently - a deadline can be in multiple categories
+      
+      // UPCOMING
+      if (localDeadlineTime > now && !deadline.completed) {
+        counts.UPCOMING++;
       }
 
-      const localDeadlineTime = convertUTCToLocal(deadline.date, userTimezone);
-      
       // LATE
-      const submission = deadline.submissions?.[0];
       if (submission) {
-        const submittedDate = new Date(submission.submitteddate);
-        const deadlineDate = new Date(deadline.date);
-        if (submittedDate > deadlineDate) {
+        const submittedDate = convertUTCToLocal(submission.submitteddate, userTimezone);
+        const deadlineDate = convertUTCToLocal(deadline.date, userTimezone);
+        if (submittedDate.getTime() > deadlineDate.getTime()) {
           counts.LATE++;
-          return;
         }
       }
 
       // PENDING
-      if (hasMod && deadline.submissions?.some(sub => 
-        sub.id === deadline.lastsubmissionid && sub.status === 'pending'
-      )) {
-        counts.PENDING++;
-        return;
+      if (hasMod) {
+        if (submission) {
+          const submittedDate = convertUTCToLocal(submission.submitteddate, userTimezone);
+          const deadlineDate = convertUTCToLocal(deadline.date, userTimezone);
+          if (submittedDate.getTime() > deadlineDate.getTime()) {
+            // Don't count late submissions as pending
+          } else if (deadline.submissions?.some(sub => 
+            sub.id === deadline.lastsubmissionid && sub.status === 'pending'
+          )) {
+            counts.PENDING++;
+          }
+        } else if (deadline.submissions?.some(sub => 
+          sub.id === deadline.lastsubmissionid && sub.status === 'pending'
+        )) {
+          counts.PENDING++;
+        }
       }
 
       // INVALID
@@ -248,19 +289,20 @@ export default function ViewDeadlinesScreen() {
         sub.id === deadline.lastsubmissionid && sub.status === 'invalid'
       )) {
         counts.INVALID++;
-        return;
       }
 
-      // UPCOMING
-      if (localDeadlineTime > now) {
-        counts.UPCOMING++;
-        return;
+      // COMPLETED
+      if (deadline.completed && submission) {
+        const submittedDate = convertUTCToLocal(submission.submitteddate, userTimezone);
+        const deadlineDate = convertUTCToLocal(deadline.date, userTimezone);
+        if (submittedDate.getTime() <= deadlineDate.getTime()) {
+          counts.COMPLETED++;
+        }
       }
 
       // MISSED
-      if (!deadline.submissions?.length) {
+      if (localDeadlineTime < now && !deadline.submissions?.length) {
         counts.MISSED++;
-        return;
       }
     });
     
@@ -281,7 +323,8 @@ export default function ViewDeadlinesScreen() {
           const counts = getCategoryCounts();
           const count = counts[key as keyof typeof counts];
           
-          if (count === 0) return null;
+          // Only hide if it's not LATE and count is 0
+          if (count === 0 && key !== 'LATE') return null;
           
           if (!hasMod && (key === 'PENDING' || key === 'INVALID')) return null;
 
@@ -349,12 +392,20 @@ export default function ViewDeadlinesScreen() {
                       <View className="flex-row justify-between items-center mt-2">
                         <View>
                           <Text className="text-white text-xs uppercase mb-1 opacity-80">
-                            Submitted
+                            {selectedCategory === 'LATE' ? 'Late by' : 'Submitted'}
                           </Text>
                           <Text className="text-white text-sm font-medium">
-                            {formatDate(deadline.submissions?.find(
-                              sub => sub.id === deadline.lastsubmissionid
-                            )?.submitteddate || '')}
+                            {selectedCategory === 'LATE' ? 
+                              getLateDuration(
+                                convertUTCToLocal(deadline.submissions?.find(
+                                  sub => sub.id === deadline.lastsubmissionid
+                                )?.submitteddate || '', userTimezone),
+                                convertUTCToLocal(deadline.date, userTimezone)
+                              ) :
+                              formatDate(deadline.submissions?.find(
+                                sub => sub.id === deadline.lastsubmissionid
+                              )?.submitteddate || '')
+                            }
                           </Text>
                         </View>
                         <View>
