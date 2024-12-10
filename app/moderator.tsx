@@ -17,6 +17,13 @@ export default function ModeratorScreen() {
   const [isContentLoading, setIsContentLoading] = useState(true);
 
   useEffect(() => {
+    if (user?.role !== 'user') {
+      Alert.alert('Access Denied', 'Only regular users can manage moderators');
+      router.back();
+    }
+  }, [user]);
+
+  useEffect(() => {
     loadExistingMod();
   }, []);
 
@@ -45,6 +52,13 @@ export default function ModeratorScreen() {
 
   const handleGenerateModerator = async () => {
     if (!modEmail) return;
+    
+    // Email format validation
+    const emailRegex = /^[A-Za-z0-9._%-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}$/;
+    if (!emailRegex.test(modEmail)) {
+      Alert.alert('Error', 'Please enter a valid email address');
+      return;
+    }
 
     setIsLoading(true);
     try {
