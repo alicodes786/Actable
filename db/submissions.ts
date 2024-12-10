@@ -79,13 +79,26 @@ export async function fetchLastSubmissionImage(deadlineId: string): Promise<stri
       return null;
     }
 
-    // Convert public URL to storage path
-    const urlObj = new URL(submissionData.imageurl);
-    const path = urlObj.pathname.split('/').slice(2).join('/');
+    // Extract path from the stored URL
+    try {
+      const urlObj = new URL(submissionData.imageurl);
+      const pathParts = urlObj.pathname.split('/');
+      // Find the index of 'submissions' and take everything after it
+      const submissionsIndex = pathParts.indexOf('submissions');
+      if (submissionsIndex === -1) {
+        throw new Error('Invalid storage path');
+      }
+      const path = pathParts.slice(submissionsIndex + 1).join('/');
 
-    // Get secure signed URL
-    return await getSecureImageUrl(path);
-
+      // Get fresh signed URL
+      return await getSecureImageUrl(path);
+    } catch (error) {
+      console.error('URL parsing error:', error);
+      throw new SubmissionError(
+        'Failed to process submission URL',
+        error as DatabaseError
+      );
+    }
   } catch (error) {
     if (error instanceof SubmissionError) {
       throw error;
@@ -299,15 +312,29 @@ export async function fetchSubmissionById(submissionId: number): Promise<Submiss
     if (error) throw error;
     if (!data) throw new Error('Submission not found');
 
-    // Get secure URL for the image
-    const urlObj = new URL(data.imageurl);
-    const path = urlObj.pathname.split('/').slice(2).join('/');
-    const secureUrl = await getSecureImageUrl(path);
+    // Extract path from the stored URL and get secure URL
+    try {
+      const urlObj = new URL(data.imageurl);
+      const pathParts = urlObj.pathname.split('/');
+      // Find the index of 'submissions' and take everything after it
+      const submissionsIndex = pathParts.indexOf('submissions');
+      if (submissionsIndex === -1) {
+        throw new Error('Invalid storage path');
+      }
+      const path = pathParts.slice(submissionsIndex + 1).join('/');
+      const secureUrl = await getSecureImageUrl(path);
 
-    return {
-      ...data,
-      imageurl: secureUrl
-    };
+      return {
+        ...data,
+        imageurl: secureUrl
+      };
+    } catch (error) {
+      console.error('URL parsing error:', error);
+      throw new SubmissionError(
+        'Failed to process submission URL',
+        error as DatabaseError
+      );
+    }
   } catch (error) {
     throw new SubmissionError(
       'Failed to fetch submission',
