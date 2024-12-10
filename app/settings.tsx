@@ -1,13 +1,25 @@
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useAuth } from '@/providers/AuthProvider';
 import { Ionicons } from '@expo/vector-icons';
+import { getAssignedMod } from '@/db/mod';
 
 export default function Settings() {
-  const { logout } = useAuth();
-  
+  const { logout, user } = useAuth();
+  const [hasModerator, setHasModerator] = useState(false);
+
+  useEffect(() => {
+    const checkModerator = async () => {
+      if (user) {
+        const mod = await getAssignedMod(user.id);
+        setHasModerator(!!mod);
+      }
+    };
+    checkModerator();
+  }, [user]);
+
   const handleSignOut = async () => {
     try {
       await logout();
@@ -17,7 +29,7 @@ export default function Settings() {
     }
   };
 
-  const renderSettingItem = (icon: string, label: string, onPress?: () => void) => (
+  const renderSettingItem = (icon: string, label: string, onPress?: () => void, style?: any) => (
     <TouchableOpacity 
       style={styles.settingOption}
       onPress={onPress}
@@ -30,6 +42,7 @@ export default function Settings() {
         </View>
         <Ionicons name="chevron-forward" size={20} color="#CCCCCC" />
       </View>
+      {style && <Text style={style}>{label}</Text>}
     </TouchableOpacity>
   );
 
@@ -52,7 +65,12 @@ export default function Settings() {
         <View style={styles.settingsBox}>
           {renderSettingItem('notifications-outline', 'Notifications', () => router.push('/notifications'))}
           {renderSettingItem('alarm-outline', 'Alarm')}
-          {renderSettingItem('chatbubbles-outline', 'Chat')}
+          {renderSettingItem(
+            'shield-outline', 
+            'Moderator', 
+            () => router.push('/moderator'),
+            hasModerator ? styles.activeModText : undefined
+          )}
         </View>
       </View>
 
@@ -145,5 +163,9 @@ const styles = StyleSheet.create({
   settingText: {
     fontSize: 16,
     color: '#333333',
+  },
+  activeModText: {
+    color: '#443399',
+    fontWeight: '500',
   },
 });
