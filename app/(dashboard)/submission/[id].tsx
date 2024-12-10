@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Image, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { approveSubmission, invalidateSubmission, Submission, fetchSubmissionById } from '@/db/submissions';
+import { useSignedUrl } from '@/lib/hooks/useSignedUrl';
 
 export default function SubmissionReviewScreen() {
   const params = useLocalSearchParams();
   const [isLoading, setIsLoading] = useState(true);
   const [submission, setSubmission] = useState<Submission | null>(null);
   const submissionId = Number(params.id);
+  const signedUrl = useSignedUrl(submission?.imageurl ?? null);
 
   // Reset submission when ID changes to prevent stale data
   useEffect(() => {
@@ -71,11 +73,13 @@ export default function SubmissionReviewScreen() {
     <ScrollView className="flex-1 bg-white">
       <View className="p-5">
         <View className="bg-gray-50 rounded-2xl overflow-hidden shadow-sm">
-          <Image
-            source={{ uri: submission.imageurl }}
-            className="w-full h-96"
-            resizeMode="contain"
-          />
+          {signedUrl && (
+            <Image
+              source={{ uri: signedUrl }}
+              className="w-full h-96"
+              resizeMode="contain"
+            />
+          )}
         </View>
 
         {showActions && (

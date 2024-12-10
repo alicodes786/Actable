@@ -25,7 +25,7 @@ export class SubmissionError extends Error {
   }
 }
 
-async function getSecureImageUrl(pathOrUrl: string): Promise<string> {
+export async function getSecureImageUrl(pathOrUrl: string): Promise<string> {
   try {
     console.log('Getting secure URL for:', pathOrUrl);
 
