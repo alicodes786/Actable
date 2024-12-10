@@ -47,9 +47,67 @@ export default function ModeratorScreen() {
     if (!modEmail) return;
 
     setIsLoading(true);
-    const generatedPassword = generatePassword();
-    
     try {
+      // Check if email exists and get user_id
+      const { data: existingUserId, error: lookupError } = await supabase
+        .rpc('get_user_id_by_email', { check_email: modEmail });
+
+      if (lookupError) {
+        console.error('Lookup Error:', lookupError);
+        throw lookupError;
+      }
+
+      if (existingUserId) {
+        // Check if they're already a moderator
+        const { data: userProfile, error: profileError } = await supabase
+          .from('user_profiles')
+          .select('role')
+          .eq('id', existingUserId)
+          .single();
+
+        if (profileError) {
+          console.error('Profile Error:', profileError);
+          throw profileError;
+        }
+
+        if (userProfile.role !== 'mod') {
+          Alert.alert('Error', 'This email cannot be used. Please try another email address.');
+          return;
+        }
+
+        // Check if moderator is already assigned
+        const { data: existingRelationship, error: relError } = await supabase
+          .from('mod_user_relationships')
+          .select('*')
+          .eq('mod_uuid', existingUserId)
+          .single();
+
+        if (!relError && existingRelationship) {
+          Alert.alert('Error', 'This moderator is already assigned to another user.');
+          return;
+        }
+
+        // Create new relationship for existing mod
+        const { error: assignError } = await supabase
+          .from('mod_user_relationships')
+          .insert({
+            user_uuid: user?.id,
+            mod_uuid: existingUserId
+          });
+
+        if (assignError) {
+          Alert.alert('Error', 'Unable to assign moderator. Please try again.');
+          return;
+        }
+
+        Alert.alert('Success', 'Moderator has been assigned successfully.');
+        loadExistingMod();
+        return;
+      }
+
+      // If we get here, email doesn't exist, proceed with new moderator creation
+      const generatedPassword = generatePassword();
+      
       // Create new user with mod role
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: modEmail,
