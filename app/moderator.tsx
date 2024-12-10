@@ -4,6 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/providers/AuthProvider';
 import { getAssignedMod, removeModFromUser } from '@/db/mod';
 import { supabase } from '@/lib/db';
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 
 export default function ModeratorScreen() {
   const { user } = useAuth();
@@ -120,44 +122,72 @@ export default function ModeratorScreen() {
     );
   };
 
-  return (
-    <SafeAreaView className="flex-1 bg-white p-4">
-      <Text className="text-2xl font-semibold mb-6">Moderator Management</Text>
+  const renderSettingItem = (icon: string, label: string, onPress?: () => void) => (
+    <TouchableOpacity 
+      className="border-b border-gray-100 py-4 px-5 flex-row items-center justify-between"
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
+      <View className="flex-row items-center">
+        <Ionicons name={icon as any} size={22} color="#333" className="mr-3" />
+        <Text className="text-base text-gray-800">{label}</Text>
+      </View>
+      <Ionicons name="chevron-forward" size={20} color="#CCCCCC" />
+    </TouchableOpacity>
+  );
 
-      {existingMod ? (
-        <View className="mb-6">
-          <Text className="text-lg font-medium mb-4">Current Moderator</Text>
-          <Text className="text-base mb-2">Email: {existingMod.email}</Text>
-          <TouchableOpacity
-            className="bg-red-500 p-4 rounded-lg items-center mt-4"
-            onPress={handleRemoveModerator}
-          >
-            <Text className="text-white font-medium">Remove Moderator</Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <View className="mb-6">
-          <Text className="text-lg font-medium mb-4">Generate New Moderator</Text>
-          <TextInput
-            className="w-full mb-4 p-3 border border-gray-300 rounded-lg"
-            placeholder="Enter moderator's email"
-            value={modEmail}
-            onChangeText={setModEmail}
-            autoCapitalize="none"
-            keyboardType="email-address"
-          />
-          
-          <TouchableOpacity
-            className={`bg-[#443399] p-4 rounded-lg items-center ${isLoading ? 'opacity-50' : ''}`}
-            onPress={handleGenerateModerator}
-            disabled={isLoading}
-          >
-            <Text className="text-white font-medium">
-              {isLoading ? 'Generating...' : 'Generate Credentials'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      )}
+  return (
+    <SafeAreaView className="flex-1 bg-white">
+      <View className="flex-row items-center p-4 border-b border-gray-200">
+        <TouchableOpacity 
+          onPress={() => router.back()}
+          className="mr-4"
+        >
+          <Ionicons name="arrow-back" size={24} color="#333" />
+        </TouchableOpacity>
+        <Text className="text-2xl font-semibold">Moderator Settings</Text>
+      </View>
+
+      <View className="flex-1 p-4">
+        {existingMod ? (
+          <View>
+            <Text className="text-base text-gray-600 mb-2 ml-1">Current Moderator</Text>
+            <View className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+              {renderSettingItem('mail-outline', existingMod.email)}
+              <TouchableOpacity 
+                className="py-4 px-5"
+                onPress={handleRemoveModerator}
+              >
+                <Text className="text-red-500 text-base">Remove Moderator</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : (
+          <View>
+            <Text className="text-base text-gray-600 mb-2 ml-1">Add New Moderator</Text>
+            <View className="bg-white rounded-xl border border-gray-200 p-4">
+              <TextInput
+                className="w-full mb-4 p-3 border border-gray-300 rounded-lg bg-gray-50"
+                placeholder="Enter moderator's email"
+                value={modEmail}
+                onChangeText={setModEmail}
+                autoCapitalize="none"
+                keyboardType="email-address"
+              />
+              
+              <TouchableOpacity
+                className={`bg-[#443399] p-4 rounded-lg items-center ${isLoading ? 'opacity-50' : ''}`}
+                onPress={handleGenerateModerator}
+                disabled={isLoading}
+              >
+                <Text className="text-white font-medium">
+                  {isLoading ? 'Generating...' : 'Generate Credentials'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+      </View>
 
       <Modal
         visible={showCredentials}
