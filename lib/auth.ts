@@ -1,6 +1,7 @@
 import { Alert } from 'react-native';
 import { supabase } from './db';
 import { router } from 'expo-router';
+import { User } from '@/providers/AuthProvider';
 
 type LoginFunction = (user: {
   id: string;
@@ -12,46 +13,47 @@ type LoginFunction = (user: {
 export const handleSignIn = async (
   email: string,
   password: string,
-  login: LoginFunction,
+  login: (userData: User) => Promise<void>,
   setIsLoading: (loading: boolean) => void
 ) => {
   try {
-    if (!validateInputs(email, password)) {
-      return;
-    }
-
     setIsLoading(true);
-
-    // Sign in with Supabase Auth
-    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
-    if (authError) throw authError;
+    if (error) throw error;
 
-    // Fetch user profile
-    const { data: profile, error: profileError } = await supabase
-      .from('user_profiles')
-      .select('*')
-      .eq('id', authData.user.id)
-      .single();
+    if (data.user) {
+      // Get user profile
+      const { data: profile, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', data.user.id)
+        .single();
 
-    if (profileError) throw profileError;
+      if (profileError) throw profileError;
 
-    // Login with AuthProvider
-    await login({
-      id: authData.user.id,
-      email: authData.user.email || '',
-      role: profile.role,
-      name: profile.name
-    });
+      // Only check relationship if the user is a mod
+      if (profile.role === 'mod') {
+        const { data: relationship, error: relError } = await supabase
+          .from('mod_user_relationships')
+          .select('*')
+          .eq('mod_uuid', data.user.id)
+          .single();
 
+        if (relError || !relationship) {
+          Alert.alert('Access Denied', 'Your moderator access has been revoked.');
+          await supabase.auth.signOut();
+          return;
+        }
+      }
+
+      await login(profile);
+    }
   } catch (error: any) {
-    Alert.alert(
-      'Login Failed',
-      error.message || 'Unable to sign in. Please try again.'
-    );
+    Alert.alert('Error', error.message);
   } finally {
     setIsLoading(false);
   }
@@ -62,7 +64,7 @@ export const handleGoogleSignIn = async (
 ) => {
   try {
     setIsLoading(true);
-    
+
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
     });

@@ -4,6 +4,7 @@ export interface ModUser {
   id: string;
   name: string;
   role: 'user' | 'mod' | 'admin';
+  email?: string;
   created_at?: string;
 }
 
@@ -20,7 +21,7 @@ export async function getAssignedMod(uuid: string): Promise<ModUser | null> {
     return null;
   }
 
-  // Then get the mod's user details
+  // Get the mod's user details
   const { data: modUser, error: userError } = await supabase
     .from('user_profiles')
     .select('id, name, role')
@@ -32,7 +33,19 @@ export async function getAssignedMod(uuid: string): Promise<ModUser | null> {
     return null;
   }
 
-  return modUser as ModUser;
+  // Get the email from auth.users table
+  const { data: authUser, error: authError } = await supabase.auth
+    .admin.getUserById(relationships[0].mod_uuid);
+
+  if (authError || !authUser) {
+    console.error('Error fetching mod email:', authError);
+    return null;
+  }
+
+  return {
+    ...modUser,
+    email: authUser.user.email
+  } as ModUser;
 }
 
 export async function addModToUser(uuid: string, modUuid: string) {
@@ -50,7 +63,7 @@ export async function removeModFromUser(uuid: string) {
   const { error } = await supabase
     .from('mod_user_relationships')
     .delete()
-    .match({ uuid });
+    .match({ user_uuid: uuid });
 
   if (error) {
     console.error('Error removing mod:', error);
