@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Image, ScrollView } from 'react-native';
 import { useAuth } from '@/providers/AuthProvider';
 import { router, useFocusEffect } from 'expo-router';
-import Toast from 'react-native-toast-message';
 import { LinearGradient } from 'expo-linear-gradient';
 import { DeadlineWithSubmission, fetchUnapprovedSubmissions } from '@/db/submissions';
 
@@ -33,41 +32,24 @@ export default function Dashboard() {
   // Only render dashboard content for moderators
   if (user?.role !== 'mod') return null;
 
-  useFocusEffect(
-    React.useCallback(() => {
-      let isActive = true;
-      const refreshInterval = setInterval(() => {
-        if (isActive) {
-            loadSubmissions();
-          }
-        }, 5000);
-
-        loadSubmissions();
-
-      return () => {
-        isActive = false;
-        clearInterval(refreshInterval);
-      };
-    }, [assignedUser])
-  );
-
   const loadSubmissions = async () => {
-    if (!assignedUser?.id) return;
-    
-    try {
-      const data = await fetchUnapprovedSubmissions(String(assignedUser.id));
-      setSubmissions(data);
-    } catch (error) {
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: 'Failed to load submissions',
-        position: 'bottom',
-      });
-    } finally {
-      setLoading(false);
+    if (assignedUser?.id) {
+      try {
+        const data = await fetchUnapprovedSubmissions(assignedUser.id);
+        setSubmissions(data);
+      } catch (error) {
+        console.error('Error loading submissions:', error);
+      } finally {
+        setLoading(false);
+      }
     }
   };
+
+  useFocusEffect(
+    React.useCallback(() => {
+      loadSubmissions();
+    }, [assignedUser?.id])
+  );
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);

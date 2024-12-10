@@ -162,24 +162,11 @@ export const uploadSubmissionImage = async ({
       };
     }
 
-    // Step 6: Get signed URL
-    const { data: urlData, error: urlError } = await supabase.storage
-      .from('submissions')
-      .createSignedUrl(filePath, 3600); // URL expires in 1 hour
-
-    if (urlError) {
-      console.error('Signed URL generation error:', urlError);
-      return {
-        publicUrl: '',
-        error: new StorageUploadError(
-          'Failed to generate secure URL',
-          urlError
-        )
-      };
-    }
-
-    console.log('Upload successful, signed URL generated');
-    return { publicUrl: urlData.signedUrl, error: null };
+    // Return the storage path instead of signed URL
+    return {
+      publicUrl: filePath,  // Remove 'submissions/' prefix
+      error: null
+    };
 
   } catch (error) {
     console.error('Unexpected error in uploadSubmissionImage:', error);

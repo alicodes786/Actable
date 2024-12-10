@@ -131,13 +131,18 @@ function ImageCapture({ deadlineId, userId }: { deadlineId: string; userId: stri
           publicUrl
         );
 
+        // Fetch the signed URL for display
+        const signedUrl = await fetchLastSubmissionImage(deadlineId);
+        if (signedUrl) {
+          setImage(signedUrl);
+          setIsNewPhoto(false);
+        }
+
         Alert.alert(
           'Success',
           'Submission uploaded successfully!',
           [{ text: 'OK' }]
         );
-        setImage(publicUrl);
-        setIsNewPhoto(false);
 
       } catch (error) {
         Alert.alert(
@@ -222,7 +227,7 @@ function SubmissionContent() {
 
       const fetchSubmissionData = async () => {
         try {
-          const deadline = await getSingleDeadline(deadlineId);
+          const deadline = await getSingleDeadline(deadlineId.toString());
           
           if (deadline) {
             

@@ -25,15 +25,62 @@ export class SubmissionError extends Error {
   }
 }
 
-async function getSecureImageUrl(path: string): Promise<string> {
+async function getSecureImageUrl(pathOrUrl: string): Promise<string> {
   try {
-    const { data, error } = await supabase.storage
-      .from('submissions')
-      .createSignedUrl(path, 3600); // URL expires in 1 hour
+    console.log('Getting secure URL for:', pathOrUrl);
 
-    if (error) throw error;
-    return data.signedUrl;
+    // If it's already just a path (starts with userId/), use it directly
+    if (!pathOrUrl.startsWith('http')) {
+      console.log('Processing as direct path');
+      // Remove 'submissions/' prefix if it exists
+      const cleanPath = pathOrUrl.replace(/^submissions\//, '');
+      console.log('Clean path:', cleanPath);
+
+      const { data, error } = await supabase.storage
+        .from('submissions')
+        .createSignedUrl(cleanPath, 3600);
+
+      if (error) {
+        console.error('Storage error for direct path:', error);
+        throw error;
+      }
+      return data.signedUrl;
+    }
+
+    // Otherwise, extract path from URL
+    try {
+      console.log('Processing as URL');
+      const urlObj = new URL(pathOrUrl);
+      const pathParts = urlObj.pathname.split('/');
+      console.log('Path parts:', pathParts);
+
+      const submissionsIndex = pathParts.indexOf('submissions');
+      if (submissionsIndex === -1) {
+        console.error('No submissions folder found in path');
+        throw new Error('Invalid storage path');
+      }
+
+      const path = pathParts.slice(submissionsIndex + 1).join('/');
+      console.log('Extracted path:', path);
+
+      const { data, error } = await supabase.storage
+        .from('submissions')
+        .createSignedUrl(path, 3600);
+
+      if (error) {
+        console.error('Storage error for extracted path:', error);
+        throw error;
+      }
+      return data.signedUrl;
+    } catch (error) {
+      console.error('URL parsing error:', error);
+      throw new SubmissionError(
+        'Failed to process submission URL',
+        error as DatabaseError
+      );
+    }
   } catch (error) {
+    console.error('Final error in getSecureImageUrl:', error);
     throw new SubmissionError(
       'Failed to generate secure image URL',
       error as DatabaseError
@@ -79,26 +126,9 @@ export async function fetchLastSubmissionImage(deadlineId: string): Promise<stri
       return null;
     }
 
-    // Extract path from the stored URL
-    try {
-      const urlObj = new URL(submissionData.imageurl);
-      const pathParts = urlObj.pathname.split('/');
-      // Find the index of 'submissions' and take everything after it
-      const submissionsIndex = pathParts.indexOf('submissions');
-      if (submissionsIndex === -1) {
-        throw new Error('Invalid storage path');
-      }
-      const path = pathParts.slice(submissionsIndex + 1).join('/');
+    // Generate signed URL from stored path
+    return await getSecureImageUrl(submissionData.imageurl);
 
-      // Get fresh signed URL
-      return await getSecureImageUrl(path);
-    } catch (error) {
-      console.error('URL parsing error:', error);
-      throw new SubmissionError(
-        'Failed to process submission URL',
-        error as DatabaseError
-      );
-    }
   } catch (error) {
     if (error instanceof SubmissionError) {
       throw error;
@@ -113,7 +143,7 @@ export async function fetchLastSubmissionImage(deadlineId: string): Promise<stri
 export async function createNewSubmission(
   deadlineId: string,
   userId: string,
-  imageUrl: string
+  storagePath: string
 ): Promise<SubmissionData> {
   try {
     // Insert new submission with pending status initially
@@ -121,7 +151,7 @@ export async function createNewSubmission(
       .from('submissions')
       .insert({
         deadlineid: deadlineId,
-        imageurl: imageUrl,
+        imageurl: storagePath,
         uuid: userId,
         status: 'pending',
         submitteddate: new Date().toISOString()
@@ -254,9 +284,19 @@ export async function fetchUnapprovedSubmissions(userId: string): Promise<Deadli
       throw new SubmissionError('Failed to fetch unapproved submissions', error);
     }
 
+    // Get signed URLs for all submissions
     const filtered = data?.filter(item => item.submission.status === 'pending');
+    const withSignedUrls = await Promise.all(
+      filtered.map(async (item) => ({
+        ...item,
+        submission: {
+          ...item.submission,
+          imageurl: await getSecureImageUrl(item.submission.imageurl)
+        }
+      }))
+    );
 
-    return filtered || [];
+    return withSignedUrls || [];
   } catch (error) {
     throw new SubmissionError(
       'Unexpected error fetching unapproved submissions',
@@ -312,29 +352,13 @@ export async function fetchSubmissionById(submissionId: number): Promise<Submiss
     if (error) throw error;
     if (!data) throw new Error('Submission not found');
 
-    // Extract path from the stored URL and get secure URL
-    try {
-      const urlObj = new URL(data.imageurl);
-      const pathParts = urlObj.pathname.split('/');
-      // Find the index of 'submissions' and take everything after it
-      const submissionsIndex = pathParts.indexOf('submissions');
-      if (submissionsIndex === -1) {
-        throw new Error('Invalid storage path');
-      }
-      const path = pathParts.slice(submissionsIndex + 1).join('/');
-      const secureUrl = await getSecureImageUrl(path);
+    // Generate signed URL from stored path
+    const secureUrl = await getSecureImageUrl(data.imageurl);
 
-      return {
-        ...data,
-        imageurl: secureUrl
-      };
-    } catch (error) {
-      console.error('URL parsing error:', error);
-      throw new SubmissionError(
-        'Failed to process submission URL',
-        error as DatabaseError
-      );
-    }
+    return {
+      ...data,
+      imageurl: secureUrl
+    };
   } catch (error) {
     throw new SubmissionError(
       'Failed to fetch submission',
