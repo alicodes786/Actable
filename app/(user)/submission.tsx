@@ -116,30 +116,43 @@ function ImageCapture({ deadlineId, userId }: { deadlineId: string; userId: stri
       });
 
       if (error) {
-        throw error;
+        Alert.alert(
+          'Upload Failed',
+          'Failed to upload image. Please try again.',
+          [{ text: 'OK' }]
+        );
+        return;
       }
 
-      const newSubmission = await createNewSubmission(
-        deadlineId,
-        userId,
-        publicUrl
-      );
+      try {
+        await createNewSubmission(
+          deadlineId,
+          userId,
+          publicUrl
+        );
 
-      Alert.alert(
-        'Success',
-        'Submission uploaded successfully!',
-        [{ text: 'OK' }]
-      );
-      setImage(publicUrl);
-      setIsNewPhoto(false);
+        Alert.alert(
+          'Success',
+          'Submission uploaded successfully!',
+          [{ text: 'OK' }]
+        );
+        setImage(publicUrl);
+        setIsNewPhoto(false);
+
+      } catch (error) {
+        Alert.alert(
+          'Submission Failed',
+          error instanceof SubmissionError 
+            ? error.message 
+            : 'Failed to create submission. Please try again.',
+          [{ text: 'OK' }]
+        );
+      }
 
     } catch (error) {
-      console.error('Error uploading submission:', error);
       Alert.alert(
         'Upload Failed',
-        error instanceof SubmissionError 
-          ? error.message 
-          : 'Failed to upload submission. Please try again.',
+        'Failed to upload image. Please try again.',
         [{ text: 'OK' }]
       );
     } finally {

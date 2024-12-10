@@ -42,11 +42,11 @@ function base64ToUint8Array(base64String: string): Uint8Array {
     const binaryString = atob(base64String);
     const length = binaryString.length;
     const bytes = new Uint8Array(length);
-    
+
     for (let i = 0; i < length; i++) {
       bytes[i] = binaryString.charCodeAt(i);
     }
-    
+
     return bytes;
   } catch (error) {
     throw new FileSystemError(
@@ -56,18 +56,47 @@ function base64ToUint8Array(base64String: string): Uint8Array {
   }
 }
 
+async function validateFileSize(uri: string): Promise<boolean> {
+  const fileInfo = await FileSystem.getInfoAsync(uri, { size: true });
+  // Limit file size to 5MB
+  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB in bytes
+  return 'size' in fileInfo ? fileInfo.size <= MAX_FILE_SIZE : false;
+}
+
 export const uploadSubmissionImage = async ({
   uri,
   userId,
   deadlineId,
 }: UploadImageParams): Promise<UploadResult> => {
   try {
-    // Step 1: Validate file exists
-    const fileInfo = await FileSystem.getInfoAsync(uri);
+    // First verify authentication
+    const { data: { session }, error: authError } = await supabase.auth.getSession();
+
+    console.log(session)
+    if (authError || !session) {
+      console.error('Authentication error:', authError);
+      return {
+        publicUrl: '',
+        error: new Error(authError?.message || 'User not authenticated')
+      };
+    }
+
+    // Validate file exists and size
+    const fileInfo = await FileSystem.getInfoAsync(uri, { size: true });
     if (!fileInfo.exists) {
+      console.error('File does not exist:', uri);
       return {
         publicUrl: '',
         error: new FileSystemError('File does not exist')
+      };
+    }
+
+    const isValidSize = await validateFileSize(uri);
+    if (!isValidSize) {
+      console.error('File size exceeds limit');
+      return {
+        publicUrl: '',
+        error: new FileSystemError('File size exceeds 5MB limit')
       };
     }
 
@@ -78,6 +107,7 @@ export const uploadSubmissionImage = async ({
         encoding: FileSystem.EncodingType.Base64,
       });
     } catch (error) {
+      console.error('File read error:', error);
       return {
         publicUrl: '',
         error: new FileSystemError(
@@ -92,6 +122,7 @@ export const uploadSubmissionImage = async ({
     try {
       binaryData = base64ToUint8Array(fileData);
     } catch (error) {
+      console.error('Binary conversion error:', error);
       return {
         publicUrl: '',
         error: new FileSystemError(
@@ -101,34 +132,54 @@ export const uploadSubmissionImage = async ({
       };
     }
 
-    // Step 4: Generate unique file path
+    // Step 4: Generate unique file path with authenticated user ID
     const fileName = `submission-${Date.now()}.jpg`;
-    const filePath = `${userId}/${deadlineId}/${fileName}`;
+    const filePath = `${session.user.id}/${deadlineId}/${fileName}`;
+
+    console.log('Attempting upload with path:', filePath);
+    console.log('Current user ID:', session.user.id);
 
     // Step 5: Upload to Supabase Storage
     const { data: storageData, error: uploadError } = await supabase.storage
       .from('submissions')
       .upload(filePath, binaryData, {
         contentType: 'image/jpeg',
-        upsert: false,
+        upsert: false
       });
 
     if (uploadError) {
+      console.error('Storage upload error:', {
+        message: uploadError.message,
+        name: uploadError.name,
+        cause: uploadError.cause
+      });
       return {
         publicUrl: '',
         error: new StorageUploadError(
-          'Failed to upload file to storage',
+          `Failed to upload file to storage: ${uploadError.message}`,
           uploadError
         )
       };
     }
 
-    // Step 6: Get public URL
-    const { data: { publicUrl } } = supabase.storage
+    // Step 6: Get signed URL
+    const { data: urlData, error: urlError } = await supabase.storage
       .from('submissions')
-      .getPublicUrl(filePath);
+      .createSignedUrl(filePath, 3600); // URL expires in 1 hour
 
-    return { publicUrl, error: null };
+    if (urlError) {
+      console.error('Signed URL generation error:', urlError);
+      return {
+        publicUrl: '',
+        error: new StorageUploadError(
+          'Failed to generate secure URL',
+          urlError
+        )
+      };
+    }
+
+    console.log('Upload successful, signed URL generated');
+    return { publicUrl: urlData.signedUrl, error: null };
 
   } catch (error) {
     console.error('Unexpected error in uploadSubmissionImage:', error);

@@ -6,7 +6,7 @@ interface SubmissionData {
   id: string;
   deadlineid: string;
   imageurl: string;
-  userid: string;
+  uuid: string;
   status: 'pending' | 'approved' | 'invalid';
   submitteddate: string;
 }
@@ -22,6 +22,22 @@ export class SubmissionError extends Error {
   constructor(message: string, public originalError?: DatabaseError | PostgrestError) {
     super(message);
     this.name = 'SubmissionError';
+  }
+}
+
+async function getSecureImageUrl(path: string): Promise<string> {
+  try {
+    const { data, error } = await supabase.storage
+      .from('submissions')
+      .createSignedUrl(path, 3600); // URL expires in 1 hour
+
+    if (error) throw error;
+    return data.signedUrl;
+  } catch (error) {
+    throw new SubmissionError(
+      'Failed to generate secure image URL',
+      error as DatabaseError
+    );
   }
 }
 
@@ -59,7 +75,16 @@ export async function fetchLastSubmissionImage(deadlineId: string): Promise<stri
       );
     }
 
-    return submissionData?.imageurl || null;
+    if (!submissionData?.imageurl) {
+      return null;
+    }
+
+    // Convert public URL to storage path
+    const urlObj = new URL(submissionData.imageurl);
+    const path = urlObj.pathname.split('/').slice(2).join('/');
+
+    // Get secure signed URL
+    return await getSecureImageUrl(path);
 
   } catch (error) {
     if (error instanceof SubmissionError) {
@@ -92,6 +117,7 @@ export async function createNewSubmission(
       .single();
 
     if (submissionError) {
+      console.error('Submission creation error:', submissionError);
       throw new SubmissionError(
         'Failed to create new submission',
         submissionError
@@ -138,7 +164,7 @@ async function handleSubmissionApproval(
 ): Promise<void> {
   try {
     const assignedMod = await getAssignedMod(userId);
-    
+
     // If no mod is assigned, auto-approve the submission
     if (assignedMod === null) {
       const { error: approvalError } = await supabase
@@ -216,7 +242,7 @@ export async function fetchUnapprovedSubmissions(userId: string): Promise<Deadli
     }
 
     const filtered = data?.filter(item => item.submission.status === 'pending');
-    
+
     return filtered || [];
   } catch (error) {
     throw new SubmissionError(
@@ -272,8 +298,16 @@ export async function fetchSubmissionById(submissionId: number): Promise<Submiss
 
     if (error) throw error;
     if (!data) throw new Error('Submission not found');
-    
-    return data;
+
+    // Get secure URL for the image
+    const urlObj = new URL(data.imageurl);
+    const path = urlObj.pathname.split('/').slice(2).join('/');
+    const secureUrl = await getSecureImageUrl(path);
+
+    return {
+      ...data,
+      imageurl: secureUrl
+    };
   } catch (error) {
     throw new SubmissionError(
       'Failed to fetch submission',
