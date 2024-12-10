@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, Modal, Clipboard } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Alert, Modal, Clipboard, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/providers/AuthProvider';
 import { getAssignedMod, removeModFromUser } from '@/db/mod';
@@ -14,15 +14,22 @@ export default function ModeratorScreen() {
   const [existingMod, setExistingMod] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showCredentials, setShowCredentials] = useState(false);
+  const [isContentLoading, setIsContentLoading] = useState(true);
 
   useEffect(() => {
     loadExistingMod();
   }, []);
 
   const loadExistingMod = async () => {
-    if (user) {
-      const mod = await getAssignedMod(user.id);
-      setExistingMod(mod);
+    try {
+      if (user) {
+        const mod = await getAssignedMod(user.id);
+        setExistingMod(mod);
+      }
+    } catch (error) {
+      console.error('Error loading moderator:', error);
+    } finally {
+      setIsContentLoading(false);
     }
   };
 
@@ -124,7 +131,7 @@ export default function ModeratorScreen() {
 
   const renderSettingItem = (icon: string, label: string, onPress?: () => void) => (
     <TouchableOpacity 
-      className="border-b border-gray-100 py-4 px-5 flex-row items-center justify-between"
+      className="border-b border-gray-100 py-4 px-5 flex-row items-center"
       onPress={onPress}
       activeOpacity={0.7}
     >
@@ -132,7 +139,6 @@ export default function ModeratorScreen() {
         <Ionicons name={icon as any} size={22} color="#333" className="mr-3" />
         <Text className="text-base text-gray-800">{label}</Text>
       </View>
-      <Ionicons name="chevron-forward" size={20} color="#CCCCCC" />
     </TouchableOpacity>
   );
 
@@ -149,43 +155,49 @@ export default function ModeratorScreen() {
       </View>
 
       <View className="flex-1 p-4">
-        {existingMod ? (
-          <View>
-            <Text className="text-base text-gray-600 mb-2 ml-1">Current Moderator</Text>
-            <View className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-              {renderSettingItem('mail-outline', existingMod.email)}
-              <TouchableOpacity 
-                className="py-4 px-5"
-                onPress={handleRemoveModerator}
-              >
-                <Text className="text-red-500 text-base">Remove Moderator</Text>
-              </TouchableOpacity>
-            </View>
+        {isContentLoading ? (
+          <View className="flex-1 justify-center items-center">
+            <ActivityIndicator size="large" color="#443399" />
           </View>
         ) : (
-          <View>
-            <Text className="text-base text-gray-600 mb-2 ml-1">Add New Moderator</Text>
-            <View className="bg-white rounded-xl border border-gray-200 p-4">
-              <TextInput
-                className="w-full mb-4 p-3 border border-gray-300 rounded-lg bg-gray-50"
-                placeholder="Enter moderator's email"
-                value={modEmail}
-                onChangeText={setModEmail}
-                autoCapitalize="none"
-                keyboardType="email-address"
-              />
-              
-              <TouchableOpacity
-                className={`bg-[#443399] p-4 rounded-lg items-center ${isLoading ? 'opacity-50' : ''}`}
-                onPress={handleGenerateModerator}
-                disabled={isLoading}
-              >
-                <Text className="text-white font-medium">
-                  {isLoading ? 'Generating...' : 'Generate Credentials'}
-                </Text>
-              </TouchableOpacity>
+          existingMod ? (
+            <View>
+              <Text className="text-base text-gray-600 mb-2 ml-1">Current Moderator</Text>
+              <View className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                {renderSettingItem('mail-outline', existingMod.email)}
+                <TouchableOpacity 
+                  className="py-4 px-5"
+                  onPress={handleRemoveModerator}
+                >
+                  <Text className="text-red-500 text-base">Remove Moderator</Text>
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
+          ) : (
+            <View>
+              <Text className="text-base text-gray-600 mb-2 ml-1">Add New Moderator</Text>
+              <View className="bg-white rounded-xl border border-gray-200 p-4">
+                <TextInput
+                  className="w-full mb-4 p-3 border border-gray-300 rounded-lg bg-gray-50"
+                  placeholder="Enter moderator's email"
+                  value={modEmail}
+                  onChangeText={setModEmail}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                />
+                
+                <TouchableOpacity
+                  className={`bg-[#443399] p-4 rounded-lg items-center ${isLoading ? 'opacity-50' : ''}`}
+                  onPress={handleGenerateModerator}
+                  disabled={isLoading}
+                >
+                  <Text className="text-white font-medium">
+                    {isLoading ? 'Generating...' : 'Generate Credentials'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )
         )}
       </View>
 
