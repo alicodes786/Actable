@@ -39,8 +39,8 @@ const CATEGORIES = {
   },
 };
 
-const convertUTCToLocal = (dateString: string, userTimezone: string) => {
-  return fromUTC(dateString, userTimezone);
+const convertUTCToLocal = (dateString: string) => {
+  return fromUTC(dateString);
 };
 
 const formatDate = (dateString: string) => {
@@ -150,7 +150,7 @@ export default function ViewDeadlinesScreen() {
     switch (selectedCategory) {
       case 'UPCOMING':
         filteredDeadlines = deadlines.filter(deadline => {
-          const localDeadlineTime = convertUTCToLocal(deadline.date, userTimezone);
+          const localDeadlineTime = convertUTCToLocal(deadline.date);
           return localDeadlineTime > now && !deadline.completed;
         });
         break;
@@ -186,8 +186,8 @@ export default function ViewDeadlinesScreen() {
           if (!submission) return false;
           
           // Check if it's not late first
-          const submittedDate = convertUTCToLocal(submission.submitteddate, userTimezone);
-          const deadlineDate = convertUTCToLocal(deadline.date, userTimezone);
+          const submittedDate = convertUTCToLocal(submission.submitteddate);
+          const deadlineDate = convertUTCToLocal(deadline.date);
           
           // Only count as completed if it wasn't submitted late
           return deadline.completed && submittedDate.getTime() <= deadlineDate.getTime();
@@ -196,7 +196,7 @@ export default function ViewDeadlinesScreen() {
       
       case 'MISSED':
         filteredDeadlines = deadlines.filter(deadline => {
-          const localDeadlineTime = convertUTCToLocal(deadline.date, userTimezone);
+          const localDeadlineTime = convertUTCToLocal(deadline.date);
           return localDeadlineTime < now && !deadline.submissions?.length;
         });
         break;
@@ -206,8 +206,8 @@ export default function ViewDeadlinesScreen() {
           const submission = deadline.submissions?.[0];
           if (!submission) return false;
           
-          const submittedDate = convertUTCToLocal(submission.submitteddate, userTimezone);
-          const deadlineDate = convertUTCToLocal(deadline.date, userTimezone);
+          const submittedDate = convertUTCToLocal(submission.submitteddate);
+          const deadlineDate = convertUTCToLocal(deadline.date);
           
           // Any submission after deadline (even by seconds) is late
           return submittedDate.getTime() > deadlineDate.getTime();
@@ -247,7 +247,7 @@ export default function ViewDeadlinesScreen() {
 
     deadlines.forEach(deadline => {
       const submission = deadline.submissions?.[0];
-      const localDeadlineTime = convertUTCToLocal(deadline.date, userTimezone);
+      const localDeadlineTime = convertUTCToLocal(deadline.date);
 
       // Check each category independently - a deadline can be in multiple categories
       
@@ -258,8 +258,8 @@ export default function ViewDeadlinesScreen() {
 
       // LATE
       if (submission) {
-        const submittedDate = convertUTCToLocal(submission.submitteddate, userTimezone);
-        const deadlineDate = convertUTCToLocal(deadline.date, userTimezone);
+        const submittedDate = convertUTCToLocal(submission.submitteddate);
+        const deadlineDate = convertUTCToLocal(deadline.date);
         if (submittedDate.getTime() > deadlineDate.getTime()) {
           counts.LATE++;
         }
@@ -268,8 +268,8 @@ export default function ViewDeadlinesScreen() {
       // PENDING
       if (hasMod) {
         if (submission) {
-          const submittedDate = convertUTCToLocal(submission.submitteddate, userTimezone);
-          const deadlineDate = convertUTCToLocal(deadline.date, userTimezone);
+          const submittedDate = convertUTCToLocal(submission.submitteddate);
+          const deadlineDate = convertUTCToLocal(deadline.date);
           if (submittedDate.getTime() > deadlineDate.getTime()) {
             // Don't count late submissions as pending
           } else if (deadline.submissions?.some(sub => 
@@ -293,8 +293,8 @@ export default function ViewDeadlinesScreen() {
 
       // COMPLETED
       if (deadline.completed && submission) {
-        const submittedDate = convertUTCToLocal(submission.submitteddate, userTimezone);
-        const deadlineDate = convertUTCToLocal(deadline.date, userTimezone);
+        const submittedDate = convertUTCToLocal(submission.submitteddate);
+        const deadlineDate = convertUTCToLocal(deadline.date);
         if (submittedDate.getTime() <= deadlineDate.getTime()) {
           counts.COMPLETED++;
         }
@@ -307,7 +307,7 @@ export default function ViewDeadlinesScreen() {
     });
     
     return counts;
-  }, [deadlines, hasMod, userTimezone]);
+  }, [deadlines, hasMod]);
 
   return (
     <View className="flex-1 bg-white p-4">
@@ -399,8 +399,8 @@ export default function ViewDeadlinesScreen() {
                               getLateDuration(
                                 convertUTCToLocal(deadline.submissions?.find(
                                   sub => sub.id === deadline.lastsubmissionid
-                                )?.submitteddate || '', userTimezone),
-                                convertUTCToLocal(deadline.date, userTimezone)
+                                )?.submitteddate || ''),
+                                convertUTCToLocal(deadline.date)
                               ) :
                               formatDate(deadline.submissions?.find(
                                 sub => sub.id === deadline.lastsubmissionid
