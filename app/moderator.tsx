@@ -35,15 +35,13 @@ export default function ModeratorScreen() {
   };
 
   const handleGenerateModerator = async () => {
-    if (!modEmail) {
-      return;
-    }
+    if (!modEmail) return;
 
     setIsLoading(true);
     const generatedPassword = generatePassword();
     
     try {
-      // Try to sign up - if it fails with "User already registered", we know the user exists
+      // Create new user with mod role
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: modEmail,
         password: generatedPassword,
@@ -51,62 +49,13 @@ export default function ModeratorScreen() {
 
       if (authError) {
         if (authError.message.includes('already registered')) {
-          // Get user by email
-          const { data: { users }, error: adminError } = await supabase.auth.admin.listUsers({
-            filters: {
-              email: modEmail
-            }
-          });
-
-          if (adminError) throw adminError;
-          if (!users || users.length === 0) throw new Error('User not found');
-
-          const existingUserId = users[0].id;
-
-          // Check if they're a moderator using the ID
-          const { data: userProfile, error: profileError } = await supabase
-            .from('user_profiles')
-            .select('id, role')
-            .eq('id', existingUserId)
-            .single();
-
-          if (profileError) throw profileError;
-
-          if (!userProfile || userProfile.role !== 'mod') {
-            return;
-          }
-
-          // Check if moderator is already assigned
-          const { data: existingRelationship, error: relError } = await supabase
-            .from('mod_user_relationships')
-            .select('*')
-            .eq('mod_uuid', userProfile.id);
-
-          if (relError) throw relError;
-
-          if (existingRelationship && existingRelationship.length > 0) {
-            return;
-          }
-
-          // Assign existing moderator to current user
-          const { error: assignError } = await supabase
-            .from('mod_user_relationships')
-            .insert({
-              user_uuid: user?.id,
-              mod_uuid: userProfile.id,
-            });
-
-          if (assignError) throw assignError;
-
-          loadExistingMod();
-          return;
+          Alert.alert('Error', 'This email cannot be used. Please try another email address.');
         } else {
-          // Some other error occurred during signup
-          throw authError;
+          Alert.alert('Error', 'Unable to generate moderator credentials. Please try again.');
         }
+        return;
       }
 
-      // If we get here, it means the signup was successful (new user)
       if (authData.user) {
         // Create user profile
         const { error: profileError } = await supabase
@@ -117,7 +66,10 @@ export default function ModeratorScreen() {
             role: 'mod',
           });
 
-        if (profileError) throw profileError;
+        if (profileError) {
+          Alert.alert('Error', 'Unable to generate moderator credentials. Please try again.');
+          return;
+        }
 
         // Create relationship
         const { error: relError } = await supabase
@@ -127,14 +79,17 @@ export default function ModeratorScreen() {
             mod_uuid: authData.user.id,
           });
 
-        if (relError) throw relError;
+        if (relError) {
+          Alert.alert('Error', 'Unable to generate moderator credentials. Please try again.');
+          return;
+        }
 
         setGeneratedPassword(generatedPassword);
         setShowCredentials(true);
         loadExistingMod();
       }
     } catch (error: any) {
-      console.error('Error', error.message);
+      Alert.alert('Error', 'Unable to generate moderator credentials. Please try again.');
     } finally {
       setIsLoading(false);
     }
