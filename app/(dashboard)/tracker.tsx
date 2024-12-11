@@ -1,6 +1,5 @@
 import React, { useCallback, useState, useEffect } from 'react';
-import { View, ScrollView, SafeAreaView, TouchableOpacity, Modal } from 'react-native';
-import { Text } from 'tamagui';
+import { View, ScrollView, SafeAreaView, TouchableOpacity, Modal, Text } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { useAuth } from '@/providers/AuthProvider';
 import { getDeadlines } from '@/db/deadlines';
@@ -115,7 +114,7 @@ export default function TrackerScreen() {
     <SafeAreaView className="flex-1 bg-white">
       <ScrollView className="flex-1" bounces={false}>
         <View className="px-5 pt-2 pb-10">
-          <Text className="text-2xl font-bold mb-3" style={{ fontFamily: 'Manrope' }}>Performance Overview</Text>
+          <Text className="text-2xl mt-6 font-bold mb-3" style={{ fontFamily: 'Manrope' }}>Performance Overview</Text>
           
           <TouchableOpacity 
             className="mb-5 flex-row items-center justify-between bg-gray-100 p-4 rounded-xl"
