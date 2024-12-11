@@ -115,13 +115,13 @@ export default function TrackerScreen() {
     <SafeAreaView className="flex-1 bg-white">
       <ScrollView className="flex-1" bounces={false}>
         <View className="px-5 pt-2 pb-10">
-          <Text className="text-2xl font-bold mb-3">Performance Overview</Text>
+          <Text className="text-2xl font-bold mb-3" style={{ fontFamily: 'Manrope' }}>Performance Overview</Text>
           
           <TouchableOpacity 
             className="mb-5 flex-row items-center justify-between bg-gray-100 p-4 rounded-xl"
             onPress={() => setShowPeriodModal(true)}
           >
-            <Text>{periodLabels[period]}</Text>
+            <Text style={{ fontFamily: 'Roboto' }}>{periodLabels[period]}</Text>
             <Ionicons name="chevron-down" size={20} />
           </TouchableOpacity>
 
@@ -169,16 +169,16 @@ export default function TrackerScreen() {
             end={{ x: 1, y: 0 }}
             className="rounded-xl p-5 mb-4 shadow-sm"
           >
-            <Text className="text-white text-lg font-bold mb-2">Total Deadlines</Text>
-            <Text className="text-white text-3xl font-bold">{stats.total}</Text>
+            <Text className="text-white text-lg font-bold mb-2" style={{ fontFamily: 'Manrope' }}>Total Deadlines</Text>
+            <Text className="text-white text-3xl font-bold" style={{ fontFamily: 'Roboto' }}>{stats.total}</Text>
           </LinearGradient>
 
           {/* Statistics Grid */}
           <View className="flex-row flex-wrap justify-between mb-4">
             {/* On Time Card */}
             <View className="w-[48%] bg-green-100 rounded-xl p-4 mb-3">
-              <Text className="text-green-800 text-base font-semibold mb-1">On Time</Text>
-              <Text className="text-green-800 text-2xl font-bold">{stats.onTime}</Text>
+              <Text className="text-green-800 text-base font-semibold mb-1" style={{ fontFamily: 'Roboto' }}>On Time</Text>
+              <Text className="text-green-800 text-2xl font-bold" style={{ fontFamily: 'Roboto' }}>{stats.onTime}</Text>
               <Text className="text-green-700 text-sm">
                 {stats.total > 0 ? ((stats.onTime / stats.total) * 100).toFixed(0) : 0}%
               </Text>

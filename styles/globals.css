@@ -1,0 +1,16 @@
+:root {
+  --font-primary: var(--font-manrope);
+  --font-secondary: var(--font-roboto);
+  
+  /* Colors */
+  --color-upcoming: #979CFF;
+  --color-missed: #A50505;
+  --color-completed: #5EBD3C;
+  --color-pending: #D96A4E;
+  --color-late: #A07705;
+}
+
+/* Default font settings */
+body {
+  font-family: var(--font-primary);
+} 

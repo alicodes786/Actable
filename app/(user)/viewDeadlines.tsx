@@ -311,7 +311,7 @@ export default function ViewDeadlinesScreen() {
 
   return (
     <View className="flex-1 bg-white p-4">
-      <Text className="text-2xl font-bold mb-5">Your Deadlines</Text>
+      <Text className="text-2xl font-bold mb-5" style={{ fontFamily: 'Manrope' }}>Your Deadlines</Text>
       
       {/* Category Tabs */}
       <ScrollView 
@@ -345,6 +345,7 @@ export default function ViewDeadlinesScreen() {
                     ? 'text-white'
                     : 'text-gray-600'
                 }`}
+                style={{ fontFamily: 'Roboto' }}
               >
                 {value.label} ({count})
               </Text>
@@ -367,10 +368,10 @@ export default function ViewDeadlinesScreen() {
                 className="rounded-xl p-4 shadow-md"
               >
                 <View className="flex-1">
-                  <Text className="text-lg font-bold text-white mb-2">
+                  <Text className="text-lg font-bold text-white mb-2" style={{ fontFamily: 'Roboto' }}>
                     {deadline.name}
                   </Text>
-                  <Text className="text-sm text-white mb-2">
+                  <Text className="text-sm text-white mb-2" style={{ fontFamily: 'Roboto' }}>
                     {deadline.description}
                   </Text>
                   

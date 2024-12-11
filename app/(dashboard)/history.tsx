@@ -120,7 +120,9 @@ export default function HistoryScreen() {
     <SafeAreaView className="flex-1 bg-white">
       <ScrollView className="flex-1" bounces={false}>
         <View className="px-5 pt-2 pb-10 flex-1">
-          <Text className="text-2xl font-bold mb-3">History</Text>
+          <Text className="text-2xl font-bold mb-3" style={{ fontFamily: 'Manrope' }}>
+            History
+          </Text>
 
           {getHistoryEntries().map(({ deadline, status, completedDate, dueDate }, idx) => (
             <View key={deadline.id || idx}>
@@ -130,18 +132,18 @@ export default function HistoryScreen() {
                 end={{ x: 1, y: 0 }}
                 className="mt-4 p-5 rounded-2xl shadow-md"
               >
-                <Text className="text-white text-base font-medium mb-1">
+                <Text className="text-white text-base font-medium mb-1" style={{ fontFamily: 'Roboto' }}>
                   {deadline.name}
                 </Text>
                 {completedDate && (
-                  <Text className="text-white text-sm mb-1">
+                  <Text className="text-white text-sm mb-1" style={{ fontFamily: 'Roboto' }}>
                     Completed: {formatDate(completedDate)}
                   </Text>
                 )}
-                <Text className="text-white text-sm mb-1">
+                <Text className="text-white text-sm mb-1" style={{ fontFamily: 'Roboto' }}>
                   Due: {formatDate(dueDate)}
                 </Text>
-                <Text className="text-white text-sm mb-2 italic">
+                <Text className="text-white text-sm mb-2 italic" style={{ fontFamily: 'Roboto' }}>
                   {getStatusLabel(status)}
                 </Text>
               </LinearGradient>
@@ -149,7 +151,7 @@ export default function HistoryScreen() {
           ))}
 
           {getHistoryEntries().length === 0 && (
-            <Text className="text-gray-500 text-center mt-10">
+            <Text className="text-gray-500 text-center mt-10" style={{ fontFamily: 'Roboto' }}>
               No deadline history found
             </Text>
           )}
