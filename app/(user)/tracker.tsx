@@ -7,6 +7,7 @@ import { IdeadlineList } from '@/lib/interfaces';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import Header from '@/components/Header';
+import { colors, fonts } from '@/styles/theme';
 
 type TimePeriod = '1' | '7' | '31';
 
@@ -164,49 +165,97 @@ export default function TrackerScreen() {
               </TouchableOpacity>
             </Modal>
 
-            {/* Total Deadlines Card */}
-            <LinearGradient
-              colors={['#4c669f', '#3b5998']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              className="rounded-xl p-5 mb-4 shadow-sm"
-            >
-              <Text className="text-white text-lg font-bold mb-2" style={{ fontFamily: 'Manrope' }}>Total Deadlines</Text>
-              <Text className="text-white text-3xl font-bold">{stats.total}</Text>
-            </LinearGradient>
-
             {/* Statistics Grid */}
             <View className="flex-row flex-wrap justify-between mb-4">
-              {/* Cards for On Time, Late, Missed, and Invalid - same as dashboard version */}
-              <View className="w-[48%] bg-green-100 rounded-xl p-4 mb-3">
-                <Text className="text-green-800 text-base font-semibold mb-1" style={{ fontFamily: 'Roboto' }}>On Time</Text>
-                <Text className="text-green-800 text-2xl font-bold">{stats.onTime}</Text>
-                <Text className="text-green-700 text-sm">
+              {/* On Time Card */}
+              <View 
+                className="w-[48%] rounded-2xl p-4 mb-3"
+                style={{ backgroundColor: colors.completed }}
+              >
+                <Text 
+                  className="text-white text-2xl font-bold mb-1"
+                >
+                  {stats.onTime}
+                </Text>
+                <Text 
+                  className="text-white/80 text-sm"
+                >
                   {stats.total > 0 ? ((stats.onTime / stats.total) * 100).toFixed(0) : 0}%
                 </Text>
+                <Text 
+                  className="text-white/90 text-base mt-1"
+                  style={{ fontFamily: fonts.secondary }}
+                >
+                  On Time
+                </Text>
               </View>
 
-              <View className="w-[48%] bg-orange-100 rounded-xl p-4 mb-3">
-                <Text className="text-orange-800 text-base font-semibold mb-1" style={{ fontFamily: 'Roboto' }}>Late</Text>
-                <Text className="text-orange-800 text-2xl font-bold">{stats.late}</Text>
-                <Text className="text-orange-700 text-sm">
+              {/* Late Card */}
+              <View 
+                className="w-[48%] rounded-2xl p-4 mb-3"
+                style={{ backgroundColor: colors.late }}
+              >
+                <Text 
+                  className="text-white text-2xl font-bold mb-1"
+                >
+                  {stats.late}
+                </Text>
+                <Text 
+                  className="text-white/80 text-sm"
+                >
                   {stats.total > 0 ? ((stats.late / stats.total) * 100).toFixed(0) : 0}%
                 </Text>
-              </View>
-
-              <View className="w-[48%] bg-red-100 rounded-xl p-4 mb-3">
-                <Text className="text-red-800 text-base font-semibold mb-1" style={{ fontFamily: 'Roboto' }}>Missed</Text>
-                <Text className="text-red-800 text-2xl font-bold">{stats.missed}</Text>
-                <Text className="text-red-700 text-sm">
-                  {stats.total > 0 ? ((stats.missed / stats.total) * 100).toFixed(0) : 0}%
+                <Text 
+                  className="text-white/90 text-base mt-1"
+                  style={{ fontFamily: fonts.secondary }}
+                >
+                  Late
                 </Text>
               </View>
 
-              <View className="w-[48%] bg-gray-100 rounded-xl p-4 mb-3">
-                <Text className="text-gray-800 text-base font-semibold mb-1" style={{ fontFamily: 'Roboto' }}>Invalid</Text>
-                <Text className="text-gray-800 text-2xl font-bold">{stats.invalid}</Text>
-                <Text className="text-gray-700 text-sm">
+              {/* Missed Card */}
+              <View 
+                className="w-[48%] rounded-2xl p-4 mb-3"
+                style={{ backgroundColor: colors.missed }}
+              >
+                <Text 
+                  className="text-white text-2xl font-bold mb-1"
+                >
+                  {stats.missed}
+                </Text>
+                <Text 
+                  className="text-white/80 text-sm"
+                >
+                  {stats.total > 0 ? ((stats.missed / stats.total) * 100).toFixed(0) : 0}%
+                </Text>
+                <Text 
+                  className="text-white/90 text-base mt-1"
+                  style={{ fontFamily: fonts.secondary }}
+                >
+                  Missed
+                </Text>
+              </View>
+
+              {/* Invalid Card */}
+              <View 
+                className="w-[48%] rounded-2xl p-4 mb-3"
+                style={{ backgroundColor: colors.invalid }}
+              >
+                <Text 
+                  className="text-white text-2xl font-bold mb-1"
+                >
+                  {stats.invalid}
+                </Text>
+                <Text 
+                  className="text-white/80 text-sm"
+                >
                   {stats.total > 0 ? ((stats.invalid / stats.total) * 100).toFixed(0) : 0}%
+                </Text>
+                <Text 
+                  className="text-white/90 text-base mt-1"
+                  style={{ fontFamily: fonts.secondary }}
+                >
+                  Invalid
                 </Text>
               </View>
             </View>
@@ -214,7 +263,7 @@ export default function TrackerScreen() {
             {/* Performance Metrics */}
             {stats.total > 0 && (
               <LinearGradient
-                colors={['#00b09b', '#96c93d']}
+                colors={['#83D7F0', '#83D7F0']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 className="rounded-xl p-5 shadow-sm"
