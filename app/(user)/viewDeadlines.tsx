@@ -422,7 +422,10 @@ export default function ViewDeadlinesScreen() {
                   ) : (
                     <Text className="text-white text-base font-medium">
                       {new Date(deadline.date).getTime() >= Date.now() ?
-                        <CountDownTimer deadlineDate={new Date(deadline.date)} />
+                        <CountDownTimer 
+                          deadlineDate={new Date(deadline.date)} 
+                          textColour="#FFFFFF"
+                        />
                         :
                         "Deadline Passed"
                       }

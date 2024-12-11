@@ -136,11 +136,14 @@ export default function Home() {
                       </Text>
                     </View>
                   )}
-                  <Text className="text-white text-base font-medium mb-1" style={{ fontFamily: 'Roboto' }}>
+                  <Text className="text-white text-base font-medium mb-1">
                     {item.name}
                   </Text>
                   <Text className="text-white text-base font-medium">
-                    <CountDownTimer deadlineDate={new Date(item.date)} />
+                    <CountDownTimer 
+                      deadlineDate={new Date(item.date)} 
+                      textColour="#FFFFFF" 
+                    />
                   </Text>
                   <TouchableOpacity
                     className="bg-black p-2.5 rounded mt-2.5 self-start min-w-[100px] items-center"
