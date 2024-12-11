@@ -7,6 +7,7 @@ import { getDeadlines } from '@/db/deadlines';
 import CountDownTimer from '../CountDownTimer';
 import { useAuth } from '@/providers/AuthProvider';
 import { getUserName } from '@/db/users'; // Assuming you have this function to fetch user name
+import Header from '@/components/Header';
 
 const GRADIENT_COLORS: [string, string][] = [
   ['#87CEEB', '#00BFFF'],
@@ -93,10 +94,9 @@ export default function Home() {
   return (
     <SafeAreaView className="flex-1 bg-white">
       <ScrollView className="flex-1" bounces={false}>
-        <View className="px-5 pt-2 pb-10 flex-1">
-          <Text className="text-lg font-medium" style={{ fontFamily: 'Manrope' }}>Welcome {userName || 'Loading...'}</Text>
-
-          <View className="mt-10">
+        <View className="pb-10 flex-1">
+          <Header />
+          <View className="mt-10 px-5">
             <Text className="text-2xl font-bold mb-3" style={{ fontFamily: 'Manrope' }}>Upcoming</Text>
 
             {getUpcomingDeadlines().map((item, idx) => {

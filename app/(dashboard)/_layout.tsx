@@ -1,13 +1,13 @@
-import { Tabs, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { TabBarIcon } from '@/components/navigation/TabBarIcon';
 import { View, TouchableOpacity, Text } from 'react-native';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { fetchNotifications } from '@/db/notifications';
 import NotificationDropdown from '@/components/DropDown';
 import { useAuth } from '@/providers/AuthProvider';
 import { ModUser } from '@/db/mod';
+import DashboardTabNavigation from '@/components/navigation/DashboardTabNavigation';
 
 export default function DashboardLayout() {
   const { user, loadAssignedUser, logout } = useAuth();
@@ -26,7 +26,6 @@ export default function DashboardLayout() {
     loadNotifications();
   }, []);
 
-  // Load managed user when the component mounts
   useEffect(() => {
     const loadUser = async () => {
       if (user?.role === 'mod') {
@@ -79,61 +78,7 @@ export default function DashboardLayout() {
       </View>
 
       {/* Tab Navigation */}
-      <Tabs
-        screenOptions={{
-          tabBarActiveTintColor: '#000',
-          headerShown: false,
-          tabBarStyle: {
-            height: 70,
-            paddingBottom: 10,
-            borderTopLeftRadius: 20,
-            borderTopRightRadius: 20,
-          },
-        }}
-      >
-        <Tabs.Screen
-          name="dashboard"
-          options={{
-            title: 'Dashboard',
-            tabBarIcon: ({ color, focused }) => (
-              <TabBarIcon name={focused ? 'home' : 'home-outline'} color={color} />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="history"
-          options={{
-            title: 'History',
-            tabBarIcon: ({ color, focused }) => (
-              <TabBarIcon name={focused ? 'time' : 'time-outline'} color={color} />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="tracker"
-          options={{
-            title: 'Tracker',
-            tabBarIcon: ({ color, focused }) => (
-              <TabBarIcon name={focused ? 'stats-chart' : 'stats-chart-outline'} color={color} />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="upcoming"
-          options={{
-            title: 'Upcoming',
-            tabBarIcon: ({ color, focused }) => (
-              <TabBarIcon name={focused ? 'calendar' : 'calendar-outline'} color={color} />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="submission/[id]"
-          options={{
-            href: null,  // This prevents the tab from showing
-          }}
-        />
-      </Tabs>
+      <DashboardTabNavigation />
     </SafeAreaView>
   );
 } 

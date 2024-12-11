@@ -68,7 +68,7 @@ export default function UpcomingScreen() {
 
   return (
     <View className="flex-1 bg-white p-4">
-      <Text className="text-2xl font-bold mb-5" style={{ fontFamily: 'Manrope' }}>
+      <Text className="text-2xl mt-6 font-bold mb-5" style={{ fontFamily: 'Manrope' }}>
         Upcoming Deadlines
       </Text>
       
