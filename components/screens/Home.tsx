@@ -94,10 +94,10 @@ export default function Home() {
     <SafeAreaView className="flex-1 bg-white">
       <ScrollView className="flex-1" bounces={false}>
         <View className="px-5 pt-2 pb-10 flex-1">
-          <Text className="text-lg font-medium">Welcome {userName || 'Loading...'}</Text>
+          <Text className="text-lg font-medium" style={{ fontFamily: 'Manrope' }}>Welcome {userName || 'Loading...'}</Text>
 
           <View className="mt-10">
-            <Text className="text-2xl font-bold mb-3">Upcoming</Text>
+            <Text className="text-2xl font-bold mb-3" style={{ fontFamily: 'Manrope' }}>Upcoming</Text>
 
             {getUpcomingDeadlines().map((item, idx) => {
               const submission = item.submissions?.find(
@@ -140,7 +140,10 @@ export default function Home() {
                     {item.name}
                   </Text>
                   <Text className="text-white text-base font-medium">
-                    <CountDownTimer deadlineDate={new Date(item.date)} />
+                    <CountDownTimer 
+                      deadlineDate={new Date(item.date)} 
+                      textColour="#FFFFFF" 
+                    />
                   </Text>
                   <TouchableOpacity
                     className="bg-black p-2.5 rounded mt-2.5 self-start min-w-[100px] items-center"

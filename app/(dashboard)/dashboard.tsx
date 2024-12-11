@@ -70,12 +70,12 @@ function SubmissionCard({ item }: { item: DeadlineWithSubmission }) {
             borderColor: 'rgba(0, 0, 0, 0.05)',
           }}
         >
-          <Text className="text-gray-900 text-lg font-semibold mb-3">
+          <Text className="text-gray-900 text-lg font-semibold mb-3" style={{ fontFamily: 'Roboto' }}>
             {item.name}
           </Text>
           <View className="flex-row justify-between items-center">
             <View>
-              <Text className="text-gray-500 text-xs uppercase mb-1">
+              <Text className="text-gray-500 text-xs uppercase mb-1" style={{ fontFamily: 'Roboto' }}>
                 Submitted
               </Text>
               <Text 
@@ -83,7 +83,8 @@ function SubmissionCard({ item }: { item: DeadlineWithSubmission }) {
                 style={{ 
                   color: isSubmissionLate(item.date, item.submission.submitteddate) 
                     ? STATUS_TEXT_COLORS.LATE 
-                    : STATUS_TEXT_COLORS.ON_TIME 
+                    : STATUS_TEXT_COLORS.ON_TIME,
+                  fontFamily: 'Roboto'
                 }}
               >
                 {formatDate(item.submission.submitteddate)}
@@ -142,7 +143,7 @@ export default function Dashboard() {
     <View className="flex-1 bg-white">
       <ScrollView className="flex-1">
         <View className="p-5">
-          <Text className="text-2xl font-bold mb-5">
+          <Text className="text-2xl font-bold mb-5" style={{ fontFamily: 'Manrope' }}>
             Pending Submissions
           </Text>
 
@@ -151,7 +152,7 @@ export default function Dashboard() {
           ))}
 
           {submissions.length === 0 && !loading && (
-            <Text className="text-center text-gray-500 mt-5">
+            <Text className="text-center text-gray-500 mt-5" style={{ fontFamily: 'Roboto' }}>
               No pending submissions to review
             </Text>
           )}

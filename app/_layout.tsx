@@ -5,9 +5,7 @@ import * as Notifications from 'expo-notifications';
 import 'react-native-reanimated';
 import { View, ActivityIndicator, Platform } from 'react-native';
 import { router } from 'expo-router';
-import config from '../tamagui.config';
 import { AuthProvider, useAuth } from '@/providers/AuthProvider';
-import { TamaguiProvider } from 'tamagui';
 
 export {
   ErrorBoundary,
@@ -23,7 +21,8 @@ SplashScreen.preventAutoHideAsync();
 function AppContent() {
   const { isLoading, user } = useAuth();
   const [loaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+    'Manrope': require('../assets/fonts/Manrope-VariableFont_wght.ttf'),
+    'Roboto': require('../assets/fonts/Roboto-Regular.ttf'),
   });
   const [isAppReady, setAppReady] = useState(false);
 
@@ -54,7 +53,7 @@ function AppContent() {
   }
 
   return (
-    <TamaguiProvider config={config}>
+   
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen 
           name="(auth)" 
@@ -96,7 +95,6 @@ function AppContent() {
           }} 
         />
       </Stack>
-    </TamaguiProvider>
   );
 }
 

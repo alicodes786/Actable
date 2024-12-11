@@ -55,7 +55,7 @@ export default function DashboardLayout() {
     <SafeAreaView className="flex-1 bg-white mt-8 overflow-visible">
       {/* Header */}
       <View className="flex-row justify-between items-center p-2 bg-white w-full z-10">
-        <Text className="font-bold text-lg">
+        <Text className="font-bold text-lg" style={{ fontFamily: 'Manrope' }}>
           {managedUser ? `Managing ${managedUser.name}` : 'No User Assigned'}
         </Text>
         <View className="flex-row mr-2 space-x-4">

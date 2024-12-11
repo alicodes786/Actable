@@ -68,7 +68,9 @@ export default function UpcomingScreen() {
 
   return (
     <View className="flex-1 bg-white p-4">
-      <Text className="text-2xl font-bold mb-5">Upcoming Deadlines</Text>
+      <Text className="text-2xl font-bold mb-5" style={{ fontFamily: 'Manrope' }}>
+        Upcoming Deadlines
+      </Text>
       
       <ScrollView className="flex-1">
         {getUpcomingDeadlines().map((deadline) => {
@@ -101,14 +103,20 @@ export default function UpcomingScreen() {
                 >
                   <Text 
                     className="text-xs font-medium"
-                    style={{ color: status.text }}
+                    style={{ 
+                      color: status.text,
+                      fontFamily: 'Roboto'
+                    }}
                   >
                     {statusText}
                   </Text>
                 </View>
                 <Text 
                   className="text-lg font-bold mb-2" 
-                  style={{ color: status.text }}
+                  style={{ 
+                    color: status.text,
+                    fontFamily: 'Roboto'
+                  }}
                 >
                   {deadline.name}
                 </Text>

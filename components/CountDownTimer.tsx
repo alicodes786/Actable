@@ -5,6 +5,7 @@ import { useAuth } from '@/providers/AuthProvider';
 
 interface CountDownTimerProps {
   deadlineDate: Date;
+  textColour: string;
 }
 
 const CountDownTimer: React.FC<CountDownTimerProps> = ({ deadlineDate }) => {

@@ -114,13 +114,13 @@ export default function TrackerScreen() {
     <SafeAreaView className="flex-1 bg-white">
       <ScrollView className="flex-1" bounces={false}>
         <View className="px-5 pt-2 pb-10">
-          <Text className="text-2xl font-bold mb-3">Performance Overview</Text>
+          <Text className="text-2xl font-bold mb-3" style={{ fontFamily: 'Manrope' }}>Performance Overview</Text>
           
           <TouchableOpacity 
             className="mb-5 flex-row items-center justify-between bg-gray-100 p-4 rounded-xl"
             onPress={() => setShowPeriodModal(true)}
           >
-            <Text>{periodLabels[period]}</Text>
+            <Text style={{ fontFamily: 'Roboto' }}>{periodLabels[period]}</Text>
             <Ionicons name="chevron-down" size={20} />
           </TouchableOpacity>
 
@@ -169,7 +169,7 @@ export default function TrackerScreen() {
             end={{ x: 1, y: 0 }}
             className="rounded-xl p-5 mb-4 shadow-sm"
           >
-            <Text className="text-white text-lg font-bold mb-2">Total Deadlines</Text>
+            <Text className="text-white text-lg font-bold mb-2" style={{ fontFamily: 'Manrope' }}>Total Deadlines</Text>
             <Text className="text-white text-3xl font-bold">{stats.total}</Text>
           </LinearGradient>
 
@@ -177,7 +177,7 @@ export default function TrackerScreen() {
           <View className="flex-row flex-wrap justify-between mb-4">
             {/* Cards for On Time, Late, Missed, and Invalid - same as dashboard version */}
             <View className="w-[48%] bg-green-100 rounded-xl p-4 mb-3">
-              <Text className="text-green-800 text-base font-semibold mb-1">On Time</Text>
+              <Text className="text-green-800 text-base font-semibold mb-1" style={{ fontFamily: 'Roboto' }}>On Time</Text>
               <Text className="text-green-800 text-2xl font-bold">{stats.onTime}</Text>
               <Text className="text-green-700 text-sm">
                 {stats.total > 0 ? ((stats.onTime / stats.total) * 100).toFixed(0) : 0}%
@@ -185,7 +185,7 @@ export default function TrackerScreen() {
             </View>
 
             <View className="w-[48%] bg-orange-100 rounded-xl p-4 mb-3">
-              <Text className="text-orange-800 text-base font-semibold mb-1">Late</Text>
+              <Text className="text-orange-800 text-base font-semibold mb-1" style={{ fontFamily: 'Roboto' }}>Late</Text>
               <Text className="text-orange-800 text-2xl font-bold">{stats.late}</Text>
               <Text className="text-orange-700 text-sm">
                 {stats.total > 0 ? ((stats.late / stats.total) * 100).toFixed(0) : 0}%
@@ -193,7 +193,7 @@ export default function TrackerScreen() {
             </View>
 
             <View className="w-[48%] bg-red-100 rounded-xl p-4 mb-3">
-              <Text className="text-red-800 text-base font-semibold mb-1">Missed</Text>
+              <Text className="text-red-800 text-base font-semibold mb-1" style={{ fontFamily: 'Roboto' }}>Missed</Text>
               <Text className="text-red-800 text-2xl font-bold">{stats.missed}</Text>
               <Text className="text-red-700 text-sm">
                 {stats.total > 0 ? ((stats.missed / stats.total) * 100).toFixed(0) : 0}%
@@ -201,7 +201,7 @@ export default function TrackerScreen() {
             </View>
 
             <View className="w-[48%] bg-gray-100 rounded-xl p-4 mb-3">
-              <Text className="text-gray-800 text-base font-semibold mb-1">Invalid</Text>
+              <Text className="text-gray-800 text-base font-semibold mb-1" style={{ fontFamily: 'Roboto' }}>Invalid</Text>
               <Text className="text-gray-800 text-2xl font-bold">{stats.invalid}</Text>
               <Text className="text-gray-700 text-sm">
                 {stats.total > 0 ? ((stats.invalid / stats.total) * 100).toFixed(0) : 0}%
@@ -217,7 +217,7 @@ export default function TrackerScreen() {
               end={{ x: 1, y: 0 }}
               className="rounded-xl p-5 shadow-sm"
             >
-              <Text className="text-white text-lg font-bold mb-3">Overall Performance</Text>
+              <Text className="text-white text-lg font-bold mb-3" style={{ fontFamily: 'Manrope' }}>Overall Performance</Text>
               <View className="bg-white/20 rounded-lg p-3 mb-2">
                 <Text className="text-white font-semibold">
                   On-Time Rate: {((stats.onTime / stats.total) * 100).toFixed(1)}%
