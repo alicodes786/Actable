@@ -5,9 +5,7 @@ import * as Notifications from 'expo-notifications';
 import 'react-native-reanimated';
 import { View, ActivityIndicator, Platform } from 'react-native';
 import { router } from 'expo-router';
-import config from '../tamagui.config';
 import { AuthProvider, useAuth } from '@/providers/AuthProvider';
-import { TamaguiProvider } from 'tamagui';
 
 export {
   ErrorBoundary,
@@ -55,7 +53,7 @@ function AppContent() {
   }
 
   return (
-    <TamaguiProvider config={config}>
+   
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen 
           name="(auth)" 
@@ -97,7 +95,6 @@ function AppContent() {
           }} 
         />
       </Stack>
-    </TamaguiProvider>
   );
 }
 
