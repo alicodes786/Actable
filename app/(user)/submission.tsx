@@ -4,7 +4,7 @@ import { useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { useEffect, useState, useCallback } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import CountDownTimer from '@/components/CountDownTimer';
-import { uploadSubmissionImage } from '@/db/imageUpload';
+import { uploadSubmissionImage, RateLimitError } from '@/db/imageUpload';
 import { createNewSubmission, fetchLastSubmissionImage, SubmissionError } from '@/db/submissions';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { useAuth } from '@/providers/AuthProvider';
@@ -116,30 +116,49 @@ function ImageCapture({ deadlineId, userId }: { deadlineId: string; userId: stri
       });
 
       if (error) {
-        throw error;
+        Alert.alert(
+          error instanceof RateLimitError ? 'Rate Limit Exceeded' : 'Upload Failed',
+          error.message,
+          [{ text: 'OK' }]
+        );
+        setUploading(false);
+        return;
       }
 
-      const newSubmission = await createNewSubmission(
-        deadlineId,
-        userId,
-        publicUrl
-      );
+      try {
+        await createNewSubmission(
+          deadlineId,
+          userId,
+          publicUrl
+        );
 
-      Alert.alert(
-        'Success',
-        'Submission uploaded successfully!',
-        [{ text: 'OK' }]
-      );
-      setImage(publicUrl);
-      setIsNewPhoto(false);
+        // Fetch the signed URL for display
+        const signedUrl = await fetchLastSubmissionImage(deadlineId);
+        if (signedUrl) {
+          setImage(signedUrl);
+          setIsNewPhoto(false);
+        }
+
+        Alert.alert(
+          'Success',
+          'Submission uploaded successfully!',
+          [{ text: 'OK' }]
+        );
+
+      } catch (error) {
+        Alert.alert(
+          'Submission Failed',
+          error instanceof SubmissionError 
+            ? error.message 
+            : 'Failed to create submission. Please try again.',
+          [{ text: 'OK' }]
+        );
+      }
 
     } catch (error) {
-      console.error('Error uploading submission:', error);
       Alert.alert(
         'Upload Failed',
-        error instanceof SubmissionError 
-          ? error.message 
-          : 'Failed to upload submission. Please try again.',
+        error instanceof Error ? error.message : 'Failed to upload image. Please try again.',
         [{ text: 'OK' }]
       );
     } finally {
@@ -209,7 +228,7 @@ function SubmissionContent() {
 
       const fetchSubmissionData = async () => {
         try {
-          const deadline = await getSingleDeadline(deadlineId);
+          const deadline = await getSingleDeadline(deadlineId.toString());
           
           if (deadline) {
             

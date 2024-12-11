@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, Keyboard, TouchableWithoutFeedback } from 'react-native';
 import { router, Href } from "expo-router";
 import { useAuth } from '@/providers/AuthProvider';
-import { supabase } from '@/lib/db';
 import { handleSignIn, handleGoogleSignIn } from '@/lib/auth';
 
 export default function SignIn() {
@@ -10,7 +9,7 @@ export default function SignIn() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const signUpPath: Href = "/(auth)/sign-up";
-  const { login, user } = useAuth();
+  const { login, user, session } = useAuth();
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
@@ -20,11 +19,11 @@ export default function SignIn() {
   useEffect(() => {
     if (!isReady) return;
     
-    if (user) {
+    if (user && session) {
       const route = user.role === 'mod' ? '/(dashboard)/dashboard' : '/(user)';
       router.replace(route);
     }
-  }, [user, isReady]);
+  }, [user, session, isReady]);
 
   // Separate effect to handle back navigation prevention
   useEffect(() => {
@@ -33,16 +32,6 @@ export default function SignIn() {
     }
   }, []);
 
-  const validateInputs = () => {
-    if (!email.trim() || !password.trim()) {
-      Alert.alert(
-        'Missing Information',
-        'Please enter both email and password'
-      );
-      return false;
-    }
-    return true;
-  };
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>

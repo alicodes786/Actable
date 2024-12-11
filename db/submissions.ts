@@ -6,7 +6,7 @@ interface SubmissionData {
   id: string;
   deadlineid: string;
   imageurl: string;
-  userid: string;
+  uuid: string;
   status: 'pending' | 'approved' | 'invalid';
   submitteddate: string;
 }
@@ -22,6 +22,51 @@ export class SubmissionError extends Error {
   constructor(message: string, public originalError?: DatabaseError | PostgrestError) {
     super(message);
     this.name = 'SubmissionError';
+  }
+}
+
+export async function getSecureImageUrl(pathOrUrl: string): Promise<string | null> {
+  try {
+    // If the URL already contains a token, it's already signed
+    if (pathOrUrl.includes('?token=')) {
+      return pathOrUrl;
+    }
+
+    let cleanPath: string;
+
+    // Handle full URLs
+    if (pathOrUrl.startsWith('http')) {
+      const match = pathOrUrl.match(/submissions\/([^?]+)/);
+      if (!match) {
+        return null;
+      }
+      cleanPath = match[1];
+    } else {
+      cleanPath = pathOrUrl
+        .replace(/^submissions\//, '')
+        .replace(/^\/+|\/+$/g, '');
+    }
+
+    const pathParts = cleanPath.split('/');
+
+    // Silently ignore old format paths
+    const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!UUID_REGEX.test(pathParts[0])) {
+      return null;
+    }
+
+    const { data, error } = await supabase.storage
+      .from('submissions')
+      .createSignedUrl(cleanPath, 3600);
+
+    if (error || !data?.signedUrl) {
+      return null;
+    }
+
+    return data.signedUrl;
+
+  } catch (error) {
+    return null;
   }
 }
 
@@ -59,7 +104,12 @@ export async function fetchLastSubmissionImage(deadlineId: string): Promise<stri
       );
     }
 
-    return submissionData?.imageurl || null;
+    if (!submissionData?.imageurl) {
+      return null;
+    }
+
+    // Generate signed URL from stored path
+    return await getSecureImageUrl(submissionData.imageurl);
 
   } catch (error) {
     if (error instanceof SubmissionError) {
@@ -75,15 +125,21 @@ export async function fetchLastSubmissionImage(deadlineId: string): Promise<stri
 export async function createNewSubmission(
   deadlineId: string,
   userId: string,
-  imageUrl: string
+  storagePath: string
 ): Promise<SubmissionData> {
   try {
-    // Insert new submission with pending status initially
+    console.log('Starting submission creation:', {
+      deadlineId,
+      userId,
+      timestamp: new Date().toISOString()
+    });
+
+    // Rest of your existing createNewSubmission code...
     const { data: newSubmission, error: submissionError } = await supabase
       .from('submissions')
       .insert({
         deadlineid: deadlineId,
-        imageurl: imageUrl,
+        imageurl: storagePath,
         uuid: userId,
         status: 'pending',
         submitteddate: new Date().toISOString()
@@ -138,7 +194,7 @@ async function handleSubmissionApproval(
 ): Promise<void> {
   try {
     const assignedMod = await getAssignedMod(userId);
-    
+
     // If no mod is assigned, auto-approve the submission
     if (assignedMod === null) {
       const { error: approvalError } = await supabase
@@ -215,10 +271,34 @@ export async function fetchUnapprovedSubmissions(userId: string): Promise<Deadli
       throw new SubmissionError('Failed to fetch unapproved submissions', error);
     }
 
-    const filtered = data?.filter(item => item.submission.status === 'pending');
-    
-    return filtered || [];
+    // Get signed URLs for all submissions
+    const filtered = data?.filter(item => item.submission.status === 'pending') || [];
+    const withSignedUrls = await Promise.all(
+      filtered.map(async (item) => {
+        const signedUrl = await getSecureImageUrl(item.submission.imageurl);
+        if (!signedUrl) {
+          // Skip this submission if we couldn't get a signed URL
+          return null;
+        }
+
+        return {
+          ...item,
+          submission: {
+            ...item.submission,
+            imageurl: signedUrl
+          }
+        } satisfies DeadlineWithSubmission;
+      })
+    );
+
+    // Filter out null entries and explicitly type the result
+    return withSignedUrls.filter((item): item is DeadlineWithSubmission => item !== null);
   } catch (error) {
+    console.error('Error in fetchUnapprovedSubmissions:', {
+      error,
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+
     throw new SubmissionError(
       'Unexpected error fetching unapproved submissions',
       error as DatabaseError
@@ -272,8 +352,14 @@ export async function fetchSubmissionById(submissionId: number): Promise<Submiss
 
     if (error) throw error;
     if (!data) throw new Error('Submission not found');
-    
-    return data;
+
+    // Generate signed URL from stored path
+    const secureUrl = await getSecureImageUrl(data.imageurl);
+
+    return {
+      ...data,
+      imageurl: secureUrl
+    };
   } catch (error) {
     throw new SubmissionError(
       'Failed to fetch submission',

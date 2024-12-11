@@ -1,16 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Image, ScrollView, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, Image, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { approveSubmission, invalidateSubmission, Submission, fetchSubmissionById } from '@/db/submissions';
-import LoadingSpinner from '@/components/LoadingSpinner';
+import { useSignedUrl } from '@/lib/hooks/useSignedUrl';
 
 export default function SubmissionReviewScreen() {
   const params = useLocalSearchParams();
   const [isLoading, setIsLoading] = useState(true);
   const [submission, setSubmission] = useState<Submission | null>(null);
   const submissionId = Number(params.id);
+  const signedUrl = useSignedUrl(submission?.imageurl ?? null);
 
+  // Reset submission when ID changes to prevent stale data
   useEffect(() => {
+    setSubmission(null);
+    setIsLoading(true);
     loadSubmission();
   }, [submissionId]);
 
@@ -53,16 +57,11 @@ export default function SubmissionReviewScreen() {
     }
   };
 
-  if (isLoading) {
-    return <LoadingSpinner />;
-  }
-
-  if (!submission) {
+  if (isLoading || !submission) {
     return (
-      <View className="flex-1 bg-white">
-        <Text className="text-base text-gray-600 text-center mt-5">
-          Submission not found
-        </Text>
+      <View className="flex-1 bg-white justify-center items-center">
+        <ActivityIndicator size="large" color="#0000ff" />
+        <Text className="text-gray-600 mt-4">Loading submission...</Text>
       </View>
     );
   }
@@ -74,11 +73,13 @@ export default function SubmissionReviewScreen() {
     <ScrollView className="flex-1 bg-white">
       <View className="p-5">
         <View className="bg-gray-50 rounded-2xl overflow-hidden shadow-sm">
-          <Image
-            source={{ uri: submission.imageurl }}
-            className="w-full h-96"
-            resizeMode="contain"
-          />
+          {signedUrl && (
+            <Image
+              source={{ uri: signedUrl }}
+              className="w-full h-96"
+              resizeMode="contain"
+            />
+          )}
         </View>
 
         {showActions && (
