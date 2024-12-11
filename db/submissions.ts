@@ -70,22 +70,6 @@ export async function getSecureImageUrl(pathOrUrl: string): Promise<string | nul
   }
 }
 
-// Add rate limiting helper
-async function checkRateLimit(userId: string): Promise<boolean> {
-  const RATE_LIMIT_WINDOW = 1000 * 60 * 60; // 1 hour
-  const MAX_SUBMISSIONS_PER_WINDOW = 10;
-
-  const windowStart = new Date(Date.now() - RATE_LIMIT_WINDOW).toISOString();
-
-  const { count } = await supabase
-    .from('submissions')
-    .select('*', { count: 'exact', head: true })
-    .eq('uuid', userId)
-    .gte('submitteddate', windowStart);
-
-  return count !== null && count < MAX_SUBMISSIONS_PER_WINDOW;
-}
-
 export async function fetchLastSubmissionImage(deadlineId: string): Promise<string | null> {
   try {
     // First fetch the last submission ID from the deadline
@@ -144,11 +128,11 @@ export async function createNewSubmission(
   storagePath: string
 ): Promise<SubmissionData> {
   try {
-    // Check rate limit first
-    const isWithinLimit = await checkRateLimit(userId);
-    if (!isWithinLimit) {
-      throw new SubmissionError('Rate limit exceeded. Please try again later.');
-    }
+    console.log('Starting submission creation:', {
+      deadlineId,
+      userId,
+      timestamp: new Date().toISOString()
+    });
 
     // Rest of your existing createNewSubmission code...
     const { data: newSubmission, error: submissionError } = await supabase

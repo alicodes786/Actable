@@ -14,11 +14,6 @@ interface UploadResult {
   error: Error | null;
 }
 
-interface RateLimitCheck {
-  allowed: boolean;
-  remainingTime?: number;
-}
-
 // Custom error classes for different types of failures
 export class FileSystemError extends Error {
   constructor(message: string, public originalError?: Error) {
@@ -38,6 +33,13 @@ export class DatabaseError extends Error {
   constructor(message: string, public originalError?: PostgrestError) {
     super(message);
     this.name = 'DatabaseError';
+  }
+}
+
+export class RateLimitError extends Error {
+  constructor(message: string, public originalError?: StorageError) {
+    super(message);
+    this.name = 'RateLimitError';
   }
 }
 
@@ -68,51 +70,10 @@ async function validateFileSize(uri: string): Promise<boolean> {
   return 'size' in fileInfo ? fileInfo.size <= MAX_FILE_SIZE : false;
 }
 
-async function checkUploadRateLimit(userId: string): Promise<RateLimitCheck> {
-  const RATE_LIMIT_WINDOW = 1000 * 60 * 60; // 1 hour
-  const MAX_UPLOADS_PER_WINDOW = 10;
-
-  try {
-    // Record this attempt first
-    const { error: insertError } = await supabase
-      .from('upload_attempts')
-      .insert({
-        user_id: userId,
-        success: false // Will be updated to true if upload succeeds
-      });
-
-    if (insertError) throw insertError;
-
-    const windowStart = new Date(Date.now() - RATE_LIMIT_WINDOW).toISOString();
-
-    // Check recent attempts (both successful and failed)
-    const { data: recentAttempts, error } = await supabase
-      .from('upload_attempts')
-      .select('attempted_at')
-      .eq('user_id', userId)
-      .gte('attempted_at', windowStart)
-      .order('attempted_at', { ascending: false });
-
-    if (error) throw error;
-
-    if (!recentAttempts || recentAttempts.length < MAX_UPLOADS_PER_WINDOW) {
-      return { allowed: true };
-    }
-
-    // If rate limited, calculate remaining time
-    const oldestAttempt = new Date(recentAttempts[recentAttempts.length - 1].attempted_at);
-    const resetTime = new Date(oldestAttempt.getTime() + RATE_LIMIT_WINDOW);
-    const remainingTime = resetTime.getTime() - Date.now();
-
-    return {
-      allowed: false,
-      remainingTime: Math.ceil(remainingTime / 1000 / 60) // Convert to minutes
-    };
-  } catch (error) {
-    console.error('Rate limit check error:', error);
-    // If check fails, allow upload to proceed
-    return { allowed: true };
-  }
+// Add at the top with other interfaces
+interface StorageErrorWithStatus extends StorageError {
+  status?: number;
+  statusText?: string;
 }
 
 export const uploadSubmissionImage = async ({
@@ -121,22 +82,10 @@ export const uploadSubmissionImage = async ({
   deadlineId,
 }: UploadImageParams): Promise<UploadResult> => {
   try {
-    // Check rate limit first
-    const rateLimit = await checkUploadRateLimit(userId);
-    if (!rateLimit.allowed) {
-      return {
-        publicUrl: '',
-        error: new Error(
-          `Upload attempt limit exceeded. Please try again in ${rateLimit.remainingTime} minutes.`
-        )
-      };
-    }
-
     // First verify authentication
     const { data: { session }, error: authError } = await supabase.auth.getSession();
 
     if (authError || !session) {
-      console.error('Authentication error:', authError);
       return {
         publicUrl: '',
         error: new Error(authError?.message || 'User not authenticated')
@@ -146,7 +95,6 @@ export const uploadSubmissionImage = async ({
     // Validate file exists and size
     const fileInfo = await FileSystem.getInfoAsync(uri, { size: true });
     if (!fileInfo.exists) {
-      console.error('File does not exist:', uri);
       return {
         publicUrl: '',
         error: new FileSystemError('File does not exist')
@@ -155,7 +103,6 @@ export const uploadSubmissionImage = async ({
 
     const isValidSize = await validateFileSize(uri);
     if (!isValidSize) {
-      console.error('File size exceeds limit');
       return {
         publicUrl: '',
         error: new FileSystemError('File size exceeds 5MB limit')
@@ -169,7 +116,6 @@ export const uploadSubmissionImage = async ({
         encoding: FileSystem.EncodingType.Base64,
       });
     } catch (error) {
-      console.error('File read error:', error);
       return {
         publicUrl: '',
         error: new FileSystemError(
@@ -184,7 +130,6 @@ export const uploadSubmissionImage = async ({
     try {
       binaryData = base64ToUint8Array(fileData);
     } catch (error) {
-      console.error('Binary conversion error:', error);
       return {
         publicUrl: '',
         error: new FileSystemError(
@@ -198,9 +143,6 @@ export const uploadSubmissionImage = async ({
     const fileName = `submission-${Date.now()}.jpg`;
     const filePath = `${session.user.id}/${deadlineId}/${fileName}`;
 
-    console.log('Attempting upload with path:', filePath);
-    console.log('Current user ID:', session.user.id);
-
     // Step 5: Upload to Supabase Storage
     const { data: storageData, error: uploadError } = await supabase.storage
       .from('submissions')
@@ -210,30 +152,27 @@ export const uploadSubmissionImage = async ({
       });
 
     if (uploadError) {
-      console.error('Storage upload error:', {
-        message: uploadError.message,
-        name: uploadError.name,
-        cause: uploadError.cause
-      });
+      const error = uploadError as StorageErrorWithStatus;
+
+      // Check for rate limit violation
+      if (error.message?.includes('violates row-level security policy')) {
+        return {
+          publicUrl: '',
+          error: new RateLimitError(
+            'You have exceeded the upload limit. Please wait a minute before uploading again.',
+            error
+          )
+        };
+      }
+
+      // Other storage errors
       return {
         publicUrl: '',
         error: new StorageUploadError(
-          `Failed to upload file to storage: ${uploadError.message}`,
-          uploadError
+          `Failed to upload file to storage: ${error.message}`,
+          error
         )
       };
-    }
-
-    // If upload succeeds, update the attempt record
-    const { error: updateError } = await supabase
-      .from('upload_attempts')
-      .update({ success: true })
-      .eq('user_id', userId)
-      .order('attempted_at', { ascending: false })
-      .limit(1);
-
-    if (updateError) {
-      console.error('Failed to update upload attempt:', updateError);
     }
 
     return {
@@ -242,7 +181,6 @@ export const uploadSubmissionImage = async ({
     };
 
   } catch (error) {
-    console.error('Unexpected error in uploadSubmissionImage:', error);
     return {
       publicUrl: '',
       error: error instanceof Error ? error : new Error('Unknown error occurred during upload')

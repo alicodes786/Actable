@@ -4,7 +4,7 @@ import { useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { useEffect, useState, useCallback } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import CountDownTimer from '@/components/CountDownTimer';
-import { uploadSubmissionImage } from '@/db/imageUpload';
+import { uploadSubmissionImage, RateLimitError } from '@/db/imageUpload';
 import { createNewSubmission, fetchLastSubmissionImage, SubmissionError } from '@/db/submissions';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { useAuth } from '@/providers/AuthProvider';
@@ -117,10 +117,11 @@ function ImageCapture({ deadlineId, userId }: { deadlineId: string; userId: stri
 
       if (error) {
         Alert.alert(
-          'Upload Failed',
-          'Failed to upload image. Please try again.',
+          error instanceof RateLimitError ? 'Rate Limit Exceeded' : 'Upload Failed',
+          error.message,
           [{ text: 'OK' }]
         );
+        setUploading(false);
         return;
       }
 
@@ -157,7 +158,7 @@ function ImageCapture({ deadlineId, userId }: { deadlineId: string; userId: stri
     } catch (error) {
       Alert.alert(
         'Upload Failed',
-        'Failed to upload image. Please try again.',
+        error instanceof Error ? error.message : 'Failed to upload image. Please try again.',
         [{ text: 'OK' }]
       );
     } finally {
