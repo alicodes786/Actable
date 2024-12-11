@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, SafeAreaView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { getDeadlines } from '@/db/deadlines';
 import { useAuth } from '@/providers/AuthProvider';
@@ -10,6 +10,7 @@ import { router } from 'expo-router';
 import CountDownTimer from '@/components/CountDownTimer';
 import { getAssignedMod } from '@/db/mod';
 import { fromUTC, formatLocalDate } from '@/lib/dateUtils';
+import Header from '@/components/Header';
 
 // Define categories and their colors
 const CATEGORIES = {
@@ -102,8 +103,10 @@ export default function ViewDeadlinesScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      if (!user) return;
+
       const fetchData = async () => {
-        if (user) {
+        try {
           // Fetch deadlines
           const result = await getDeadlines(String(user.id));
           if (result?.deadlineList) {
@@ -113,6 +116,8 @@ export default function ViewDeadlinesScreen() {
           // Check if user has an assigned mod
           const assignedMod = await getAssignedMod(String(user.id));
           setHasMod(assignedMod !== null);
+        } catch (error) {
+          console.error('Error fetching deadlines:', error);
         }
       };
 
@@ -310,161 +315,164 @@ export default function ViewDeadlinesScreen() {
   }, [deadlines, hasMod]);
 
   return (
-    <View className="flex-1 bg-white p-4">
-      <Text className="text-2xl font-bold mb-5" style={{ fontFamily: 'Manrope' }}>Your Deadlines</Text>
-      
-      {/* Category Tabs */}
-      <ScrollView 
-        horizontal 
-        showsHorizontalScrollIndicator={false}
-        className="flex-row mb-4 max-h-10"
-      >
-        {Object.entries(CATEGORIES).map(([key, value]) => {
-          const counts = getCategoryCounts();
-          const count = counts[key as keyof typeof counts];
-          
-          // Only hide if it's not LATE and count is 0
-          if (count === 0 && key !== 'LATE') return null;
-          
-          if (!hasMod && (key === 'PENDING' || key === 'INVALID')) return null;
-
-          return (
-            <TouchableOpacity
-              key={key}
-              onPress={() => setSelectedCategory(key)}
-              className={`px-3 py-1.5 mr-2 rounded-2xl items-center justify-center ${
-                selectedCategory === key 
-                  ? ''
-                  : 'bg-gray-100'
-              }`}
-              style={selectedCategory === key ? { backgroundColor: value.colors[1] } : undefined}
-            >
-              <Text 
-                className={`text-sm font-medium ${
-                  selectedCategory === key 
-                    ? 'text-white'
-                    : 'text-gray-600'
-                }`}
-                style={{ fontFamily: 'Roboto' }}
-              >
-                {value.label} ({count})
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
-
-      <ScrollView className="flex-1">
-        {filterDeadlines().map((deadline) => {
-          const colors = CATEGORIES[selectedCategory as keyof typeof CATEGORIES].colors as [string, string, string];
-          const showActions = !['COMPLETED', 'LATE', 'MISSED'].includes(selectedCategory);
-          
-          return(
-            <View key={deadline.id} className="mb-4">
-              <LinearGradient
-                colors={colors}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                className="rounded-xl p-4 shadow-md"
-              >
-                <View className="flex-1">
-                  <Text className="text-lg font-bold text-white mb-2" style={{ fontFamily: 'Roboto' }}>
-                    {deadline.name}
-                  </Text>
-                  <Text className="text-sm text-white mb-2" style={{ fontFamily: 'Roboto' }}>
-                    {deadline.description}
-                  </Text>
-                  
-                  {selectedCategory === 'MISSED' ? (
-                    <View>
-                      <View className="flex-row justify-end items-center mt-2">
-                        <View>
-                          <Text className="text-white text-xs uppercase mb-1 opacity-80">
-                            Due Date
-                          </Text>
-                          <Text className="text-white text-sm font-medium">
-                            {formatDate(deadline.date)}
-                          </Text>
-                        </View>
-                      </View>
-                    </View>
-                  ) : ['COMPLETED', 'LATE'].includes(selectedCategory) ? (
-                    <View>
-                      <View className="flex-row justify-between items-center mt-2">
-                        <View>
-                          <Text className="text-white text-xs uppercase mb-1 opacity-80">
-                            {selectedCategory === 'LATE' ? 'Late by' : 'Submitted'}
-                          </Text>
-                          <Text className="text-white text-sm font-medium">
-                            {selectedCategory === 'LATE' ? 
-                              getLateDuration(
-                                convertUTCToLocal(deadline.submissions?.find(
-                                  sub => sub.id === deadline.lastsubmissionid
-                                )?.submitteddate || ''),
-                                convertUTCToLocal(deadline.date)
-                              ) :
-                              formatDate(deadline.submissions?.find(
-                                sub => sub.id === deadline.lastsubmissionid
-                              )?.submitteddate || '')
-                            }
-                          </Text>
-                        </View>
-                        <View>
-                          <Text className="text-white text-xs uppercase mb-1 opacity-80">
-                            Due Date
-                          </Text>
-                          <Text className="text-white text-sm font-medium">
-                            {formatDate(deadline.date)}
-                          </Text>
-                        </View>
-                      </View>
-                    </View>
-                  ) : (
-                    <Text className="text-white text-base font-medium">
-                      {new Date(deadline.date).getTime() >= Date.now() ?
-                        <CountDownTimer 
-                          deadlineDate={new Date(deadline.date)} 
-                          textColour="#FFFFFF"
-                        />
-                        :
-                        "Deadline Passed"
-                      }
-                    </Text>
-                  )}
-                </View>
-
-                {showActions && (
-                  <View className="flex-row items-center justify-end mt-2.5">
-                    {selectedCategory === 'UPCOMING' && (
-                      <TouchableOpacity
-                        className="flex-1 flex-row gap-2.5"
-                        onPress={() => handleEdit(deadline)}
-                      >
-                        <Ionicons name="create" size={24} color="#fff" />
-                      </TouchableOpacity>
-                    )}
-                    
-                    <TouchableOpacity 
-                      className="bg-white px-2 py-2 rounded-lg"
-                      onPress={() => handleSubmission(deadline)}
-                    >
-                      <Text>
-                        {selectedCategory === 'UPCOMING' ? 'Submit' : 'Resubmit'}
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
-              </LinearGradient>
-            </View>
-          );
-        })}
+    <SafeAreaView className="flex-1 bg-white">
+      <Header />
+      <View className="flex-1 px-4">
+        <Text className="text-2xl font-bold mb-5" style={{ fontFamily: 'Manrope' }}>Your Deadlines</Text>
         
-        {filterDeadlines().length === 0 && (
-          <Text className="text-center text-gray-500 mt-5">
-            No deadlines in this category
-          </Text>
-        )}
-      </ScrollView>
-    </View>
+        {/* Category Tabs */}
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          className="flex-row mb-4 max-h-10"
+        >
+          {Object.entries(CATEGORIES).map(([key, value]) => {
+            const counts = getCategoryCounts();
+            const count = counts[key as keyof typeof counts];
+            
+            // Only hide if it's not LATE and count is 0
+            if (count === 0 && key !== 'LATE') return null;
+            
+            if (!hasMod && (key === 'PENDING' || key === 'INVALID')) return null;
+
+            return (
+              <TouchableOpacity
+                key={key}
+                onPress={() => setSelectedCategory(key)}
+                className={`px-3 py-1.5 mr-2 rounded-2xl items-center justify-center ${
+                  selectedCategory === key 
+                    ? ''
+                    : 'bg-gray-100'
+                }`}
+                style={selectedCategory === key ? { backgroundColor: value.colors[1] } : undefined}
+              >
+                <Text 
+                  className={`text-sm font-medium ${
+                    selectedCategory === key 
+                      ? 'text-white'
+                      : 'text-gray-600'
+                  }`}
+                  style={{ fontFamily: 'Roboto' }}
+                >
+                  {value.label} ({count})
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+
+        <ScrollView className="flex-1">
+          {filterDeadlines().map((deadline) => {
+            const colors = CATEGORIES[selectedCategory as keyof typeof CATEGORIES].colors as [string, string, string];
+            const showActions = !['COMPLETED', 'LATE', 'MISSED'].includes(selectedCategory);
+            
+            return(
+              <View key={deadline.id} className="mb-4">
+                <LinearGradient
+                  colors={colors}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  className="rounded-xl p-4 shadow-md"
+                >
+                  <View className="flex-1">
+                    <Text className="text-lg font-bold text-white mb-2" style={{ fontFamily: 'Roboto' }}>
+                      {deadline.name}
+                    </Text>
+                    <Text className="text-sm text-white mb-2" style={{ fontFamily: 'Roboto' }}>
+                      {deadline.description}
+                    </Text>
+                    
+                    {selectedCategory === 'MISSED' ? (
+                      <View>
+                        <View className="flex-row justify-end items-center mt-2">
+                          <View>
+                            <Text className="text-white text-xs uppercase mb-1 opacity-80">
+                              Due Date
+                            </Text>
+                            <Text className="text-white text-sm font-medium">
+                              {formatDate(deadline.date)}
+                            </Text>
+                          </View>
+                        </View>
+                      </View>
+                    ) : ['COMPLETED', 'LATE'].includes(selectedCategory) ? (
+                      <View>
+                        <View className="flex-row justify-between items-center mt-2">
+                          <View>
+                            <Text className="text-white text-xs uppercase mb-1 opacity-80">
+                              {selectedCategory === 'LATE' ? 'Late by' : 'Submitted'}
+                            </Text>
+                            <Text className="text-white text-sm font-medium">
+                              {selectedCategory === 'LATE' ? 
+                                getLateDuration(
+                                  convertUTCToLocal(deadline.submissions?.find(
+                                    sub => sub.id === deadline.lastsubmissionid
+                                  )?.submitteddate || ''),
+                                  convertUTCToLocal(deadline.date)
+                                ) :
+                                formatDate(deadline.submissions?.find(
+                                  sub => sub.id === deadline.lastsubmissionid
+                                )?.submitteddate || '')
+                              }
+                            </Text>
+                          </View>
+                          <View>
+                            <Text className="text-white text-xs uppercase mb-1 opacity-80">
+                              Due Date
+                            </Text>
+                            <Text className="text-white text-sm font-medium">
+                              {formatDate(deadline.date)}
+                            </Text>
+                          </View>
+                        </View>
+                      </View>
+                    ) : (
+                      <Text className="text-white text-base font-medium">
+                        {new Date(deadline.date).getTime() >= Date.now() ?
+                          <CountDownTimer 
+                            deadlineDate={new Date(deadline.date)} 
+                            textColour="#FFFFFF"
+                          />
+                          :
+                          "Deadline Passed"
+                        }
+                      </Text>
+                    )}
+                  </View>
+
+                  {showActions && (
+                    <View className="flex-row items-center justify-end mt-2.5">
+                      {selectedCategory === 'UPCOMING' && (
+                        <TouchableOpacity
+                          className="flex-1 flex-row gap-2.5"
+                          onPress={() => handleEdit(deadline)}
+                        >
+                          <Ionicons name="create" size={24} color="#fff" />
+                        </TouchableOpacity>
+                      )}
+                      
+                      <TouchableOpacity 
+                        className="bg-white px-2 py-2 rounded-lg"
+                        onPress={() => handleSubmission(deadline)}
+                      >
+                        <Text>
+                          {selectedCategory === 'UPCOMING' ? 'Submit' : 'Resubmit'}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </LinearGradient>
+              </View>
+            );
+          })}
+          
+          {filterDeadlines().length === 0 && (
+            <Text className="text-center text-gray-500 mt-5">
+              No deadlines in this category
+            </Text>
+          )}
+        </ScrollView>
+      </View>
+    </SafeAreaView>
   );
 }
