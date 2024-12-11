@@ -1,13 +1,12 @@
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
-import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, Stack } from 'expo-router';
 import { useAuth } from '@/providers/AuthProvider';
 import { Ionicons } from '@expo/vector-icons';
-import { getAssignedMod } from '@/db/mod';
 
 export default function Settings() {
-  const { logout, user } = useAuth();
+  const { logout } = useAuth();
 
   const handleSignOut = async () => {
     try {
@@ -36,42 +35,48 @@ export default function Settings() {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Pro Banner */}
-      <TouchableOpacity style={styles.proBanner} activeOpacity={0.9}>
-        <View style={styles.proTextContainer}>
-          <Text style={styles.proTitle}>Get Unlimited Access</Text>
-          <Text style={styles.proSubtitle}>to Everything</Text>
-        </View>
-        <TouchableOpacity style={styles.proButton}>
-          <Text style={styles.proButtonText}>Go Pro</Text>
+    <>
+      <Stack.Screen 
+        options={{
+          title: 'Settings',
+          headerShadowVisible: false,
+          headerStyle: { backgroundColor: '#FFFFFF' },
+        }} 
+      />
+      <SafeAreaView style={styles.container}>
+        {/* Pro Banner */}
+        <TouchableOpacity style={styles.proBanner} activeOpacity={0.9}>
+          <View style={styles.proTextContainer}>
+            <Text style={styles.proTitle}>Get Unlimited Access</Text>
+            <Text style={styles.proSubtitle}>to Everything</Text>
+          </View>
+          <TouchableOpacity style={styles.proButton}>
+            <Text style={styles.proButtonText}>Go Pro</Text>
+          </TouchableOpacity>
         </TouchableOpacity>
-      </TouchableOpacity>
 
-      {/* Settings Groups */}
-      <View style={styles.settingsGroup}>
-        <Text style={styles.groupTitle}>General</Text>
-        <View style={styles.settingsBox}>
-          {renderSettingItem('notifications-outline', 'Notifications', () => router.push('/notifications'))}
-          {renderSettingItem('alarm-outline', 'Alarm')}
-          {renderSettingItem(
-            'shield-outline', 
-            'Moderator', 
-            () => router.push('/moderator')
-          )}
+        {/* Settings Groups */}
+        <View style={styles.settingsGroup}>
+          <Text style={styles.groupTitle}>General</Text>
+          <View style={styles.settingsBox}>
+            {renderSettingItem('notifications-outline', 'Notifications', () => router.push('/notifications'))}
+            {renderSettingItem(
+              'shield-outline', 
+              'Moderator', 
+              () => router.push('/moderator')
+            )}
+          </View>
         </View>
-      </View>
 
-      <View style={styles.settingsGroup}>
-        <Text style={styles.groupTitle}>About App</Text>
-        <View style={styles.settingsBox}>
-          {renderSettingItem('star-outline', 'Feedback', () => router.push('/feedbackForm'))}
-          {renderSettingItem('person-outline', 'Coach')}
-          {renderSettingItem('card-outline', 'Billing & Payment')}
-          {renderSettingItem('log-out-outline', 'Sign Out', handleSignOut)}
+        <View style={styles.settingsGroup}>
+          <Text style={styles.groupTitle}>About App</Text>
+          <View style={styles.settingsBox}>
+            {renderSettingItem('star-outline', 'Feedback', () => router.push('/feedbackForm'))}
+            {renderSettingItem('log-out-outline', 'Sign Out', handleSignOut)}
+          </View>
         </View>
-      </View>
-    </SafeAreaView>
+      </SafeAreaView>
+    </>
   );
 }
 
