@@ -8,13 +8,31 @@ export default function TabNavigation() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#000',
+        tabBarActiveTintColor: '#fff',
+        tabBarInactiveTintColor: 'rgba(255,255,255,0.6)',
         headerShown: false,
         tabBarStyle: {
-          height: 70,
-          paddingBottom: 10,
-          borderTopLeftRadius: 20,
-          borderTopRightRadius: 20,
+          height: 60,
+          backgroundColor: '#000',
+          position: 'fixed',
+          bottom: 16,
+          width:'90%',
+          left: 0,
+          alignSelf: 'center',
+          justifyContent: 'center',
+          right: 0,
+          borderRadius: 30,
+          paddingBottom: 8,
+          paddingTop: 8,
+          borderTopWidth: 0,
+          elevation: 8,
+          shadowColor: '#000',
+          shadowOffset: {
+            width: 0,
+            height: 5,
+          },
+          shadowOpacity: 0.25,
+          shadowRadius: 8,
         },
       }}
     >
@@ -23,7 +41,7 @@ export default function TabNavigation() {
         options={{
           title: 'Home',
           tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name={focused ? 'home' : 'home-outline'} color={color} />
+            <TabBarIcon name={focused ? 'home' : 'home-outline'} color={color} size={24} />
           ),
         }}
       />
@@ -32,7 +50,7 @@ export default function TabNavigation() {
         options={{
           title: 'Deadlines',
           tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name={focused ? 'time' : 'time-outline'} color={color} />
+            <TabBarIcon name={focused ? 'time' : 'time-outline'} color={color} size={24} />
           ),
         }}
       />
@@ -41,23 +59,11 @@ export default function TabNavigation() {
         options={{
           title: '',
           tabBarIcon: () => (
-            <View className="absolute bottom-0 h-14 w-14 items-center justify-center bg-black rounded-full shadow-md">
-              <Ionicons name="add" size={36} color="white" />
+            <View className="h-12 w-12 items-center justify-center bg-white rounded-full border-2 border-black">
+              <Ionicons name="add" size={32} color="black" />
             </View>
           ),
-          tabBarItemStyle: { height: 60, marginTop: -20 },
-          tabBarButton: (props) => {
-            const { style, onPress, children } = props;
-            return (
-              <TouchableOpacity 
-                style={style as StyleProp<ViewStyle>}
-                onPress={onPress}
-                activeOpacity={0.7}
-              >
-                {children}
-              </TouchableOpacity>
-            );
-          },
+          tabBarItemStyle: { height: 50 },
         }}
       />
       <Tabs.Screen
@@ -65,7 +71,7 @@ export default function TabNavigation() {
         options={{
           title: 'Tracker',
           tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name={focused ? 'stats-chart' : 'stats-chart-outline'} color={color} />
+            <TabBarIcon name={focused ? 'stats-chart' : 'stats-chart-outline'} color={color} size={24} />
           ),
         }}
       />
@@ -74,7 +80,7 @@ export default function TabNavigation() {
         options={{
           title: 'Coach',
           tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name={focused ? 'person' : 'person-outline'} color={color} />
+            <TabBarIcon name={focused ? 'person' : 'person-outline'} color={color} size={24} />
           ),
         }}
       />
@@ -84,6 +90,8 @@ export default function TabNavigation() {
           href: null,
         }}
       />
+
     </Tabs>
   );
-} 
+}
+

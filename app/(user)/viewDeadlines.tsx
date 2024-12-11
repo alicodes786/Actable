@@ -11,32 +11,33 @@ import CountDownTimer from '@/components/CountDownTimer';
 import { getAssignedMod } from '@/db/mod';
 import { fromUTC, formatLocalDate } from '@/lib/dateUtils';
 import Header from '@/components/Header';
+import { colors, fonts } from '@/styles/theme';
 
 // Define categories and their colors
 const CATEGORIES = {
   UPCOMING: {
     label: 'Upcoming',
-    colors: ['#66b3ff', '#007FFF', '#0066cc'],
-  },
-  LATE: {
-    label: 'Late',
-    colors: ['#F97316', '#EA580C', '#C2410C'],
-  },
-  PENDING: {
-    label: 'Pending',
-    colors: ['#F59E0B', '#D97706', '#B45309'],
-  },
-  INVALID: {
-    label: 'Invalid',
-    colors: ['#808080', '#6B7280', '#4B5563'],
+    color: colors.upcoming, // #979CFF
   },
   COMPLETED: {
     label: 'Completed',
-    colors: ['#10B981', '#059669', '#047857'],
+    color: colors.completed, // #5EBD3C
   },
   MISSED: {
     label: 'Missed',
-    colors: ['#EF4444', '#DC2626', '#B91C1C'],
+    color: colors.missed, // #A50505
+  },
+  LATE: {
+    label: 'Late',
+    color: colors.late, // #A07705
+  },
+  PENDING: {
+    label: 'Pending',
+    color: colors.pending, // #D96A4E
+  },
+  INVALID: {
+    label: 'Invalid',
+    color: colors.invalid, // #B7B7B7
   },
 };
 
@@ -330,9 +331,7 @@ export default function ViewDeadlinesScreen() {
             const counts = getCategoryCounts();
             const count = counts[key as keyof typeof counts];
             
-            // Only hide if it's not LATE and count is 0
             if (count === 0 && key !== 'LATE') return null;
-            
             if (!hasMod && (key === 'PENDING' || key === 'INVALID')) return null;
 
             return (
@@ -344,7 +343,7 @@ export default function ViewDeadlinesScreen() {
                     ? ''
                     : 'bg-gray-100'
                 }`}
-                style={selectedCategory === key ? { backgroundColor: value.colors[1] } : undefined}
+                style={selectedCategory === key ? { backgroundColor: value.color } : undefined}
               >
                 <Text 
                   className={`text-sm font-medium ${
@@ -352,7 +351,7 @@ export default function ViewDeadlinesScreen() {
                       ? 'text-white'
                       : 'text-gray-600'
                   }`}
-                  style={{ fontFamily: 'Roboto' }}
+                  style={{ fontFamily: fonts.secondary }}
                 >
                   {value.label} ({count})
                 </Text>
@@ -363,22 +362,20 @@ export default function ViewDeadlinesScreen() {
 
         <ScrollView className="flex-1">
           {filterDeadlines().map((deadline) => {
-            const colors = CATEGORIES[selectedCategory as keyof typeof CATEGORIES].colors as [string, string, string];
+            const backgroundColor = CATEGORIES[selectedCategory as keyof typeof CATEGORIES].color;
             const showActions = !['COMPLETED', 'LATE', 'MISSED'].includes(selectedCategory);
             
             return(
               <View key={deadline.id} className="mb-4">
-                <LinearGradient
-                  colors={colors}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
+                <View
                   className="rounded-xl p-4 shadow-md"
+                  style={{ backgroundColor }}
                 >
                   <View className="flex-1">
-                    <Text className="text-lg font-bold text-white mb-2" style={{ fontFamily: 'Roboto' }}>
+                    <Text className="text-lg font-bold text-white mb-2" style={{ fontFamily: fonts.secondary }}>
                       {deadline.name}
                     </Text>
-                    <Text className="text-sm text-white mb-2" style={{ fontFamily: 'Roboto' }}>
+                    <Text className="text-sm text-white mb-2" style={{ fontFamily: fonts.secondary }}>
                       {deadline.description}
                     </Text>
                     
@@ -461,7 +458,7 @@ export default function ViewDeadlinesScreen() {
                       </TouchableOpacity>
                     </View>
                   )}
-                </LinearGradient>
+                </View>
               </View>
             );
           })}
