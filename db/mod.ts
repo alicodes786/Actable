@@ -33,18 +33,20 @@ export async function getAssignedMod(uuid: string): Promise<ModUser | null> {
     return null;
   }
 
-  // Get the email from auth.users table
-  const { data: authUser, error: authError } = await supabase.auth
-    .admin.getUserById(relationships[0].mod_uuid);
+  // Get the mod's email using the secure RPC
+  const { data: emailData, error: emailError } = await supabase
+    .rpc('get_user_email', {
+      user_id: relationships[0].mod_uuid
+    });
 
-  if (authError || !authUser) {
-    console.error('Error fetching mod email:', authError);
+  if (emailError) {
+    console.error('Error fetching mod email:', emailError);
     return null;
   }
 
   return {
     ...modUser,
-    email: authUser.user.email
+    email: emailData
   } as ModUser;
 }
 
@@ -72,29 +74,34 @@ export async function removeModFromUser(uuid: string) {
 }
 
 export async function getAssignedUser(modUuid: string): Promise<ModUser | null> {
-  // Find the user that this mod is managing
-  const { data: relationship, error: relError } = await supabase
-    .from('mod_user_relationships')
-    .select('user_uuid')
-    .eq('mod_uuid', modUuid)
-    .single();
+  try {
+    // Find the user that this mod is managing
+    const { data: relationship, error: relError } = await supabase
+      .from('mod_user_relationships')
+      .select('user_uuid')
+      .eq('mod_uuid', modUuid)
+      .single();
 
-  if (relError || !relationship) {
-    console.error('Error or no relationship found:', relError);
+    if (relError || !relationship) {
+      console.log('No active mod relationship found for:', modUuid);
+      return null;
+    }
+
+    // Get the managed user's information
+    const { data: managedUser, error: userError } = await supabase
+      .from('user_profiles')
+      .select('id, name, role')
+      .eq('id', relationship.user_uuid)
+      .single();
+
+    if (userError || !managedUser) {
+      console.log('No user found for relationship:', relationship.user_uuid);
+      return null;
+    }
+
+    return managedUser as ModUser;
+  } catch (error) {
+    console.error('Error in getAssignedUser:', error);
     return null;
   }
-  // Get the managed user's information
-  const { data: managedUser, error: userError } = await supabase
-    .from('user_profiles')
-    .select('id, name, role')
-    .eq('id', relationship.user_uuid)
-    .single();
-
-  if (userError || !managedUser) {
-    console.error('Error fetching managed user:', userError);
-    return null;
-  }
-
-  console.log('Found managed user:', managedUser.name);
-  return managedUser as ModUser;
 } 
