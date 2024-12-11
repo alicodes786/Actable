@@ -115,7 +115,7 @@ export default function TrackerScreen() {
       <ScrollView className="flex-1" bounces={false}>
         <View className="pb-10">
           <Header />
-          <View className="px-5 pt-2">
+          <View className="px-5 mt-10">
             <Text className="text-2xl font-bold mb-3" style={{ fontFamily: 'Manrope' }}>Performance Overview</Text>
             
             <TouchableOpacity 
