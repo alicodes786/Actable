@@ -36,47 +36,50 @@ export default function TrackerScreen() {
     const cutoffDate = new Date();
     cutoffDate.setDate(now.getDate() - parseInt(period));
 
-    // First, find all deadlines in the period that were missed
-    const missedDeadlines = deadlines.deadlineList.filter(deadline => {
-      const deadlineDate = new Date(deadline.date);
-      const isInPeriod = deadlineDate >= cutoffDate && deadlineDate <= now;
-      return isInPeriod && !deadline.submissions?.[0];
-    });
+    // Find all deadlines with submissions in this period
+    const relevantDeadlines = deadlines.deadlineList.filter(deadline => {
+      const submission = deadline.submissions?.find(
+        sub => sub.id === deadline.lastsubmissionid
+      );
 
-    // Then find all submissions in the period
-    const submittedDeadlines = deadlines.deadlineList.filter(deadline => {
-      const submission = deadline.submissions?.[0];
-      if (!submission) return false;
-      
-      const submissionDate = new Date(submission.submitteddate);
-      return submissionDate >= cutoffDate && submissionDate <= now;
+      if (submission) {
+        const submissionDate = new Date(submission.submitteddate);
+        return submissionDate >= cutoffDate && submissionDate <= now;
+      }
+
+      // Include missed deadlines that were due in this period
+      const dueDate = new Date(deadline.date);
+      return dueDate >= cutoffDate && dueDate <= now;
     });
 
     const newStats = {
-      total: missedDeadlines.length + submittedDeadlines.length,
+      total: relevantDeadlines.length,
       onTime: 0,
       late: 0,
-      missed: missedDeadlines.length,
+      missed: 0,
       invalid: 0,
     };
 
-    // Calculate stats for submitted deadlines
-    submittedDeadlines.forEach(deadline => {
-      const submission = deadline.submissions?.[0];
-      if (!submission) return;
+    relevantDeadlines.forEach(deadline => {
+      const dueDate = new Date(deadline.date);
+      const submission = deadline.submissions?.find(
+        sub => sub.id === deadline.lastsubmissionid
+      );
 
-      if (submission.status === "invalid") {
-        newStats.invalid++;
-        return;
-      }
+      if (!deadline.lastsubmissionid && dueDate < now) {
+        newStats.missed++;
+      } else if (submission) {
+        const submissionDate = new Date(submission.submitteddate);
 
-      const submittedDate = new Date(submission.submitteddate);
-      const deadlineDate = new Date(deadline.date);
-
-      if (submittedDate <= deadlineDate) {
-        newStats.onTime++;
-      } else {
-        newStats.late++;
+        if (submission.status === 'invalid') {
+          newStats.invalid++;
+        } else if (submission.status === 'approved') {
+          if (submissionDate <= dueDate) {
+            newStats.onTime++;
+          } else {
+            newStats.late++;
+          }
+        }
       }
     });
 
