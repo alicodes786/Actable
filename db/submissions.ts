@@ -25,67 +25,65 @@ export class SubmissionError extends Error {
   }
 }
 
-export async function getSecureImageUrl(pathOrUrl: string): Promise<string> {
+export async function getSecureImageUrl(pathOrUrl: string): Promise<string | null> {
   try {
-    console.log('Getting secure URL for:', pathOrUrl);
-
-    // If it's already just a path (starts with userId/), use it directly
-    if (!pathOrUrl.startsWith('http')) {
-      console.log('Processing as direct path');
-      // Remove 'submissions/' prefix if it exists
-      const cleanPath = pathOrUrl.replace(/^submissions\//, '');
-      console.log('Clean path:', cleanPath);
-
-      const { data, error } = await supabase.storage
-        .from('submissions')
-        .createSignedUrl(cleanPath, 3600);
-
-      if (error) {
-        console.error('Storage error for direct path:', error);
-        throw error;
-      }
-      return data.signedUrl;
+    // If the URL already contains a token, it's already signed
+    if (pathOrUrl.includes('?token=')) {
+      return pathOrUrl;
     }
 
-    // Otherwise, extract path from URL
-    try {
-      console.log('Processing as URL');
-      const urlObj = new URL(pathOrUrl);
-      const pathParts = urlObj.pathname.split('/');
-      console.log('Path parts:', pathParts);
+    let cleanPath: string;
 
-      const submissionsIndex = pathParts.indexOf('submissions');
-      if (submissionsIndex === -1) {
-        console.error('No submissions folder found in path');
-        throw new Error('Invalid storage path');
+    // Handle full URLs
+    if (pathOrUrl.startsWith('http')) {
+      const match = pathOrUrl.match(/submissions\/([^?]+)/);
+      if (!match) {
+        return null;
       }
-
-      const path = pathParts.slice(submissionsIndex + 1).join('/');
-      console.log('Extracted path:', path);
-
-      const { data, error } = await supabase.storage
-        .from('submissions')
-        .createSignedUrl(path, 3600);
-
-      if (error) {
-        console.error('Storage error for extracted path:', error);
-        throw error;
-      }
-      return data.signedUrl;
-    } catch (error) {
-      console.error('URL parsing error:', error);
-      throw new SubmissionError(
-        'Failed to process submission URL',
-        error as DatabaseError
-      );
+      cleanPath = match[1];
+    } else {
+      cleanPath = pathOrUrl
+        .replace(/^submissions\//, '')
+        .replace(/^\/+|\/+$/g, '');
     }
+
+    const pathParts = cleanPath.split('/');
+
+    // Silently ignore old format paths
+    const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!UUID_REGEX.test(pathParts[0])) {
+      return null;
+    }
+
+    const { data, error } = await supabase.storage
+      .from('submissions')
+      .createSignedUrl(cleanPath, 3600);
+
+    if (error || !data?.signedUrl) {
+      return null;
+    }
+
+    return data.signedUrl;
+
   } catch (error) {
-    console.error('Final error in getSecureImageUrl:', error);
-    throw new SubmissionError(
-      'Failed to generate secure image URL',
-      error as DatabaseError
-    );
+    return null;
   }
+}
+
+// Add rate limiting helper
+async function checkRateLimit(userId: string): Promise<boolean> {
+  const RATE_LIMIT_WINDOW = 1000 * 60 * 60; // 1 hour
+  const MAX_SUBMISSIONS_PER_WINDOW = 10;
+
+  const windowStart = new Date(Date.now() - RATE_LIMIT_WINDOW).toISOString();
+
+  const { count } = await supabase
+    .from('submissions')
+    .select('*', { count: 'exact', head: true })
+    .eq('uuid', userId)
+    .gte('submitteddate', windowStart);
+
+  return count !== null && count < MAX_SUBMISSIONS_PER_WINDOW;
 }
 
 export async function fetchLastSubmissionImage(deadlineId: string): Promise<string | null> {
@@ -146,7 +144,13 @@ export async function createNewSubmission(
   storagePath: string
 ): Promise<SubmissionData> {
   try {
-    // Insert new submission with pending status initially
+    // Check rate limit first
+    const isWithinLimit = await checkRateLimit(userId);
+    if (!isWithinLimit) {
+      throw new SubmissionError('Rate limit exceeded. Please try again later.');
+    }
+
+    // Rest of your existing createNewSubmission code...
     const { data: newSubmission, error: submissionError } = await supabase
       .from('submissions')
       .insert({
@@ -160,7 +164,6 @@ export async function createNewSubmission(
       .single();
 
     if (submissionError) {
-      console.error('Submission creation error:', submissionError);
       throw new SubmissionError(
         'Failed to create new submission',
         submissionError
@@ -285,19 +288,33 @@ export async function fetchUnapprovedSubmissions(userId: string): Promise<Deadli
     }
 
     // Get signed URLs for all submissions
-    const filtered = data?.filter(item => item.submission.status === 'pending');
+    const filtered = data?.filter(item => item.submission.status === 'pending') || [];
     const withSignedUrls = await Promise.all(
-      filtered.map(async (item) => ({
-        ...item,
-        submission: {
-          ...item.submission,
-          imageurl: await getSecureImageUrl(item.submission.imageurl)
+      filtered.map(async (item) => {
+        const signedUrl = await getSecureImageUrl(item.submission.imageurl);
+        if (!signedUrl) {
+          // Skip this submission if we couldn't get a signed URL
+          return null;
         }
-      }))
+
+        return {
+          ...item,
+          submission: {
+            ...item.submission,
+            imageurl: signedUrl
+          }
+        } satisfies DeadlineWithSubmission;
+      })
     );
 
-    return withSignedUrls || [];
+    // Filter out null entries and explicitly type the result
+    return withSignedUrls.filter((item): item is DeadlineWithSubmission => item !== null);
   } catch (error) {
+    console.error('Error in fetchUnapprovedSubmissions:', {
+      error,
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+
     throw new SubmissionError(
       'Unexpected error fetching unapproved submissions',
       error as DatabaseError

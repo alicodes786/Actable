@@ -14,6 +14,11 @@ interface UploadResult {
   error: Error | null;
 }
 
+interface RateLimitCheck {
+  allowed: boolean;
+  remainingTime?: number;
+}
+
 // Custom error classes for different types of failures
 export class FileSystemError extends Error {
   constructor(message: string, public originalError?: Error) {
@@ -63,16 +68,73 @@ async function validateFileSize(uri: string): Promise<boolean> {
   return 'size' in fileInfo ? fileInfo.size <= MAX_FILE_SIZE : false;
 }
 
+async function checkUploadRateLimit(userId: string): Promise<RateLimitCheck> {
+  const RATE_LIMIT_WINDOW = 1000 * 60 * 60; // 1 hour
+  const MAX_UPLOADS_PER_WINDOW = 10;
+
+  try {
+    // Record this attempt first
+    const { error: insertError } = await supabase
+      .from('upload_attempts')
+      .insert({
+        user_id: userId,
+        success: false // Will be updated to true if upload succeeds
+      });
+
+    if (insertError) throw insertError;
+
+    const windowStart = new Date(Date.now() - RATE_LIMIT_WINDOW).toISOString();
+
+    // Check recent attempts (both successful and failed)
+    const { data: recentAttempts, error } = await supabase
+      .from('upload_attempts')
+      .select('attempted_at')
+      .eq('user_id', userId)
+      .gte('attempted_at', windowStart)
+      .order('attempted_at', { ascending: false });
+
+    if (error) throw error;
+
+    if (!recentAttempts || recentAttempts.length < MAX_UPLOADS_PER_WINDOW) {
+      return { allowed: true };
+    }
+
+    // If rate limited, calculate remaining time
+    const oldestAttempt = new Date(recentAttempts[recentAttempts.length - 1].attempted_at);
+    const resetTime = new Date(oldestAttempt.getTime() + RATE_LIMIT_WINDOW);
+    const remainingTime = resetTime.getTime() - Date.now();
+
+    return {
+      allowed: false,
+      remainingTime: Math.ceil(remainingTime / 1000 / 60) // Convert to minutes
+    };
+  } catch (error) {
+    console.error('Rate limit check error:', error);
+    // If check fails, allow upload to proceed
+    return { allowed: true };
+  }
+}
+
 export const uploadSubmissionImage = async ({
   uri,
   userId,
   deadlineId,
 }: UploadImageParams): Promise<UploadResult> => {
   try {
+    // Check rate limit first
+    const rateLimit = await checkUploadRateLimit(userId);
+    if (!rateLimit.allowed) {
+      return {
+        publicUrl: '',
+        error: new Error(
+          `Upload attempt limit exceeded. Please try again in ${rateLimit.remainingTime} minutes.`
+        )
+      };
+    }
+
     // First verify authentication
     const { data: { session }, error: authError } = await supabase.auth.getSession();
 
-    console.log(session)
     if (authError || !session) {
       console.error('Authentication error:', authError);
       return {
@@ -162,9 +224,20 @@ export const uploadSubmissionImage = async ({
       };
     }
 
-    // Return the storage path instead of signed URL
+    // If upload succeeds, update the attempt record
+    const { error: updateError } = await supabase
+      .from('upload_attempts')
+      .update({ success: true })
+      .eq('user_id', userId)
+      .order('attempted_at', { ascending: false })
+      .limit(1);
+
+    if (updateError) {
+      console.error('Failed to update upload attempt:', updateError);
+    }
+
     return {
-      publicUrl: filePath,  // Remove 'submissions/' prefix
+      publicUrl: filePath,
       error: null
     };
 
