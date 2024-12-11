@@ -366,22 +366,29 @@ export default function ViewDeadlinesScreen() {
             const showActions = !['COMPLETED', 'LATE', 'MISSED'].includes(selectedCategory);
             
             return(
-              <View key={deadline.id} className="mb-4">
+              <View key={deadline.id} className="mb-5">
                 <View
-                  className="rounded-xl p-4 shadow-md"
+                  className="rounded-3xl p-4 shadow-md"
                   style={{ backgroundColor }}
                 >
-                  <View className="flex-1">
-                    <Text className="text-lg font-bold text-white mb-2" style={{ fontFamily: fonts.secondary }}>
-                      {deadline.name}
-                    </Text>
-                    <Text className="text-sm text-white mb-2" style={{ fontFamily: fonts.secondary }}>
-                      {deadline.description}
-                    </Text>
-                    
-                    {selectedCategory === 'MISSED' ? (
-                      <View>
-                        <View className="flex-row justify-end items-center mt-2">
+                  <View className="flex-row justify-between items-start">
+                    <View className="flex-1">
+                      <Text className="text-white text-lg mb-1" style={{ fontFamily: fonts.primary }}>
+                        {deadline.name}
+                      </Text>
+                      <Text className="text-white/80 text-sm mb-3" style={{ fontFamily: fonts.secondary }}>
+                        {deadline.description}
+                      </Text>
+                      
+                      {selectedCategory === 'UPCOMING' ? (
+                        <Text className="text-white text-lg font-medium" style={{ fontFamily: fonts.primary }}>
+                          <CountDownTimer 
+                            deadlineDate={new Date(deadline.date)} 
+                            textColour="#FFFFFF" 
+                          />
+                        </Text>
+                      ) : selectedCategory === 'MISSED' ? (
+                        <View className="flex-row justify-end items-center">
                           <View>
                             <Text className="text-white text-xs uppercase mb-1 opacity-80">
                               Due Date
@@ -391,10 +398,8 @@ export default function ViewDeadlinesScreen() {
                             </Text>
                           </View>
                         </View>
-                      </View>
-                    ) : ['COMPLETED', 'LATE'].includes(selectedCategory) ? (
-                      <View>
-                        <View className="flex-row justify-between items-center mt-2">
+                      ) : ['COMPLETED', 'LATE'].includes(selectedCategory) ? (
+                        <View className="flex-row justify-between items-center">
                           <View>
                             <Text className="text-white text-xs uppercase mb-1 opacity-80">
                               {selectedCategory === 'LATE' ? 'Late by' : 'Submitted'}
@@ -422,41 +427,37 @@ export default function ViewDeadlinesScreen() {
                             </Text>
                           </View>
                         </View>
-                      </View>
-                    ) : (
-                      <Text className="text-white text-base font-medium">
-                        {new Date(deadline.date).getTime() >= Date.now() ?
-                          <CountDownTimer 
-                            deadlineDate={new Date(deadline.date)} 
-                            textColour="#FFFFFF"
-                          />
-                          :
-                          "Deadline Passed"
-                        }
-                      </Text>
+                      ) : ['PENDING', 'INVALID'].includes(selectedCategory) && (
+                        <View>
+                          <Text className="text-white text-lg font-medium" style={{ fontFamily: fonts.primary }}>
+                            <CountDownTimer 
+                              deadlineDate={new Date(deadline.date)} 
+                              textColour="#FFFFFF" 
+                            />
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+
+                    {['UPCOMING', 'PENDING', 'INVALID'].includes(selectedCategory) && (
+                      <TouchableOpacity 
+                        className="p-1"
+                        onPress={() => handleEdit(deadline)}
+                      >
+                        <Ionicons name="create-outline" size={20} color="white" />
+                      </TouchableOpacity>
                     )}
                   </View>
 
-                  {showActions && (
-                    <View className="flex-row items-center justify-end mt-2.5">
-                      {selectedCategory === 'UPCOMING' && (
-                        <TouchableOpacity
-                          className="flex-1 flex-row gap-2.5"
-                          onPress={() => handleEdit(deadline)}
-                        >
-                          <Ionicons name="create" size={24} color="#fff" />
-                        </TouchableOpacity>
-                      )}
-                      
-                      <TouchableOpacity 
-                        className="bg-white px-2 py-2 rounded-lg"
-                        onPress={() => handleSubmission(deadline)}
-                      >
-                        <Text>
-                          {selectedCategory === 'UPCOMING' ? 'Submit' : 'Resubmit'}
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
+                  {['UPCOMING', 'PENDING', 'INVALID'].includes(selectedCategory) && (
+                    <TouchableOpacity 
+                      className="bg-white self-end px-4 py-2 rounded-lg mt-3"
+                      onPress={() => handleSubmission(deadline)}
+                    >
+                      <Text className="text-black font-medium">
+                        {selectedCategory === 'UPCOMING' ? 'Submit →' : 'Resubmit →'}
+                      </Text>
+                    </TouchableOpacity>
                   )}
                 </View>
               </View>

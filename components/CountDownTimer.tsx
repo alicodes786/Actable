@@ -35,7 +35,7 @@ const CountDownTimer: React.FC<CountDownTimerProps> = ({ deadlineDate }) => {
     return () => clearInterval(timer);
   }, [deadlineDate, userTimezone]);
 
-  return <Text>{timeLeft}</Text>;
+  return <Text style={{ fontSize: 24 }}>{timeLeft}</Text>;
 };
 
 export default CountDownTimer;
