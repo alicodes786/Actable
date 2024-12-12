@@ -5,6 +5,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { DeadlineWithSubmission, fetchUnapprovedSubmissions } from '@/db/submissions';
 import { useSignedUrl } from '@/lib/hooks/useSignedUrl';
+import { fonts } from '@/styles/theme';
 
 // Define status colors
 const STATUS_COLORS = {
@@ -47,57 +48,55 @@ function SubmissionCard({ item }: { item: DeadlineWithSubmission }) {
         pathname: "/(dashboard)/submission/[id]",
         params: { id: item.submission.id }
       })}
+      className="mb-4"
     >
-      <View className="mt-4 overflow-hidden rounded-2xl">
-        <LinearGradient
-          colors={colors}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-        >
-          <View className="p-5 pb-3">
-            {signedUrl && (
-              <Image
-                source={{ uri: signedUrl }}
-                className="w-full h-40 rounded-lg"
-              />
-            )}
+      <View className="rounded-2xl overflow-hidden bg-white shadow-lg border border-gray-300">
+        {/* Image Container */}
+        <View className="relative">
+          {signedUrl && (
+            <Image
+              source={{ uri: signedUrl }}
+              className="w-full h-48"
+              resizeMode="cover"
+            />
+          )}
+          {/* Floating Title */}
+          <View className="absolute top-0 left-0 right-0 p-4 bg-gradient-to-b from-black/50 to-transparent">
+            <Text className="text-white text-lg font-medium" style={{ fontFamily: fonts.primary }}>
+              {item.name}
+            </Text>
           </View>
-        </LinearGradient>
-        <View 
-          className="bg-white p-5"
-          style={{
-            borderTopWidth: 1,
-            borderColor: 'rgba(0, 0, 0, 0.05)',
-          }}
-        >
-          <Text className="text-gray-900 text-lg font-semibold mb-3" style={{ fontFamily: 'Roboto' }}>
-            {item.name}
-          </Text>
-          <View className="flex-row justify-between items-center">
-            <View>
-              <Text className="text-gray-500 text-xs uppercase mb-1" style={{ fontFamily: 'Roboto' }}>
-                Submitted
-              </Text>
-              <Text 
-                className="text-sm font-medium"
-                style={{ 
-                  color: isSubmissionLate(item.date, item.submission.submitteddate) 
-                    ? STATUS_TEXT_COLORS.LATE 
-                    : STATUS_TEXT_COLORS.ON_TIME,
-                  fontFamily: 'Roboto'
-                }}
-              >
-                {formatDate(item.submission.submitteddate)}
-              </Text>
-            </View>
-            <View>
-              <Text className="text-gray-500 text-xs uppercase mb-1">
-                Due Date
-              </Text>
-              <Text className="text-gray-800 text-sm font-medium">
-                {formatDate(item.date)}
-              </Text>
-            </View>
+        </View>
+
+        {/* Status and Dates */}
+        <View className="p-4 flex-row justify-between items-center">
+          <View>
+            <Text 
+              className="text-green-600 text-sm uppercase mb-1" 
+              style={{ fontFamily: fonts.secondary }}
+            >
+              SUBMITTED
+            </Text>
+            <Text 
+              className="text-gray-600 text-sm" 
+              style={{ fontFamily: fonts.secondary }}
+            >
+              {formatDate(item.submission.submitteddate)}
+            </Text>
+          </View>
+          <View>
+            <Text 
+              className="text-gray-500 text-sm uppercase mb-1" 
+              style={{ fontFamily: fonts.secondary }}
+            >
+              DUE
+            </Text>
+            <Text 
+              className="text-gray-600 text-sm" 
+              style={{ fontFamily: fonts.secondary }}
+            >
+              {formatDate(item.date)}
+            </Text>
           </View>
         </View>
       </View>

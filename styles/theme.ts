@@ -1,7 +1,7 @@
 export const colors = {
   // Deadline status colors
   upcoming: '#979CFF',
-  missed: '#A50505',
+  missed: '#D95353',
   completed: '#5EBD3C',
   pending: '#D96A4E',
   late: '#A07705',
