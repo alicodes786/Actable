@@ -1,32 +1,35 @@
 import React, { useCallback, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
-import { View, ScrollView, Text } from 'react-native';
+import { View, ScrollView, Text, TouchableOpacity, SafeAreaView } from 'react-native';
 import { getDeadlines } from '@/db/deadlines';
 import { useAuth } from '@/providers/AuthProvider';
 import { Ideadline } from '@/lib/interfaces';
 import CountDownTimer from '@/components/CountDownTimer';
+import { colors, fonts } from '@/styles/theme';
 
-// Define status colors like dashboard
-const STATUS_COLORS = {
-  AWAITING: {
-    bg: '#2563EB',    // Blue 600
-    text: '#FFFFFF',   // White text
-    badge: '#1D4ED8',  // Blue 700
+// Define categories using theme colors
+const CATEGORIES = {
+  ALL: {
+    label: 'All',
+    color: '#000000',
   },
-  PENDING_REVIEW: {
-    bg: '#F59E0B',    // Amber 600 - for pending review
-    text: '#FFFFFF',   // White text
-    badge: '#B45309',  // Amber 700
+  UPCOMING: {
+    label: 'Upcoming',
+    color: colors.upcoming,
+  },
+  SUBMITTED: {
+    label: 'Submitted',
+    color: colors.pending,
   },
   INVALID: {
-    bg: '#808080',    // Gray 600
-    text: '#FFFFFF',   // White text
-    badge: '#696969',  // Gray 700
+    label: 'Invalid',
+    color: colors.invalid,
   },
 };
 
 export default function UpcomingScreen() {
   const [deadlines, setDeadlines] = useState<Ideadline[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState('UPCOMING');
   const { isLoading, user, assignedUser } = useAuth();
 
   useFocusEffect(
@@ -49,98 +52,177 @@ export default function UpcomingScreen() {
     }, [isLoading, assignedUser])
   );
 
-  const getUpcomingDeadlines = () => {
+  const filterDeadlines = () => {
     if (!deadlines) return [];
     
     const now = Date.now();
     return deadlines
       .filter(deadline => {
         const deadlineTime = new Date(deadline.date).getTime();
-        // Only show future deadlines that aren't completed
-        return deadlineTime > now && !deadline.completed;
+        const submission = deadline.submissions?.find(
+          sub => sub.id === deadline.lastsubmissionid
+        );
+
+        // First check if deadline is expired and has no submission
+        if (deadlineTime < now && !submission) {
+          return false; // Don't show expired deadlines with no submissions
+        }
+
+        switch (selectedCategory) {
+          case 'ALL':
+            return deadlineTime > now || submission; // Only show future deadlines or ones with submissions
+          case 'UPCOMING':
+            return deadlineTime > now && !deadline.completed && !submission;
+          case 'SUBMITTED':
+            return submission?.status === 'pending';
+          case 'INVALID':
+            return submission?.status === 'invalid';
+          default:
+            return false;
+        }
       })
-      .sort((a, b) => {
-        const aTime = new Date(a.date).getTime();
-        const bTime = new Date(b.date).getTime();
-        return aTime - bTime;
-      });
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  };
+
+  const getCategoryCounts = () => {
+    if (!deadlines) return {};
+    
+    const now = Date.now();
+    const counts = {
+      ALL: 0,
+      UPCOMING: 0,
+      SUBMITTED: 0,
+      INVALID: 0,
+    };
+
+    deadlines.forEach(deadline => {
+      const deadlineTime = new Date(deadline.date).getTime();
+      const submission = deadline.submissions?.find(
+        sub => sub.id === deadline.lastsubmissionid
+      );
+
+      // Skip expired deadlines with no submissions
+      if (deadlineTime < now && !submission) {
+        return;
+      }
+
+      // Only count if deadline is future or has a submission
+      if (deadlineTime > now || submission) {
+        counts.ALL++;
+      }
+
+      if (deadlineTime > now && !deadline.completed && !submission) {
+        counts.UPCOMING++;
+      } else if (submission?.status === 'pending') {
+        counts.SUBMITTED++;
+      } else if (submission?.status === 'invalid') {
+        counts.INVALID++;
+      }
+    });
+
+    return counts;
   };
 
   return (
-    <View className="flex-1 bg-white p-4">
-      <Text className="text-2xl mt-6 mb-5" style={{ fontFamily: 'Manrope' }}>
-        Upcoming Deadlines
-      </Text>
-      
-      <ScrollView className="flex-1">
-        {getUpcomingDeadlines().map((deadline) => {
-          const submission = deadline.submissions?.find(
-            sub => sub.id === deadline.lastsubmissionid
-          );
-          let status = STATUS_COLORS.AWAITING;
-          let statusText = 'Awaiting Submission';
+    <SafeAreaView className="flex-1 bg-white">
+      <View className="flex-1 px-4">
+        <Text className="text-2xl mt-6 mb-5" style={{ fontFamily: fonts.primary }}>
+          Upcoming Deadlines
+        </Text>
 
-          if (submission) {
-            if (submission.status === 'pending') {
-              status = STATUS_COLORS.PENDING_REVIEW;
-              statusText = 'Pending Review';
-            } else if (submission.status === 'invalid') {
-              status = STATUS_COLORS.INVALID;
-              statusText = 'Invalid Submission';
-            }
-          }
-          
-          return (
-            <View 
-              key={deadline.id} 
-              className="mb-4 rounded-xl p-4 shadow-md"
-              style={{ backgroundColor: status.bg }}
-            >
-              <View className="flex-1">
-                <View 
-                  className="self-start rounded-full px-3 py-1 mb-2"
-                  style={{ backgroundColor: status.badge }}
+        {/* Category Tabs */}
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          className="flex-row mb-4 max-h-10"
+        >
+          {Object.entries(CATEGORIES).map(([key, value]) => {
+            const counts = getCategoryCounts();
+            const count = counts[key as keyof typeof counts];
+            
+            if (count === 0) return null;
+
+            return (
+              <TouchableOpacity
+                key={key}
+                onPress={() => setSelectedCategory(key)}
+                className={`px-3 py-1.5 mr-2 rounded-2xl items-center justify-center ${
+                  selectedCategory === key 
+                    ? ''
+                    : 'bg-gray-100'
+                }`}
+                style={selectedCategory === key ? { backgroundColor: value.color } : undefined}
+              >
+                <Text 
+                  className={`text-sm font-medium ${
+                    selectedCategory === key 
+                      ? 'text-white'
+                      : 'text-gray-600'
+                  }`}
+                  style={{ fontFamily: fonts.secondary }}
                 >
-                  <Text 
-                    className="text-xs font-medium"
-                    style={{ 
-                      color: status.text,
-                      fontFamily: 'Roboto'
-                    }}
-                  >
-                    {statusText}
-                  </Text>
+                  {value.label} ({count})
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+
+        {/* Deadlines List */}
+        <ScrollView className="flex-1">
+          {filterDeadlines().map((deadline) => {
+            const getDeadlineColor = () => {
+              if (selectedCategory !== 'ALL') {
+                return CATEGORIES[selectedCategory as keyof typeof CATEGORIES].color;
+              }
+
+              const deadlineTime = new Date(deadline.date).getTime();
+              const submission = deadline.submissions?.find(
+                sub => sub.id === deadline.lastsubmissionid
+              );
+
+              if (submission?.status === 'pending') return colors.pending;
+              if (submission?.status === 'invalid') return colors.invalid;
+              if (deadlineTime > Date.now() && !deadline.completed && !submission) {
+                return colors.upcoming;
+              }
+              return colors.upcoming;
+            };
+
+            const backgroundColor = getDeadlineColor();
+            
+            return (
+              <View key={deadline.id} className="mb-5">
+                <View
+                  className="rounded-3xl p-4 shadow-md"
+                  style={{ backgroundColor }}
+                >
+                  <View className="flex-1">
+                    <Text className="text-white text-lg mb-1" style={{ fontFamily: fonts.primary }}>
+                      {deadline.name}
+                    </Text>
+                    <Text className="text-white/80 text-sm mb-3" style={{ fontFamily: fonts.secondary }}>
+                      {deadline.description}
+                    </Text>
+                    <Text className="text-white text-lg font-medium" style={{ fontFamily: fonts.primary }}>
+                      <CountDownTimer 
+                        deadlineDate={new Date(deadline.date)} 
+                        textColour="#FFFFFF" 
+                      />
+                    </Text>
+                  </View>
                 </View>
-                <Text 
-                  className="text-lg font-bold mb-2" 
-                  style={{ 
-                    color: status.text,
-                    fontFamily: 'Roboto'
-                  }}
-                >
-                  {deadline.name}
-                </Text>
-                <Text 
-                  className="text-sm mb-3" 
-                  style={{ color: 'rgba(255, 255, 255, 0.7)' }}
-                >
-                  {deadline.description}
-                </Text>
-                <CountDownTimer 
-                  deadlineDate={new Date(deadline.date)}
-                  textColour={status.text}
-                />
               </View>
-            </View>
-          );
-        })}
-        
-        {getUpcomingDeadlines().length === 0 && (
-          <Text className="text-center text-gray-500 mt-4">
-            No upcoming deadlines
-          </Text>
-        )}
-      </ScrollView>
-    </View>
+            );
+          })}
+          
+          {filterDeadlines().length === 0 && (
+            <Text className="text-center text-gray-500 mt-5" style={{ fontFamily: fonts.secondary }}>
+              No deadlines in this category
+            </Text>
+          )}
+        </ScrollView>
+      </View>
+    </SafeAreaView>
   );
 } 
