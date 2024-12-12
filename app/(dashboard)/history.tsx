@@ -120,7 +120,7 @@ export default function HistoryScreen() {
     <SafeAreaView className="flex-1 bg-white">
       <ScrollView className="flex-1" bounces={false}>
         <View className="px-5 pt-2 pb-10 flex-1">
-          <Text className="text-2xl mt-6 font-bold mb-3" style={{ fontFamily: 'Manrope' }}>
+          <Text className="text-2xl mt-6 mb-3" style={{ fontFamily: 'Manrope' }}>
             History
           </Text>
 
