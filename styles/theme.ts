@@ -5,6 +5,7 @@ export const colors = {
   completed: '#5EBD3C',
   pending: '#D96A4E',
   late: '#A07705',
+  invalid:'#B7B7B7'
 } as const;
 
 export const fonts = {

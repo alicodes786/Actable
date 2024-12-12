@@ -143,7 +143,7 @@ export default function Dashboard() {
     <View className="flex-1 bg-white">
       <ScrollView className="flex-1">
         <View className="p-5">
-          <Text className="text-2xl mt-6 font-bold mb-5" style={{ fontFamily: 'Manrope' }}>
+          <Text className="text-2xl mt-6 mb-5" style={{ fontFamily: 'Manrope' }}>
             Pending Submissions
           </Text>
 

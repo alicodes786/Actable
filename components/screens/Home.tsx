@@ -8,6 +8,7 @@ import CountDownTimer from '../CountDownTimer';
 import { useAuth } from '@/providers/AuthProvider';
 import { getUserName } from '@/db/users'; // Assuming you have this function to fetch user name
 import Header from '@/components/Header';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 const GRADIENT_COLORS: [string, string][] = [
   ['#87CEEB', '#00BFFF'],
@@ -27,6 +28,15 @@ const STATUS_COLORS = {
     badge: '#FF8C00',  // Dark Orange
   },
 };
+
+const DEADLINE_COLORS = [
+  '#FF7B7B',  // Coral Red
+  '#82C3FF',  // Light Blue
+  '#98D8A3',  // Light Green
+  '#FFB480',  // Light Orange
+  '#B5A8FF',  // Light Purple
+  '#FF9FD3',  // Light Pink
+];
 
 export default function Home() {
   const [deadlines, setDeadlines] = useState<IdeadlineList | null>(null);
@@ -97,63 +107,51 @@ export default function Home() {
         <View className="pb-10 flex-1">
           <Header />
           <View className="mt-10 px-5">
-            <Text className="text-2xl font-bold mb-3" style={{ fontFamily: 'Manrope' }}>Upcoming</Text>
+            <Text className="text-3xl mb-3" style={{ fontFamily: 'Manrope' }}>Upcoming</Text>
 
             {getUpcomingDeadlines().map((item, idx) => {
+              const randomColor = DEADLINE_COLORS[Math.floor(Math.random() * DEADLINE_COLORS.length)];
               const submission = item.submissions?.find(
                 sub => sub.id === item.lastsubmissionid
               );
-              const isInvalid = submission?.status === 'invalid';
-              const isPending = submission?.status === 'pending';
               const hasSubmission = !!submission;
 
               return (
-                <LinearGradient
-                  key={item.id || idx}
-                  colors={GRADIENT_COLORS[idx]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  className="mt-4 p-5 rounded-2xl shadow-md relative"
+                <View 
+                  key={item.id || idx} 
+                  className="mb-4"
                 >
-                  {(isInvalid || isPending) && (
-                    <View 
-                      className="absolute top-2 right-2 rounded-full px-3 py-1"
-                      style={{ 
-                        backgroundColor: isInvalid 
-                          ? STATUS_COLORS.INVALID.badge 
-                          : STATUS_COLORS.PENDING.badge 
-                      }}
-                    >
-                      <Text 
-                        className="text-xs font-medium"
-                        style={{ 
-                          color: isInvalid 
-                            ? STATUS_COLORS.INVALID.text 
-                            : STATUS_COLORS.PENDING.text 
-                        }}
-                      >
-                        {isInvalid ? 'Invalid Submission' : 'Pending Review'}
-                      </Text>
-                    </View>
-                  )}
-                  <Text className="text-white text-base font-medium mb-1">
-                    {item.name}
-                  </Text>
-                  <Text className="text-white text-base font-medium">
-                    <CountDownTimer 
-                      deadlineDate={new Date(item.date)} 
-                      textColour="#FFFFFF" 
-                    />
-                  </Text>
-                  <TouchableOpacity
-                    className="bg-black p-2.5 rounded mt-2.5 self-start min-w-[100px] items-center"
-                    onPress={() => handleSubmission(item)}
+                  <View
+                    className="rounded-3xl p-4 shadow-md"
+                    style={{ backgroundColor: randomColor }}
                   >
-                    <Text className="text-white text-lg font-semibold">
-                      {hasSubmission ? 'Resubmit' : 'Submit'}
-                    </Text>
-                  </TouchableOpacity>
-                </LinearGradient>
+                    <View className="flex-row justify-between items-start">
+                      <View className="flex-1">
+                        <Text className="text-white text-lg mb-1" style={{ fontFamily: 'Manrope' }}>
+                          {item.name}
+                        </Text>
+                        <Text className="text-white/80 text-sm mb-3" style={{ fontFamily: 'Manrope' }}>
+                          {item.description}
+                        </Text>
+                        <Text className="text-white text-lg font-medium" style={{ fontFamily: 'Manrope' }}>
+                          <CountDownTimer 
+                            deadlineDate={new Date(item.date)} 
+                            textColour="#FFFFFF" 
+                          />
+                        </Text>
+                      </View>
+                    </View>
+
+                    <TouchableOpacity 
+                      className="bg-white self-end px-4 py-2 rounded-lg mt-3"
+                      onPress={() => handleSubmission(item)}
+                    >
+                      <Text className="text-black font-medium">
+                        {hasSubmission ? 'Resubmit →' : 'Submit →'}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
               );
             })}
           </View>

@@ -11,32 +11,33 @@ import CountDownTimer from '@/components/CountDownTimer';
 import { getAssignedMod } from '@/db/mod';
 import { fromUTC, formatLocalDate } from '@/lib/dateUtils';
 import Header from '@/components/Header';
+import { colors, fonts } from '@/styles/theme';
 
 // Define categories and their colors
 const CATEGORIES = {
   UPCOMING: {
     label: 'Upcoming',
-    colors: ['#66b3ff', '#007FFF', '#0066cc'],
-  },
-  LATE: {
-    label: 'Late',
-    colors: ['#F97316', '#EA580C', '#C2410C'],
-  },
-  PENDING: {
-    label: 'Pending',
-    colors: ['#F59E0B', '#D97706', '#B45309'],
-  },
-  INVALID: {
-    label: 'Invalid',
-    colors: ['#808080', '#6B7280', '#4B5563'],
+    color: colors.upcoming, // #979CFF
   },
   COMPLETED: {
     label: 'Completed',
-    colors: ['#10B981', '#059669', '#047857'],
+    color: colors.completed, // #5EBD3C
   },
   MISSED: {
     label: 'Missed',
-    colors: ['#EF4444', '#DC2626', '#B91C1C'],
+    color: colors.missed, // #A50505
+  },
+  LATE: {
+    label: 'Late',
+    color: colors.late, // #A07705
+  },
+  PENDING: {
+    label: 'Pending',
+    color: colors.pending, // #D96A4E
+  },
+  INVALID: {
+    label: 'Invalid',
+    color: colors.invalid, // #B7B7B7
   },
 };
 
@@ -318,7 +319,7 @@ export default function ViewDeadlinesScreen() {
     <SafeAreaView className="flex-1 bg-white">
       <Header />
       <View className="flex-1 px-4">
-        <Text className="text-2xl mt-10 font-bold mb-5" style={{ fontFamily: 'Manrope' }}>Your Deadlines</Text>
+        <Text className="text-2xl mt-10 mb-5" style={{ fontFamily: 'Manrope' }}>All Deadlines</Text>
         
         {/* Category Tabs */}
         <ScrollView 
@@ -330,9 +331,7 @@ export default function ViewDeadlinesScreen() {
             const counts = getCategoryCounts();
             const count = counts[key as keyof typeof counts];
             
-            // Only hide if it's not LATE and count is 0
             if (count === 0 && key !== 'LATE') return null;
-            
             if (!hasMod && (key === 'PENDING' || key === 'INVALID')) return null;
 
             return (
@@ -344,7 +343,7 @@ export default function ViewDeadlinesScreen() {
                     ? ''
                     : 'bg-gray-100'
                 }`}
-                style={selectedCategory === key ? { backgroundColor: value.colors[1] } : undefined}
+                style={selectedCategory === key ? { backgroundColor: value.color } : undefined}
               >
                 <Text 
                   className={`text-sm font-medium ${
@@ -352,7 +351,7 @@ export default function ViewDeadlinesScreen() {
                       ? 'text-white'
                       : 'text-gray-600'
                   }`}
-                  style={{ fontFamily: 'Roboto' }}
+                  style={{ fontFamily: fonts.secondary }}
                 >
                   {value.label} ({count})
                 </Text>
@@ -363,28 +362,33 @@ export default function ViewDeadlinesScreen() {
 
         <ScrollView className="flex-1">
           {filterDeadlines().map((deadline) => {
-            const colors = CATEGORIES[selectedCategory as keyof typeof CATEGORIES].colors as [string, string, string];
+            const backgroundColor = CATEGORIES[selectedCategory as keyof typeof CATEGORIES].color;
             const showActions = !['COMPLETED', 'LATE', 'MISSED'].includes(selectedCategory);
             
             return(
-              <View key={deadline.id} className="mb-4">
-                <LinearGradient
-                  colors={colors}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  className="rounded-xl p-4 shadow-md"
+              <View key={deadline.id} className="mb-5">
+                <View
+                  className="rounded-3xl p-4 shadow-md"
+                  style={{ backgroundColor }}
                 >
-                  <View className="flex-1">
-                    <Text className="text-lg font-bold text-white mb-2" style={{ fontFamily: 'Roboto' }}>
-                      {deadline.name}
-                    </Text>
-                    <Text className="text-sm text-white mb-2" style={{ fontFamily: 'Roboto' }}>
-                      {deadline.description}
-                    </Text>
-                    
-                    {selectedCategory === 'MISSED' ? (
-                      <View>
-                        <View className="flex-row justify-end items-center mt-2">
+                  <View className="flex-row justify-between items-start">
+                    <View className="flex-1">
+                      <Text className="text-white text-lg mb-1" style={{ fontFamily: fonts.primary }}>
+                        {deadline.name}
+                      </Text>
+                      <Text className="text-white/80 text-sm mb-3" style={{ fontFamily: fonts.secondary }}>
+                        {deadline.description}
+                      </Text>
+                      
+                      {selectedCategory === 'UPCOMING' ? (
+                        <Text className="text-white text-lg font-medium" style={{ fontFamily: fonts.primary }}>
+                          <CountDownTimer 
+                            deadlineDate={new Date(deadline.date)} 
+                            textColour="#FFFFFF" 
+                          />
+                        </Text>
+                      ) : selectedCategory === 'MISSED' ? (
+                        <View className="flex-row justify-end items-center">
                           <View>
                             <Text className="text-white text-xs uppercase mb-1 opacity-80">
                               Due Date
@@ -394,10 +398,8 @@ export default function ViewDeadlinesScreen() {
                             </Text>
                           </View>
                         </View>
-                      </View>
-                    ) : ['COMPLETED', 'LATE'].includes(selectedCategory) ? (
-                      <View>
-                        <View className="flex-row justify-between items-center mt-2">
+                      ) : ['COMPLETED', 'LATE'].includes(selectedCategory) ? (
+                        <View className="flex-row justify-between items-center">
                           <View>
                             <Text className="text-white text-xs uppercase mb-1 opacity-80">
                               {selectedCategory === 'LATE' ? 'Late by' : 'Submitted'}
@@ -425,43 +427,39 @@ export default function ViewDeadlinesScreen() {
                             </Text>
                           </View>
                         </View>
-                      </View>
-                    ) : (
-                      <Text className="text-white text-base font-medium">
-                        {new Date(deadline.date).getTime() >= Date.now() ?
-                          <CountDownTimer 
-                            deadlineDate={new Date(deadline.date)} 
-                            textColour="#FFFFFF"
-                          />
-                          :
-                          "Deadline Passed"
-                        }
-                      </Text>
+                      ) : ['PENDING', 'INVALID'].includes(selectedCategory) && (
+                        <View>
+                          <Text className="text-white text-lg font-medium" style={{ fontFamily: fonts.primary }}>
+                            <CountDownTimer 
+                              deadlineDate={new Date(deadline.date)} 
+                              textColour="#FFFFFF" 
+                            />
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+
+                    {['UPCOMING', 'PENDING', 'INVALID'].includes(selectedCategory) && (
+                      <TouchableOpacity 
+                        className="p-1"
+                        onPress={() => handleEdit(deadline)}
+                      >
+                        <Ionicons name="create-outline" size={20} color="white" />
+                      </TouchableOpacity>
                     )}
                   </View>
 
-                  {showActions && (
-                    <View className="flex-row items-center justify-end mt-2.5">
-                      {selectedCategory === 'UPCOMING' && (
-                        <TouchableOpacity
-                          className="flex-1 flex-row gap-2.5"
-                          onPress={() => handleEdit(deadline)}
-                        >
-                          <Ionicons name="create" size={24} color="#fff" />
-                        </TouchableOpacity>
-                      )}
-                      
-                      <TouchableOpacity 
-                        className="bg-white px-2 py-2 rounded-lg"
-                        onPress={() => handleSubmission(deadline)}
-                      >
-                        <Text>
-                          {selectedCategory === 'UPCOMING' ? 'Submit' : 'Resubmit'}
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
+                  {['UPCOMING', 'PENDING', 'INVALID'].includes(selectedCategory) && (
+                    <TouchableOpacity 
+                      className="bg-white self-end px-4 py-2 rounded-lg mt-3"
+                      onPress={() => handleSubmission(deadline)}
+                    >
+                      <Text className="text-black font-medium">
+                        {selectedCategory === 'UPCOMING' ? 'Submit →' : 'Resubmit →'}
+                      </Text>
+                    </TouchableOpacity>
                   )}
-                </LinearGradient>
+                </View>
               </View>
             );
           })}
