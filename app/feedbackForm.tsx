@@ -14,6 +14,16 @@ import {
 } from "react-native";
 import { submitFeedback } from "@/db/feedback";
 import { fonts } from "@/styles/theme";
+import { LinearGradient } from 'expo-linear-gradient';
+import { colors } from '@/styles/theme';
+
+const RATING_COLORS: Record<number, readonly [string, string]> = {
+  1: ['#FF6B6B', '#FF8787'] as const,
+  2: ['#FFA06B', '#FFB787'] as const,
+  3: ['#FFD93D', '#FFE169'] as const,
+  4: ['#87CEEB', '#98D8F1'] as const,
+  5: ['#4CAF50', '#69C16D'] as const,
+};
 
 const FeedbackForm = () => {
   const [rating, setRating] = useState<number | null>(null);
@@ -60,19 +70,25 @@ const FeedbackForm = () => {
               {[1, 2, 3, 4, 5].map((num) => (
                 <TouchableOpacity
                   key={num}
-                  style={[
-                    styles.ratingButton,
-                    rating === num && styles.selectedRating,
-                  ]}
                   onPress={() => setRating(num)}
                 >
-                  <Text style={[
-                    styles.ratingText,
-                    { fontFamily: fonts.secondary },
-                    rating === num && styles.selectedRatingText,
-                  ]}>
-                    {num}
-                  </Text>
+                  <LinearGradient
+                    colors={rating === num ? RATING_COLORS[num as keyof typeof RATING_COLORS] : ['#F3F4F6', '#F3F4F6']}
+                    style={[
+                      styles.ratingButton,
+                      rating === num && styles.selectedRating,
+                    ]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                  >
+                    <Text style={[
+                      styles.ratingText,
+                      { fontFamily: fonts.secondary },
+                      rating === num && styles.selectedRatingText,
+                    ]}>
+                      {num}
+                    </Text>
+                  </LinearGradient>
                 </TouchableOpacity>
               ))}
             </View>
@@ -101,18 +117,25 @@ const FeedbackForm = () => {
               multiline
             />
 
-            <TouchableOpacity 
+            <LinearGradient
+              colors={[colors.upcoming, '#7C80FF']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
               style={[
                 styles.button,
                 (!rating || !feedback || !improvements) && styles.disabledButton
-              ]} 
-              onPress={handleSubmit}
-              disabled={!rating || !feedback || !improvements}
+              ]}
             >
-              <Text style={[styles.buttonText, { fontFamily: fonts.primary }]}>
-                Send Feedback →
-              </Text>
-            </TouchableOpacity>
+              <TouchableOpacity 
+                onPress={handleSubmit}
+                disabled={!rating || !feedback || !improvements}
+                style={styles.buttonContent}
+              >
+                <Text style={[styles.buttonText, { fontFamily: fonts.primary }]}>
+                  Send Feedback →
+                </Text>
+              </TouchableOpacity>
+            </LinearGradient>
           </View>
         </ScrollView>
       </TouchableWithoutFeedback>
@@ -130,16 +153,18 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   formContainer: {
-    backgroundColor: "#fff",
+    backgroundColor: '#fff',
     borderRadius: 24,
     padding: 24,
     marginTop: 20,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
     ...Platform.select({
       ios: {
         shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
+        shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.1,
-        shadowRadius: 8,
+        shadowRadius: 12,
       },
       android: {
         elevation: 4,
@@ -151,7 +176,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     marginBottom: 8,
     textAlign: "center",
-    color: "#000",
+    color: colors.upcoming,
   },
   subheading: {
     fontSize: 16,
@@ -167,13 +192,18 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1.5,
-    borderColor: "#E5E7EB",
+    borderColor: '#E5E7EB',
     borderRadius: 16,
     padding: 16,
     marginBottom: 24,
     fontSize: 16,
-    backgroundColor: "#F9FAFB",
-    color: "#000",
+    backgroundColor: '#F9FAFB',
+    color: '#000',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   textArea: {
     height: 120,
@@ -186,39 +216,44 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   ratingButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: "#F3F4F6",
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 2,
-    borderColor: "#E5E7EB",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   selectedRating: {
-    backgroundColor: "#000",
-    borderColor: "#000",
+    borderWidth: 0,
   },
   ratingText: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "600",
     color: "#4B5563",
   },
   selectedRatingText: {
-    color: "#fff",
+    color: '#fff',
+    fontWeight: "700",
   },
   button: {
-    backgroundColor: "#000",
-    padding: 16,
     borderRadius: 16,
-    alignItems: "center",
     marginTop: 8,
+    overflow: 'hidden',
+  },
+  buttonContent: {
+    padding: 16,
+    alignItems: 'center',
+    width: '100%',
   },
   disabledButton: {
-    backgroundColor: "#E5E7EB",
+    opacity: 0.5,
   },
   buttonText: {
-    color: "#fff",
+    color: '#fff',
     fontSize: 16,
     fontWeight: "600",
   },
