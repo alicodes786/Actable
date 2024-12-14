@@ -230,7 +230,7 @@ export default function ViewDeadlinesScreen() {
     <SafeAreaView className="flex-1 bg-white">
       <Header />
       <View className="flex-1 px-4">
-        <Text className="text-2xl mt-10 mb-5" style={{ fontFamily: 'Manrope' }}>All Deadlines</Text>
+        <Text className="text-2xl mt-10 mb-5" style={{ fontFamily: fonts.primary }}>All Deadlines</Text>
         
         {/* Category Tabs */}
         <ScrollView 
