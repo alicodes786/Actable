@@ -135,31 +135,30 @@ export default function Home() {
                     className="rounded-3xl p-4 shadow-md"
                     style={{ backgroundColor: cardColor }}
                   >
-                    <View className="flex-row justify-between items-start">
-                      <View className="flex-1">
-                        <Text className="text-white text-lg mb-1" style={{ fontFamily: 'Manrope' }}>
-                          {item.name}
-                        </Text>
-                        <Text className="text-white/80 text-sm mb-3" style={{ fontFamily: 'Manrope' }}>
-                          {item.description}
-                        </Text>
-                        <Text className="text-white text-lg font-medium" style={{ fontFamily: 'Manrope' }}>
-                          <CountDownTimer 
-                            deadlineDate={new Date(item.date)} 
-                            textColour="#FFFFFF" 
-                          />
-                        </Text>
-                      </View>
-                    </View>
+                    <Text className="text-white text-lg mb-1" style={{ fontFamily: 'Manrope' }}>
+                      {item.name}
+                    </Text>
+                    <Text className="text-white/80 text-sm mb-3" style={{ fontFamily: 'Manrope' }}>
+                      {item.description}
+                    </Text>
 
-                    <TouchableOpacity 
-                      className="bg-white self-end px-4 py-2 rounded-lg mt-3"
-                      onPress={() => handleSubmission(item)}
-                    >
-                      <Text className="text-black font-medium">
-                        {hasSubmission ? 'Resubmit →' : 'Submit →'}
+                    <View className="flex-row justify-between items-center mt-3">
+                      <Text className="text-white text-lg font-medium flex-shrink" style={{ fontFamily: 'Manrope' }}>
+                        <CountDownTimer 
+                          deadlineDate={new Date(item.date)} 
+                          textColour="#FFFFFF" 
+                        />
                       </Text>
-                    </TouchableOpacity>
+
+                      <TouchableOpacity 
+                        className="bg-white px-4 py-2 rounded-lg ml-2"
+                        onPress={() => handleSubmission(item)}
+                      >
+                        <Text className="text-black font-medium">
+                          {hasSubmission ? 'Resubmit →' : 'Submit →'}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
                   </View>
                 </View>
               );
