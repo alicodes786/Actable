@@ -101,6 +101,11 @@ export default function Home() {
       .slice(0, 3);
   };
 
+  const getUniqueRandomColor = (previousColor?: string): string => {
+    const availableColors = DEADLINE_COLORS.filter(color => color !== previousColor);
+    return availableColors[Math.floor(Math.random() * availableColors.length)];
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-white">
       <ScrollView className="flex-1" bounces={false}>
@@ -109,8 +114,13 @@ export default function Home() {
           <View className="mt-10 px-5">
             <Text className="text-3xl mb-3" style={{ fontFamily: 'Manrope' }}>Upcoming</Text>
 
-            {getUpcomingDeadlines().map((item, idx) => {
-              const randomColor = DEADLINE_COLORS[Math.floor(Math.random() * DEADLINE_COLORS.length)];
+            {getUpcomingDeadlines().map((item, idx, array) => {
+              const previousColor = idx > 0 ? 
+                (array[idx - 1] as any).cardColor : undefined;
+              const cardColor = getUniqueRandomColor(previousColor);
+              
+              (item as any).cardColor = cardColor;
+
               const submission = item.submissions?.find(
                 sub => sub.id === item.lastsubmissionid
               );
@@ -123,7 +133,7 @@ export default function Home() {
                 >
                   <View
                     className="rounded-3xl p-4 shadow-md"
-                    style={{ backgroundColor: randomColor }}
+                    style={{ backgroundColor: cardColor }}
                   >
                     <View className="flex-row justify-between items-start">
                       <View className="flex-1">
