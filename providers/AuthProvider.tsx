@@ -21,6 +21,8 @@ interface AuthContextType {
     logout: () => Promise<void>;
     isLoading: boolean;
     loadAssignedUser: (modId: string) => Promise<User | null>;
+    deadlineColors: Record<string, string>;
+    setDeadlineColors: (colors: Record<string, string>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -31,6 +33,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [assignedUser, setAssignedUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [userTimezone, setUserTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone);
+    const [deadlineColors, setDeadlineColors] = useState<Record<string, string>>({});
     const router = useRouter();
 
     // Initialise auth state and listen for Supabase auth changes
@@ -130,6 +133,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setUser(null);
             setSession(null);
             setAssignedUser(null);
+            setDeadlineColors({});
             router.replace('/(auth)/sign-in');
         } catch (error) {
             console.error('Logout error:', error);
@@ -146,7 +150,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             login, 
             logout, 
             isLoading,
-            loadAssignedUser
+            loadAssignedUser,
+            deadlineColors,
+            setDeadlineColors,
         }}>
             {children}
         </AuthContext.Provider>
