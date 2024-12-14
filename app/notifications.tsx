@@ -1,9 +1,13 @@
+
+
 import { View, Text, StyleSheet, TouchableOpacity, Switch } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import React, { useEffect, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Notifications from 'expo-notifications';
+import { colors } from '@/styles/theme';
+import { fonts } from '@/styles/theme';
 
 const NotificationsSettings = () => {
   const [isNotificationsEnabled, setIsNotificationsEnabled] = useState(true);
@@ -83,6 +87,15 @@ const NotificationsSettings = () => {
     </TouchableOpacity>
   );
 
+  const getTimeLabel = (minutes: number) => {
+    switch (minutes) {
+      case 30: return '30 minutes before';
+      case 60: return '1 hour before';
+      case 1440: return '1 day before';
+      default: return '30 minutes before';
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.title}>Notifications Settings</Text>
@@ -103,35 +116,40 @@ const NotificationsSettings = () => {
         </View>
       </View>
 
-      {/* Notification Time Options */}
+      {/* Updated Notification Time Options */}
       <View style={styles.settingsGroup}>
         <Text style={styles.groupTitle}>Reminder Time</Text>
         <View style={styles.settingsBox}>
-          <TouchableOpacity
-            style={styles.settingOption}
-            onPress={() => handleNotificationTimeChange(30)}
-          >
-            <View style={styles.settingContent}>
-              <Text style={styles.settingText}>30 minutes before</Text>
-            </View>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.settingOption}
-            onPress={() => handleNotificationTimeChange(60)}
-          >
-            <View style={styles.settingContent}>
-              <Text style={styles.settingText}>1 hour before</Text>
-            </View>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.settingOption}
-            onPress={() => handleNotificationTimeChange(1440)} // 1 day = 1440 minutes
-          >
-            <View style={styles.settingContent}>
-              <Text style={styles.settingText}>1 day before</Text>
-            </View>
-          </TouchableOpacity>
+          {[30, 60, 1440].map((time) => (
+            <TouchableOpacity
+              key={time}
+              style={[
+                styles.settingOption,
+                notificationTime === time && styles.selectedOption
+              ]}
+              onPress={() => handleNotificationTimeChange(time)}
+            >
+              <View style={styles.settingContent}>
+                <Text style={[
+                  styles.settingText,
+                  notificationTime === time && styles.selectedText
+                ]}>
+                  {getTimeLabel(time)}
+                </Text>
+                {notificationTime === time && (
+                  <Ionicons name="checkmark-circle" size={24} color={colors.completed} />
+                )}
+              </View>
+            </TouchableOpacity>
+          ))}
         </View>
+      </View>
+
+      {/* Current Setting Display */}
+      <View style={styles.currentSetting}>
+        <Text style={styles.currentSettingText}>
+          You will be notified {getTimeLabel(notificationTime).toLowerCase()}
+        </Text>
       </View>
 
       {/* Button to simulate scheduling a notification */}
@@ -194,6 +212,25 @@ const styles = StyleSheet.create({
   settingText: {
     fontSize: 16,
     color: '#333333',
+  },
+  selectedOption: {
+    backgroundColor: '#F0F9FF',  // Light blue background
+  },
+  selectedText: {
+    color: colors.completed,
+    fontWeight: '500',
+  },
+  currentSetting: {
+    backgroundColor: '#F9FAFB',
+    padding: 16,
+    borderRadius: 12,
+    marginTop: 16,
+  },
+  currentSettingText: {
+    color: '#666',
+    fontSize: 14,
+    textAlign: 'center',
+    fontFamily: fonts.secondary,
   },
 });
 

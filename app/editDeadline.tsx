@@ -1,29 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, Alert, TouchableOpacity } from 'react-native';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { useAuth } from '@/providers/AuthProvider';
 import { getSingleDeadline, updateDeadline, deleteDeadline } from '@/db/deadlines';
-import { useNavigation, useRouter } from 'expo-router';
+import { router } from 'expo-router';
 import { useRoute } from '@react-navigation/native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { fonts } from '@/styles/theme';
 
 export default function EditDeadlineScreen() {
   const { user } = useAuth();
-  const router = useRouter();
   const route = useRoute();
-  const navigation = useNavigation();
   const { deadlineId } = route.params as { deadlineId: number };
   const [deadlineName, setDeadlineName] = useState('');
   const [deadlineDescription, setDeadlineDescription] = useState('');
   const [deadlineDate, setDeadlineDate] = useState<Date | null>(null);
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  useEffect(() => {
-    // This will set the title after the component has mounted
-    navigation.setOptions({
-      title: 'Edit Deadline',
-    });
-  }, [navigation]); 
 
   useEffect(() => {
     const fetchDeadline = async () => {
@@ -147,91 +141,100 @@ export default function EditDeadlineScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.label}>Deadline Name</Text>
-      <TextInput
-        style={styles.input}
-        value={deadlineName}
-        onChangeText={setDeadlineName}
-        placeholder="Enter deadline name"
-      />
-      
-      <Text style={styles.label}>Deadline Date & Time</Text>
-      <View style={styles.dateContainer}>
-        <Text style={styles.dateText}>
-          {deadlineDate ? deadlineDate.toLocaleString() : 'No date selected'}
-        </Text>
-        <Button title="Select Date & Time" onPress={showDatePicker} />
+    <SafeAreaView className="flex-1 bg-white">
+      {/* Header */}
+      <View className="flex-row items-center h-14 px-5">
+        <TouchableOpacity 
+          onPress={() => router.back()}
+          className="flex-row items-center space-x-2"
+        >
+          <Ionicons name="arrow-back" size={24} color="#000" />
+          <Text style={{ fontFamily: fonts.primary }} className="text-lg">
+            Edit Deadline
+          </Text>
+        </TouchableOpacity>
       </View>
 
-      <DateTimePickerModal
-        isVisible={isDatePickerVisible}
-        mode="datetime"
-        onConfirm={handleConfirm}
-        onCancel={hideDatePicker}
-        date={deadlineDate || undefined}
-      />
+      <View className="flex-1 px-5">
+        <Text className="text-base mb-2" style={{ fontFamily: fonts.primary }}>
+          Name
+        </Text>
+        <TextInput
+          className="bg-[#F5F5F5] p-4 rounded-xl mb-6 text-base"
+          style={{ fontFamily: fonts.secondary }}
+          value={deadlineName}
+          onChangeText={setDeadlineName}
+          placeholder="Enter deadline name"
+          placeholderTextColor="#999"
+        />
+        
+        <Text className="text-base mb-2" style={{ fontFamily: fonts.primary }}>
+          Description
+        </Text>
+        <TextInput
+          className="bg-[#F5F5F5] p-4 rounded-xl mb-6 text-base h-[120px]"
+          style={{ fontFamily: fonts.secondary, textAlignVertical: 'top' }}
+          value={deadlineDescription}
+          onChangeText={setDeadlineDescription}
+          placeholder="Enter description"
+          placeholderTextColor="#999"
+          multiline
+          numberOfLines={4}
+        />
 
-      <Text style={styles.label}>Deadline Description</Text>
-      <TextInput
-        style={[styles.input, styles.multilineInput]}
-        value={deadlineDescription}
-        onChangeText={setDeadlineDescription}
-        placeholder="Enter description"
-        multiline
-        numberOfLines={4}
-      />
+        <Text className="text-base mb-2" style={{ fontFamily: fonts.primary }}>
+          Due Date
+        </Text>
+        <TouchableOpacity 
+          className="bg-[#F5F5F5] p-4 rounded-xl mb-6 flex-row items-center justify-between"
+          onPress={showDatePicker}
+        >
+          <Text 
+            className="text-base text-black"
+            style={{ fontFamily: fonts.secondary }}
+          >
+            {deadlineDate 
+              ? deadlineDate.toLocaleString() 
+              : 'Select date and time'}
+          </Text>
+          <Ionicons name="calendar-outline" size={24} color="#666" />
+        </TouchableOpacity>
 
-    <View>
-      <Button 
-        title="Update Deadline" 
-        onPress={handleSubmit} 
-        disabled={isSubmitting} 
-      />
-    </View>
-    <View className='mt-10'>
-      <Button
-        title="Delete Deadline"
-        color="red"
-        onPress={handleDelete}
-      />
-    </View>
+        <DateTimePickerModal
+          isVisible={isDatePickerVisible}
+          mode="datetime"
+          onConfirm={handleConfirm}
+          onCancel={hideDatePicker}
+          date={deadlineDate || undefined}
+        />
 
-    </View>
+        <View className="mt-auto mb-6 space-y-4">
+          <TouchableOpacity 
+            className="bg-black p-4 rounded-xl items-center"
+            onPress={handleSubmit}
+            disabled={isSubmitting}
+          >
+            <Text 
+              className="text-white text-base font-semibold"
+              style={{ fontFamily: fonts.primary }}
+            >
+              Update Deadline
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            className="bg-red-500 p-4 rounded-xl items-center"
+            onPress={handleDelete}
+          >
+            <Text 
+              className="text-white text-base font-semibold"
+              style={{ fontFamily: fonts.primary }}
+            >
+              Delete Deadline
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </SafeAreaView>
   );
 }
-
-// Styles remain the same
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-    backgroundColor: '#fff'
-  },
-  label: {
-    fontSize: 16,
-    marginBottom: 8,
-    fontWeight: 'bold'
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    padding: 10,
-    borderRadius: 5,
-    marginBottom: 16
-  },
-  multilineInput: {
-    height: 100,
-    textAlignVertical: 'top'
-  },
-  dateContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 16
-  },
-  dateText: {
-    flex: 1,
-    marginRight: 10
-  }
-});
