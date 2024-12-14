@@ -3,9 +3,11 @@ import { SplashScreen, Stack } from 'expo-router';
 import { useEffect, useState } from 'react';
 import * as Notifications from 'expo-notifications';
 import 'react-native-reanimated';
-import { View, ActivityIndicator, Platform } from 'react-native';
+import { View, ActivityIndicator, Platform, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
 import { AuthProvider, useAuth } from '@/providers/AuthProvider';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import { fonts } from '@/styles/theme';
 
 export {
   ErrorBoundary,
@@ -78,13 +80,45 @@ function AppContent() {
           options={{
             title: 'Settings',
             headerShown: true,
+            headerShadowVisible: false,
+            headerStyle: {
+              backgroundColor: '#FFFFFF',
+            },
+            headerTitleStyle: {
+              fontFamily: fonts.primary,
+              fontSize: 18,
+            },
+            headerLeft: () => (
+              <TouchableOpacity 
+                onPress={() => router.back()}
+                style={{ marginLeft: 8 }}
+              >
+                <Ionicons name="arrow-back" size={24} color="#000" />
+              </TouchableOpacity>
+            ),
           }} 
         />
         <Stack.Screen 
           name="notifications"
           options={{
-            title: '',
+            title: 'Notifications',
             headerShown: true,
+            headerShadowVisible: false,
+            headerStyle: {
+              backgroundColor: '#FFFFFF',
+            },
+            headerTitleStyle: {
+              fontFamily: fonts.primary,
+              fontSize: 18,
+            },
+            headerLeft: () => (
+              <TouchableOpacity 
+                onPress={() => router.back()}
+                style={{ marginLeft: 8 }}
+              >
+                <Ionicons name="arrow-back" size={24} color="#000" />
+              </TouchableOpacity>
+            ),
           }} 
         />
         <Stack.Screen 
@@ -92,6 +126,22 @@ function AppContent() {
           options={{
             title: 'Feedback',
             headerShown: true,
+            headerShadowVisible: false,
+            headerStyle: {
+              backgroundColor: '#FFFFFF',
+            },
+            headerTitleStyle: {
+              fontFamily: fonts.primary,
+              fontSize: 18,
+            },
+            headerLeft: () => (
+              <TouchableOpacity 
+                onPress={() => router.back()}
+                style={{ marginLeft: 8 }}
+              >
+                <Ionicons name="arrow-back" size={24} color="#000" />
+              </TouchableOpacity>
+            ),
           }} 
         />
       </Stack>
