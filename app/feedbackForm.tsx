@@ -12,7 +12,8 @@ import {
   Keyboard,
   TouchableWithoutFeedback,
 } from "react-native";
-import { submitFeedback } from "@/db/feedback"; // Adjust the path based on your project structure
+import { submitFeedback } from "@/db/feedback";
+import { fonts } from "@/styles/theme";
 
 const FeedbackForm = () => {
   const [rating, setRating] = useState<number | null>(null);
@@ -45,10 +46,16 @@ const FeedbackForm = () => {
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <ScrollView contentContainerStyle={styles.scrollContainer}>
           <View style={styles.formContainer}>
-            <Text style={styles.heading}>Feedback Time!</Text>
-            <Text style={styles.subheading}>Your thoughts matter to us</Text>
+            <Text style={[styles.heading, { fontFamily: fonts.primary }]}>
+            What can we improve?
+            </Text>
+            <Text style={[styles.subheading, { fontFamily: fonts.secondary }]}>
+              Your thoughts matter to us
+            </Text>
 
-            <Text style={styles.label}>How would you rate your experience?</Text>
+            <Text style={[styles.label, { fontFamily: fonts.primary }]}>
+              How would you rate your experience?
+            </Text>
             <View style={styles.ratingContainer}>
               {[1, 2, 3, 4, 5].map((num) => (
                 <TouchableOpacity
@@ -61,6 +68,7 @@ const FeedbackForm = () => {
                 >
                   <Text style={[
                     styles.ratingText,
+                    { fontFamily: fonts.secondary },
                     rating === num && styles.selectedRatingText,
                   ]}>
                     {num}
@@ -69,9 +77,11 @@ const FeedbackForm = () => {
               ))}
             </View>
 
-            <Text style={styles.label}>How is the app?</Text>
+            <Text style={[styles.label, { fontFamily: fonts.primary }]}>
+              How is the app?
+            </Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { fontFamily: fonts.secondary }]}
               placeholder="Share your thoughts about the app"
               placeholderTextColor="#999"
               value={feedback}
@@ -79,9 +89,11 @@ const FeedbackForm = () => {
               multiline
             />
 
-            <Text style={styles.label}>What can be improved?</Text>
+            <Text style={[styles.label, { fontFamily: fonts.primary }]}>
+              What can be improved?
+            </Text>
             <TextInput
-              style={[styles.input, styles.textArea]}
+              style={[styles.input, styles.textArea, { fontFamily: fonts.secondary }]}
               placeholder="Suggest improvements for the app"
               placeholderTextColor="#999"
               value={improvements}
@@ -97,7 +109,9 @@ const FeedbackForm = () => {
               onPress={handleSubmit}
               disabled={!rating || !feedback || !improvements}
             >
-              <Text style={styles.buttonText}>Send</Text>
+              <Text style={[styles.buttonText, { fontFamily: fonts.primary }]}>
+                Send Feedback →
+              </Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -109,17 +123,17 @@ const FeedbackForm = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f0f0f0",
+    backgroundColor: "#FFFFFF",
   },
   scrollContainer: {
     flexGrow: 1,
     padding: 20,
-    justifyContent: "center",
   },
   formContainer: {
     backgroundColor: "#fff",
-    borderRadius: 15,
-    padding: 20,
+    borderRadius: 24,
+    padding: 24,
+    marginTop: 20,
     ...Platform.select({
       ios: {
         shadowColor: "#000",
@@ -128,82 +142,84 @@ const styles = StyleSheet.create({
         shadowRadius: 8,
       },
       android: {
-        elevation: 5,
+        elevation: 4,
       },
     }),
   },
   heading: {
-    fontSize: 28,
-    fontWeight: "bold",
-    marginBottom: 5,
+    fontSize: 32,
+    fontWeight: "700",
+    marginBottom: 8,
     textAlign: "center",
-    color: "#333",
+    color: "#000",
   },
   subheading: {
     fontSize: 16,
-    marginBottom: 20,
+    marginBottom: 32,
     textAlign: "center",
     color: "#666",
   },
   label: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "600",
-    marginBottom: 8,
-    color: "#333",
+    marginBottom: 12,
+    color: "#000",
   },
   input: {
-    borderWidth: 1,
-    borderColor: "#e0e0e0",
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
+    borderWidth: 1.5,
+    borderColor: "#E5E7EB",
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 24,
     fontSize: 16,
-    backgroundColor: "#f9f9f9",
+    backgroundColor: "#F9FAFB",
+    color: "#000",
   },
   textArea: {
-    height: 100,
+    height: 120,
     textAlignVertical: "top",
   },
   ratingContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 20,
+    marginBottom: 32,
+    paddingHorizontal: 20,
   },
   ratingButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "#f0f0f0",
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "#F3F4F6",
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#e0e0e0",
+    borderWidth: 2,
+    borderColor: "#E5E7EB",
   },
   selectedRating: {
-    backgroundColor: "#007AFF",
-    borderColor: "#007AFF",
+    backgroundColor: "#000",
+    borderColor: "#000",
   },
   ratingText: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#333",
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#4B5563",
   },
   selectedRatingText: {
     color: "#fff",
   },
   button: {
-    backgroundColor: "#007AFF",
-    padding: 15,
-    borderRadius: 8,
+    backgroundColor: "#000",
+    padding: 16,
+    borderRadius: 16,
     alignItems: "center",
-    marginTop: 10,
+    marginTop: 8,
   },
   disabledButton: {
-    backgroundColor: "#B0B0B0",
+    backgroundColor: "#E5E7EB",
   },
   buttonText: {
     color: "#fff",
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "600",
   },
 });

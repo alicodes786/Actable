@@ -90,7 +90,7 @@ function AppContent() {
         <Stack.Screen 
           name="feedbackForm"
           options={{
-            title: '',
+            title: 'Feedback',
             headerShown: true,
           }} 
         />
