@@ -7,15 +7,44 @@ import CountDownTimer from '../CountDownTimer';
 import { useAuth } from '@/providers/AuthProvider';
 import { getUserName } from '@/db/users'; // Assuming you have this function to fetch user name
 import Header from '@/components/Header';
+import { colors, fonts } from '@/styles/theme';
 
 const DEADLINE_COLORS = [
-  '#FF7B7B',  // Coral Red
-  '#82C3FF',  // Light Blue
-  '#98D8A3',  // Light Green
-  '#FFB480',  // Light Orange
-  '#B5A8FF',  // Light Purple
-  '#FF9FD3',  // Light Pink
+  '#6366F1',    // Darker indigo
+  '#B91C1C',      // Darker red
+  '#15803D',   // Darker green
+  '#C2410C',     // Darker orange
+  '#854D0E',        // Darker amber
+  '#737373',     // Darker gray
 ];
+
+const getStatusLabel = (deadline: any, cardColor: string) => {
+  const now = new Date();
+  const deadlineDate = new Date(deadline.date);
+  const timeDiff = deadlineDate.getTime() - now.getTime();
+  const daysDiff = timeDiff / (1000 * 60 * 60 * 24);
+
+  if (daysDiff <= 1 && daysDiff > 0) {
+    return {
+      text: 'URGENT',
+      textColor: '#FFFFFF',
+      bgColor: 'rgba(255, 255, 255, 0.25)'
+    };
+  } else if (daysDiff > 1 && daysDiff <= 3) {
+    return {
+      text: 'APPROACHING',
+      textColor: '#FFFFFF',
+      bgColor: 'rgba(255, 255, 255, 0.25)'
+    };
+  } else if (daysDiff > 3) {
+    return {
+      text: 'UPCOMING',
+      textColor: '#FFFFFF',
+      bgColor: 'rgba(255, 255, 255, 0.25)',
+    };
+  }
+  return null;
+};
 
 export default function Home() {
   const [deadlines, setDeadlines] = useState<IdeadlineList | null>(null);
@@ -116,7 +145,7 @@ export default function Home() {
         <View className="pb-10 flex-1">
           <Header />
           <View className="mt-10 px-5">
-            <Text className="text-3xl mb-3" style={{ fontFamily: 'Manrope' }}>Upcoming</Text>
+            <Text className="text-3xl mb-3" style={{ fontFamily: fonts.primary }}>Upcoming</Text>
 
             {getUpcomingDeadlines().map((item, idx) => {
               const cardColor = deadlineColors[item.id] || DEADLINE_COLORS[0];
@@ -134,15 +163,38 @@ export default function Home() {
                     className="rounded-3xl p-4 shadow-md"
                     style={{ backgroundColor: cardColor }}
                   >
-                    <Text className="text-white text-lg mb-1" style={{ fontFamily: 'Manrope' }}>
-                      {item.name}
-                    </Text>
-                    <Text className="text-white/80 text-sm mb-3" style={{ fontFamily: 'Manrope' }}>
+                    <View className="flex-row items-center justify-between mb-3">
+                      <Text className="text-white text-lg font-bold" style={{ fontFamily: fonts.primary }}>
+                        {item.name}
+                      </Text>
+                      {getStatusLabel(item, cardColor) && (
+                        <View 
+                          className="px-3 py-1.5 font-bold rounded-full ml-2"
+                          style={{ 
+                            backgroundColor: getStatusLabel(item, cardColor)?.bgColor,
+                            borderWidth: 1,
+                            borderColor: 'rgba(255, 255, 255, 0.3)',
+                          }}
+                        >
+                          <Text 
+                            className="text-xs font-bold"
+                            style={{ 
+                              fontFamily: fonts.primary,
+                              color: getStatusLabel(item, cardColor)?.textColor
+                            }}
+                          >
+                            {getStatusLabel(item, cardColor)?.text}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+
+                    <Text className="text-white font-bold text-md mb-3" style={{ fontFamily: fonts.primary }}>
                       {item.description}
                     </Text>
 
                     <View className="flex-row justify-between items-center mt-3">
-                      <Text className="text-white text-lg font-medium flex-shrink" style={{ fontFamily: 'Manrope' }}>
+                      <Text className="text-white text-lg font-medium flex-shrink" style={{ fontFamily: fonts.primary }}>
                         <CountDownTimer 
                           deadlineDate={new Date(item.date)} 
                           textColour="#FFFFFF" 

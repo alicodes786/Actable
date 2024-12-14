@@ -287,7 +287,7 @@ export default function ViewDeadlinesScreen() {
                       <Text className="text-white text-lg mb-1" style={{ fontFamily: fonts.primary }}>
                         {deadline.name}
                       </Text>
-                      <Text className="text-white/80 text-sm mb-3" style={{ fontFamily: fonts.secondary }}>
+                      <Text className="text-white text-md mb-3" style={{ fontFamily: fonts.secondary }}>
                         {deadline.description}
                       </Text>
                       
