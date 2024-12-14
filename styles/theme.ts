@@ -1,11 +1,10 @@
 export const colors = {
-  // Deadline status colors
-  upcoming: '#979CFF',
-  missed: '#D95353',
-  completed: '#5EBD3C',
-  pending: '#D96A4E',
-  late: '#A07705',
-  invalid:'#B7B7B7'
+    upcoming: '#6366F1',    // Darker indigo
+    missed: '#B91C1C',      // Darker red
+    completed: '#15803D',   // Darker green
+    pending: '#C2410C',     // Darker orange
+    late: '#854D0E',        // Darker amber
+    invalid: '#737373',     // Darker gray
 } as const;
 
 export const fonts = {
