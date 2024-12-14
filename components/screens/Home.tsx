@@ -1,6 +1,5 @@
-import React, { useCallback, useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect} from 'react';
 import { View, Text, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { router, useFocusEffect } from 'expo-router';
 import { IdeadlineList } from '@/lib/interfaces';
 import { getDeadlines } from '@/db/deadlines';
@@ -8,26 +7,6 @@ import CountDownTimer from '../CountDownTimer';
 import { useAuth } from '@/providers/AuthProvider';
 import { getUserName } from '@/db/users'; // Assuming you have this function to fetch user name
 import Header from '@/components/Header';
-import Ionicons from 'react-native-vector-icons/Ionicons';
-
-const GRADIENT_COLORS: [string, string][] = [
-  ['#87CEEB', '#00BFFF'],
-  ['#ff7a63', '#FF6347'],
-  ['#8f75ff', '#5d3ce8'],
-];
-
-const STATUS_COLORS = {
-  INVALID: {
-    bg: '#808080',    // Gray 600
-    text: '#FFFFFF',   // White text
-    badge: '#696969',  // Gray 700
-  },
-  PENDING: {
-    bg: '#FFA500',    // Orange
-    text: '#FFFFFF',   // White text
-    badge: '#FF8C00',  // Dark Orange
-  },
-};
 
 const DEADLINE_COLORS = [
   '#FF7B7B',  // Coral Red
@@ -41,7 +20,37 @@ const DEADLINE_COLORS = [
 export default function Home() {
   const [deadlines, setDeadlines] = useState<IdeadlineList | null>(null);
   const [userName, setUserName] = useState<string | null>(null); // State to store user name
-  const { isLoading, user } = useAuth();
+  const { isLoading, user, deadlineColors, setDeadlineColors } = useAuth();
+
+  // Only create color mapping when deadlines are first loaded and colors aren't set
+  useEffect(() => {
+    if (!deadlines?.deadlineList || Object.keys(deadlineColors).length > 0) return;
+
+    const newColorMapping: Record<string, string> = {};
+    const usedColors = new Set<string>();
+    
+    deadlines.deadlineList.forEach((deadline) => {
+      if (!newColorMapping[deadline.id]) {
+        // Get remaining unused colors
+        const availableColors = DEADLINE_COLORS.filter(color => !usedColors.has(color));
+        
+        // If we've used all colors, reset the used colors set
+        if (availableColors.length === 0) {
+          usedColors.clear();
+          availableColors.push(...DEADLINE_COLORS);
+        }
+        
+        // Pick a random color from available ones
+        const randomIndex = Math.floor(Math.random() * availableColors.length);
+        const randomColor = availableColors[randomIndex];
+        
+        newColorMapping[deadline.id] = randomColor;
+        usedColors.add(randomColor);
+      }
+    });
+
+    setDeadlineColors(newColorMapping);
+  }, [deadlines?.deadlineList, deadlineColors, setDeadlineColors]);
 
   // Fetch user name when the user is available
   useEffect(() => {
@@ -110,7 +119,7 @@ export default function Home() {
             <Text className="text-3xl mb-3" style={{ fontFamily: 'Manrope' }}>Upcoming</Text>
 
             {getUpcomingDeadlines().map((item, idx) => {
-              const randomColor = DEADLINE_COLORS[Math.floor(Math.random() * DEADLINE_COLORS.length)];
+              const cardColor = deadlineColors[item.id] || DEADLINE_COLORS[0];
               const submission = item.submissions?.find(
                 sub => sub.id === item.lastsubmissionid
               );
@@ -123,33 +132,32 @@ export default function Home() {
                 >
                   <View
                     className="rounded-3xl p-4 shadow-md"
-                    style={{ backgroundColor: randomColor }}
+                    style={{ backgroundColor: cardColor }}
                   >
-                    <View className="flex-row justify-between items-start">
-                      <View className="flex-1">
-                        <Text className="text-white text-lg mb-1" style={{ fontFamily: 'Manrope' }}>
-                          {item.name}
-                        </Text>
-                        <Text className="text-white/80 text-sm mb-3" style={{ fontFamily: 'Manrope' }}>
-                          {item.description}
-                        </Text>
-                        <Text className="text-white text-lg font-medium" style={{ fontFamily: 'Manrope' }}>
-                          <CountDownTimer 
-                            deadlineDate={new Date(item.date)} 
-                            textColour="#FFFFFF" 
-                          />
-                        </Text>
-                      </View>
-                    </View>
+                    <Text className="text-white text-lg mb-1" style={{ fontFamily: 'Manrope' }}>
+                      {item.name}
+                    </Text>
+                    <Text className="text-white/80 text-sm mb-3" style={{ fontFamily: 'Manrope' }}>
+                      {item.description}
+                    </Text>
 
-                    <TouchableOpacity 
-                      className="bg-white self-end px-4 py-2 rounded-lg mt-3"
-                      onPress={() => handleSubmission(item)}
-                    >
-                      <Text className="text-black font-medium">
-                        {hasSubmission ? 'Resubmit →' : 'Submit →'}
+                    <View className="flex-row justify-between items-center mt-3">
+                      <Text className="text-white text-lg font-medium flex-shrink" style={{ fontFamily: 'Manrope' }}>
+                        <CountDownTimer 
+                          deadlineDate={new Date(item.date)} 
+                          textColour="#FFFFFF" 
+                        />
                       </Text>
-                    </TouchableOpacity>
+
+                      <TouchableOpacity 
+                        className="bg-white px-4 py-2 rounded-lg ml-2"
+                        onPress={() => handleSubmission(item)}
+                      >
+                        <Text className="text-black font-medium">
+                          {hasSubmission ? 'Resubmit →' : 'Submit →'}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
                   </View>
                 </View>
               );

@@ -10,6 +10,7 @@ interface CountDownTimerProps {
 
 const CountDownTimer: React.FC<CountDownTimerProps> = ({ deadlineDate }) => {
   const [timeLeft, setTimeLeft] = useState<string>('');
+  const [isDeadlineExpired, setIsDeadlineExpired] = useState(false);
   const { userTimezone } = useAuth();
 
   useEffect(() => {
@@ -19,7 +20,8 @@ const CountDownTimer: React.FC<CountDownTimerProps> = ({ deadlineDate }) => {
       const distance = localDeadline.getTime() - now.getTime();
 
       if (isExpired(deadlineDate.toISOString(), userTimezone)) {
-        setTimeLeft('EXPIRED');
+        setTimeLeft('Deadline expired');
+        setIsDeadlineExpired(true);
         clearInterval(timer);
         return;
       }
@@ -29,13 +31,26 @@ const CountDownTimer: React.FC<CountDownTimerProps> = ({ deadlineDate }) => {
       const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
-      setTimeLeft(`${days}d ${hours}h ${minutes}m ${seconds}s`);
+      let timeString = '';
+      if (days > 0) {
+        timeString = `${days}d ${hours}h`;
+      } else if (hours > 0) {
+        timeString = `${hours}h ${minutes}m`;
+      } else {
+        timeString = `${minutes}m ${seconds}s`;
+      }
+
+      setTimeLeft(timeString);
     }, 1000);
 
     return () => clearInterval(timer);
   }, [deadlineDate, userTimezone]);
 
-  return <Text style={{ fontSize: 24 }}>{timeLeft}</Text>;
+  return (
+    <Text style={{ fontSize: isDeadlineExpired ? 16 : 24 }}>
+      {timeLeft}
+    </Text>
+  );
 };
 
 export default CountDownTimer;

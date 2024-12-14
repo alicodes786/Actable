@@ -17,27 +17,27 @@ import { colors, fonts } from '@/styles/theme';
 const CATEGORIES = {
   UPCOMING: {
     label: 'Upcoming',
-    color: colors.upcoming, // #979CFF
-  },
-  COMPLETED: {
-    label: 'Completed',
-    color: colors.completed, // #5EBD3C
-  },
-  MISSED: {
-    label: 'Missed',
-    color: colors.missed, // #A50505
-  },
-  LATE: {
-    label: 'Late',
-    color: colors.late, // #A07705
+    color: colors.upcoming,
   },
   PENDING: {
     label: 'Pending',
-    color: colors.pending, // #D96A4E
+    color: colors.pending,
+  },
+  LATE: {
+    label: 'Late',
+    color: colors.late,
+  },
+  ON_TIME: {
+    label: 'On Time',
+    color: colors.completed,
+  },
+  MISSED: {
+    label: 'Missed',
+    color: colors.missed,
   },
   INVALID: {
     label: 'Invalid',
-    color: colors.invalid, // #B7B7B7
+    color: colors.invalid,
   },
 };
 
@@ -147,168 +147,79 @@ export default function ViewDeadlinesScreen() {
     });
   };
 
+  const getDeadlineCategory = (deadline: Ideadline): keyof typeof CATEGORIES | null => {
+    const now = new Date();
+    const submission = deadline.submissions?.[0];
+    const localDeadlineTime = convertUTCToLocal(deadline.date);
+
+    // Check categories in order of priority
+    if (hasMod && deadline.submissions?.some(sub => 
+      sub.id === deadline.lastsubmissionid && sub.status === 'pending'
+    )) {
+      return 'PENDING';
+    }
+    
+    if (hasMod && deadline.submissions?.some(sub => 
+      sub.id === deadline.lastsubmissionid && sub.status === 'invalid'
+    )) {
+      return 'INVALID';
+    }
+
+    if (submission) {
+      const submittedDate = convertUTCToLocal(submission.submitteddate);
+      const deadlineDate = convertUTCToLocal(deadline.date);
+      
+      if (submittedDate.getTime() > deadlineDate.getTime()) {
+        return 'LATE';
+      }
+      if (deadline.completed) {
+        return 'ON_TIME';
+      }
+    }
+
+    if (localDeadlineTime < now && !deadline.submissions?.length) {
+      return 'MISSED';
+    }
+
+    if (localDeadlineTime > now && !deadline.completed) {
+      return 'UPCOMING';
+    }
+
+    return null;
+  };
+
   const filterDeadlines = () => {
     if (!deadlines) return [];
     
-    const now = new Date();
-    let filteredDeadlines: Ideadline[] = [];
-    
-    switch (selectedCategory) {
-      case 'UPCOMING':
-        filteredDeadlines = deadlines.filter(deadline => {
-          const localDeadlineTime = convertUTCToLocal(deadline.date);
-          return localDeadlineTime > now && !deadline.completed;
-        });
-        break;
-      
-      case 'PENDING':
-        if (!hasMod) return [];
-        filteredDeadlines = deadlines.filter(deadline => {
-          const submission = deadline.submissions?.[0];
-          if (submission) {
-            const submittedDate = new Date(submission.submitteddate);
-            const deadlineDate = new Date(deadline.date);
-            if (submittedDate > deadlineDate) return false;
-          }
-          
-          return deadline.submissions?.some(sub => 
-            sub.id === deadline.lastsubmissionid && sub.status === 'pending'
-          );
-        });
-        break;
-      
-      case 'INVALID':
-        if (!hasMod) return [];
-        filteredDeadlines = deadlines.filter(deadline => 
-          deadline.submissions?.some(sub => 
-            sub.id === deadline.lastsubmissionid && sub.status === 'invalid'
-          )
-        );
-        break;
-      
-      case 'COMPLETED':
-        filteredDeadlines = deadlines.filter(deadline => {
-          const submission = deadline.submissions?.[0];
-          if (!submission) return false;
-          
-          // Check if it's not late first
-          const submittedDate = convertUTCToLocal(submission.submitteddate);
-          const deadlineDate = convertUTCToLocal(deadline.date);
-          
-          // Only count as completed if it wasn't submitted late
-          return deadline.completed && submittedDate.getTime() <= deadlineDate.getTime();
-        });
-        break;
-      
-      case 'MISSED':
-        filteredDeadlines = deadlines.filter(deadline => {
-          const localDeadlineTime = convertUTCToLocal(deadline.date);
-          return localDeadlineTime < now && !deadline.submissions?.length;
-        });
-        break;
-      
-      case 'LATE':
-        filteredDeadlines = deadlines.filter(deadline => {
-          const submission = deadline.submissions?.[0];
-          if (!submission) return false;
-          
-          const submittedDate = convertUTCToLocal(submission.submitteddate);
-          const deadlineDate = convertUTCToLocal(deadline.date);
-          
-          // Any submission after deadline (even by seconds) is late
-          return submittedDate.getTime() > deadlineDate.getTime();
-        });
-        break;
-      
-      default:
-        return [];
-    }
+    const filteredDeadlines = deadlines.filter(deadline => 
+      getDeadlineCategory(deadline) === selectedCategory
+    );
 
     // Sort deadlines by date
     return filteredDeadlines.sort((a, b) => {
       const dateA = new Date(a.date).getTime();
       const dateB = new Date(b.date).getTime();
       
-      // For upcoming deadlines, sort by closest first
-      if (selectedCategory === 'UPCOMING') {
-        return dateA - dateB;
-      }
-      // For all other categories, sort by most recent first
-      return dateB - dateA;
+      return selectedCategory === 'UPCOMING' ? dateA - dateB : dateB - dateA;
     });
   };
 
   const getCategoryCounts = useCallback(() => {
     if (!deadlines) return {};
     
-    const now = new Date();
     const counts = {
       UPCOMING: 0,
-      LATE: 0,
       PENDING: 0,
-      INVALID: 0,
-      COMPLETED: 0,
+      LATE: 0,
+      ON_TIME: 0,
       MISSED: 0,
+      INVALID: 0,
     };
 
     deadlines.forEach(deadline => {
-      const submission = deadline.submissions?.[0];
-      const localDeadlineTime = convertUTCToLocal(deadline.date);
-
-      // Check each category independently - a deadline can be in multiple categories
-      
-      // UPCOMING
-      if (localDeadlineTime > now && !deadline.completed) {
-        counts.UPCOMING++;
-      }
-
-      // LATE
-      if (submission) {
-        const submittedDate = convertUTCToLocal(submission.submitteddate);
-        const deadlineDate = convertUTCToLocal(deadline.date);
-        if (submittedDate.getTime() > deadlineDate.getTime()) {
-          counts.LATE++;
-        }
-      }
-
-      // PENDING
-      if (hasMod) {
-        if (submission) {
-          const submittedDate = convertUTCToLocal(submission.submitteddate);
-          const deadlineDate = convertUTCToLocal(deadline.date);
-          if (submittedDate.getTime() > deadlineDate.getTime()) {
-            // Don't count late submissions as pending
-          } else if (deadline.submissions?.some(sub => 
-            sub.id === deadline.lastsubmissionid && sub.status === 'pending'
-          )) {
-            counts.PENDING++;
-          }
-        } else if (deadline.submissions?.some(sub => 
-          sub.id === deadline.lastsubmissionid && sub.status === 'pending'
-        )) {
-          counts.PENDING++;
-        }
-      }
-
-      // INVALID
-      if (hasMod && deadline.submissions?.some(sub => 
-        sub.id === deadline.lastsubmissionid && sub.status === 'invalid'
-      )) {
-        counts.INVALID++;
-      }
-
-      // COMPLETED
-      if (deadline.completed && submission) {
-        const submittedDate = convertUTCToLocal(submission.submitteddate);
-        const deadlineDate = convertUTCToLocal(deadline.date);
-        if (submittedDate.getTime() <= deadlineDate.getTime()) {
-          counts.COMPLETED++;
-        }
-      }
-
-      // MISSED
-      if (localDeadlineTime < now && !deadline.submissions?.length) {
-        counts.MISSED++;
+      const category = getDeadlineCategory(deadline);
+      if (category) {
+        counts[category]++;
       }
     });
     
@@ -363,7 +274,7 @@ export default function ViewDeadlinesScreen() {
         <ScrollView className="flex-1">
           {filterDeadlines().map((deadline) => {
             const backgroundColor = CATEGORIES[selectedCategory as keyof typeof CATEGORIES].color;
-            const showActions = !['COMPLETED', 'LATE', 'MISSED'].includes(selectedCategory);
+            const showActions = !['ON_TIME', 'LATE', 'MISSED'].includes(selectedCategory);
             
             return(
               <View key={deadline.id} className="mb-5">
@@ -398,7 +309,7 @@ export default function ViewDeadlinesScreen() {
                             </Text>
                           </View>
                         </View>
-                      ) : ['COMPLETED', 'LATE'].includes(selectedCategory) ? (
+                      ) : ['ON_TIME', 'LATE'].includes(selectedCategory) ? (
                         <View className="flex-row justify-between items-center">
                           <View>
                             <Text className="text-white text-xs uppercase mb-1 opacity-80">
