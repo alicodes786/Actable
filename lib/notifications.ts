@@ -66,3 +66,9 @@ export async function cancelDeadlineNotifications(deadlineId: number): Promise<v
     console.error('Error canceling notifications:', error);
   }
 }
+
+export const formatTimeMessage = (minutes: number) => {
+  if (minutes === 1440) return '1 day';
+  if (minutes === 60) return '1 hour';
+  return `${minutes} minutes`;
+};

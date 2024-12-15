@@ -152,26 +152,31 @@ export default function RootLayout() {
   useEffect(() => {
     async function setupNotifications() {
       try {
-        if (Platform.OS === 'ios') {
-          const { status: existingStatus } = await Notifications.getPermissionsAsync();
-          let finalStatus = existingStatus;
-          
-          if (existingStatus !== 'granted') {
-            const { status } = await Notifications.requestPermissionsAsync();
-            finalStatus = status;
-          }
-          
-          if (finalStatus !== 'granted') {
-            console.log('Failed to get notification permissions!');
-            return;
-          }
+        const { status: existingStatus } = await Notifications.getPermissionsAsync();
+        let finalStatus = existingStatus;
+        
+        if (existingStatus !== 'granted') {
+          const { status } = await Notifications.requestPermissionsAsync({
+            ios: {
+              allowAlert: true,
+              allowBadge: true,
+              allowSound: true,
+              allowAnnouncements: true,
+            },
+          });
+          finalStatus = status;
+        }
+        
+        if (finalStatus !== 'granted') {
+          console.log('Failed to get notification permissions!');
+          return;
         }
 
-        Notifications.setNotificationHandler({
+        await Notifications.setNotificationHandler({
           handleNotification: async () => ({
             shouldShowAlert: true,
             shouldPlaySound: true,
-            shouldSetBadge: false,
+            shouldSetBadge: true,
           }),
         });
       } catch (error) {
