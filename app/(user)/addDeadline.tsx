@@ -49,7 +49,7 @@ export default function AddDeadlineScreen() {
       const storedNotificationTime = await SecureStore.getItemAsync('notificationTime');
 
       if (notificationsEnabled === null || JSON.parse(notificationsEnabled)) {
-        const minutes = storedNotificationTime ? JSON.parse(storedNotificationTime) : 30;
+        const minutes = parseInt(storedNotificationTime ? JSON.parse(storedNotificationTime) : '30');
         const scheduledTime = new Date(deadlineDate.getTime() - (minutes * 60 * 1000));
         const now = new Date();
 

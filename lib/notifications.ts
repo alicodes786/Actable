@@ -67,8 +67,15 @@ export async function cancelDeadlineNotifications(deadlineId: number): Promise<v
   }
 }
 
-export const formatTimeMessage = (minutes: number) => {
-  if (minutes === 1440) return '1 day';
-  if (minutes === 60) return '1 hour';
-  return `${minutes} minutes`;
+export const formatTimeMessage = (minutes: number): string => {
+  switch (minutes) {
+    case 1440:
+      return '1 day';
+    case 60:
+      return '1 hour';
+    case 30:
+      return '30 minutes';
+    default:
+      return `${minutes} minutes`;
+  }
 };
