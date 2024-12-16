@@ -7,8 +7,11 @@ import * as Notifications from 'expo-notifications';
 import { colors } from '@/styles/theme';
 import { fonts } from '@/styles/theme';
 import { formatTimeMessage } from '@/lib/notifications';
+import { getDeadlines } from '@/db/deadlines';
+import { useAuth } from '@/providers/AuthProvider';
 
 const NotificationsSettings = () => {
+  const { user } = useAuth();
   const [isNotificationsEnabled, setIsNotificationsEnabled] = useState(true);
   const [notificationTime, setNotificationTime] = useState<number>(30); 
 
@@ -36,12 +39,19 @@ const NotificationsSettings = () => {
     loadSettings();
   }, []);
 
-  const handleToggleNotifications = () => {
-    setIsNotificationsEnabled(prev => !prev);
+  const handleToggleNotifications = async () => {
+    const newState = !isNotificationsEnabled;
+    setIsNotificationsEnabled(newState);
+    if (newState) {
+      await rescheduleAllNotifications();
+    } else {
+      await Notifications.cancelAllScheduledNotificationsAsync();
+    }
   };
   
-  const handleNotificationTimeChange = (time: number) => {
+  const handleNotificationTimeChange = async (time: number) => {
     setNotificationTime(time);
+    await rescheduleAllNotifications();
   };
   
   // Call `saveSettings` after each state change
@@ -98,6 +108,46 @@ const NotificationsSettings = () => {
       case 60: return '1 hour before';
       case 1440: return '1 day before';
       default: return '30 minutes before';
+    }
+  };
+
+  // Add this function to reschedule all notifications
+  const rescheduleAllNotifications = async () => {
+    try {
+      // First cancel all existing notifications
+      await Notifications.cancelAllScheduledNotificationsAsync();
+
+      // Get all upcoming deadlines
+      const deadlines = await getDeadlines(String(user?.id));
+      if (!deadlines?.deadlineList) return;
+
+      // Filter for future deadlines
+      const futureDeadlines = deadlines.deadlineList.filter(deadline => {
+        const deadlineDate = new Date(deadline.date);
+        return deadlineDate > new Date();
+      });
+
+      // Schedule new notifications for each future deadline
+      for (const deadline of futureDeadlines) {
+        const deadlineDate = new Date(deadline.date);
+        const scheduledTime = new Date(deadlineDate.getTime() - (notificationTime * 60 * 1000));
+        const now = new Date();
+
+        if (scheduledTime > now) {
+          await Notifications.scheduleNotificationAsync({
+            content: {
+              title: "Deadline Approaching",
+              body: `${deadline.name} is due in ${formatTimeMessage(notificationTime)}`,
+            },
+            trigger: {
+              type: 'date',
+              date: scheduledTime,
+            },
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error rescheduling notifications:', error);
     }
   };
 
