@@ -8,6 +8,9 @@ import { toUTC } from '@/lib/dateUtils';
 import { fonts } from '@/styles/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import * as SecureStore from 'expo-secure-store';
+import * as Notifications from 'expo-notifications';
+import { formatTimeMessage } from '@/lib/notifications';
 
 export default function AddDeadlineScreen() {
   const { user } = useAuth();
@@ -40,6 +43,34 @@ export default function AddDeadlineScreen() {
     return true;
   };
 
+  const scheduleDeadlineNotification = async (deadlineDate: Date) => {
+    try {
+      const notificationsEnabled = await SecureStore.getItemAsync('notificationsEnabled');
+      const storedNotificationTime = await SecureStore.getItemAsync('notificationTime');
+
+      if (notificationsEnabled === null || JSON.parse(notificationsEnabled)) {
+        const minutes = parseInt(storedNotificationTime ? JSON.parse(storedNotificationTime) : '30');
+        const scheduledTime = new Date(deadlineDate.getTime() - (minutes * 60 * 1000));
+        const now = new Date();
+
+        if (scheduledTime > now) {
+          await Notifications.scheduleNotificationAsync({
+            content: {
+              title: "Deadline Approaching",
+              body: `${deadlineName} is due in ${formatTimeMessage(minutes)}`,
+            },
+            trigger: {
+              type: 'date',
+              date: scheduledTime,
+            },
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error scheduling notification:', error);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!validateForm()) return;
   
@@ -58,6 +89,8 @@ export default function AddDeadlineScreen() {
       if (!success) {
         throw new Error(error);
       }
+  
+      await scheduleDeadlineNotification(deadlineDate!);
   
       Alert.alert('Success', 'Deadline added successfully!');
       setDeadlineName('');

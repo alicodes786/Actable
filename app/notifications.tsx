@@ -1,5 +1,3 @@
-
-
 import { View, Text, StyleSheet, TouchableOpacity, Switch } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import React, { useEffect, useState } from 'react';
@@ -8,8 +6,12 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Notifications from 'expo-notifications';
 import { colors } from '@/styles/theme';
 import { fonts } from '@/styles/theme';
+import { formatTimeMessage } from '@/lib/notifications';
+import { getDeadlines } from '@/db/deadlines';
+import { useAuth } from '@/providers/AuthProvider';
 
 const NotificationsSettings = () => {
+  const { user } = useAuth();
   const [isNotificationsEnabled, setIsNotificationsEnabled] = useState(true);
   const [notificationTime, setNotificationTime] = useState<number>(30); 
 
@@ -21,15 +23,14 @@ const NotificationsSettings = () => {
 
    // Function to load settings from SecureStore
    const loadSettings = async () => {
-    const notificationsEnabled = await SecureStore.getItemAsync('notificationsEnabled');
-    const notificationTime = await SecureStore.getItemAsync('notificationTime');
-    
-    if (notificationsEnabled) {
-      setIsNotificationsEnabled(JSON.parse(notificationsEnabled));
-    }
-    if (notificationTime) {
-        console.log("LoadedTime: ",notificationTime)
-      setNotificationTime(JSON.parse(notificationTime));
+    try {
+      const notificationsEnabled = await SecureStore.getItemAsync('notificationsEnabled');
+      const notificationTime = await SecureStore.getItemAsync('notificationTime');
+      
+      setIsNotificationsEnabled(notificationsEnabled === null ? true : JSON.parse(notificationsEnabled));
+      setNotificationTime(notificationTime === null ? 30 : JSON.parse(notificationTime));
+    } catch (error) {
+      console.error('Error loading notification settings:', error);
     }
   };
 
@@ -38,12 +39,19 @@ const NotificationsSettings = () => {
     loadSettings();
   }, []);
 
-  const handleToggleNotifications = () => {
-    setIsNotificationsEnabled(prev => !prev);
+  const handleToggleNotifications = async () => {
+    const newState = !isNotificationsEnabled;
+    setIsNotificationsEnabled(newState);
+    if (newState) {
+      await rescheduleAllNotifications();
+    } else {
+      await Notifications.cancelAllScheduledNotificationsAsync();
+    }
   };
   
-  const handleNotificationTimeChange = (time: number) => {
+  const handleNotificationTimeChange = async (time: number) => {
     setNotificationTime(time);
+    await rescheduleAllNotifications();
   };
   
   // Call `saveSettings` after each state change
@@ -53,25 +61,32 @@ const NotificationsSettings = () => {
 
   const scheduleNotification = async (deadline: Date) => {
     if (!isNotificationsEnabled) return;
-    console.log(notificationTime)
 
-    const notificationTriggerTime = new Date(deadline.getTime() - notificationTime * 60 * 1000); // Time in milliseconds
-    console.log(notificationTriggerTime)
+    try {
+      const scheduledTime = new Date(deadline.getTime() - (notificationTime * 60 * 1000));
+      const now = new Date();
 
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title: "Upcoming Deadline",
-        body: `Reminder: Your deadline is approaching!`,
-        data: { deadlineId: 'someId' }, 
-      },
-      trigger: notificationTriggerTime ,
-    });
+      if (scheduledTime > now) {
+        await Notifications.scheduleNotificationAsync({
+          content: {
+            title: "Deadline Approaching",
+            body: `Your deadline is due in ${formatTimeMessage(notificationTime)}`,
+          },
+          trigger: {
+            type: 'date',
+            date: scheduledTime,
+          },
+        });
+      }
+    } catch (error) {
+      console.error('Error scheduling notification:', error);
+    }
   };
 
-  // Button press handler to simulate scheduling a notification
+  // Update the test function to use a future date
   const handleScheduleNotification = () => {
-    const deadline = new Date(); // Replace with actual deadline logic
-    deadline.setHours(deadline.getHours() + 1); // Simulate a deadline 1 hour from now
+    const deadline = new Date();
+    deadline.setHours(deadline.getHours() + 2); // Set deadline 2 hours from now
     scheduleNotification(deadline);
   };
 
@@ -93,6 +108,46 @@ const NotificationsSettings = () => {
       case 60: return '1 hour before';
       case 1440: return '1 day before';
       default: return '30 minutes before';
+    }
+  };
+
+  // Add this function to reschedule all notifications
+  const rescheduleAllNotifications = async () => {
+    try {
+      // First cancel all existing notifications
+      await Notifications.cancelAllScheduledNotificationsAsync();
+
+      // Get all upcoming deadlines
+      const deadlines = await getDeadlines(String(user?.id));
+      if (!deadlines?.deadlineList) return;
+
+      // Filter for future deadlines
+      const futureDeadlines = deadlines.deadlineList.filter(deadline => {
+        const deadlineDate = new Date(deadline.date);
+        return deadlineDate > new Date();
+      });
+
+      // Schedule new notifications for each future deadline
+      for (const deadline of futureDeadlines) {
+        const deadlineDate = new Date(deadline.date);
+        const scheduledTime = new Date(deadlineDate.getTime() - (notificationTime * 60 * 1000));
+        const now = new Date();
+
+        if (scheduledTime > now) {
+          await Notifications.scheduleNotificationAsync({
+            content: {
+              title: "Deadline Approaching",
+              body: `${deadline.name} is due in ${formatTimeMessage(notificationTime)}`,
+            },
+            trigger: {
+              type: 'date',
+              date: scheduledTime,
+            },
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error rescheduling notifications:', error);
     }
   };
 

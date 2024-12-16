@@ -66,3 +66,16 @@ export async function cancelDeadlineNotifications(deadlineId: number): Promise<v
     console.error('Error canceling notifications:', error);
   }
 }
+
+export const formatTimeMessage = (minutes: number): string => {
+  switch (minutes) {
+    case 1440:
+      return '1 day';
+    case 60:
+      return '1 hour';
+    case 30:
+      return '30 minutes';
+    default:
+      return `${minutes} minutes`;
+  }
+};
