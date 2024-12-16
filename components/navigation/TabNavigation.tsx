@@ -39,7 +39,7 @@ export default function TabNavigation() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
+          title: '',
           tabBarIcon: ({ color, focused }) => (
             <TabBarIcon name={focused ? 'home' : 'home-outline'} color={color} size={24} />
           ),
@@ -48,7 +48,7 @@ export default function TabNavigation() {
       <Tabs.Screen
         name="viewDeadlines"
         options={{
-          title: 'Deadlines',
+          title: '',
           tabBarIcon: ({ color, focused }) => (
             <TabBarIcon name={focused ? 'time' : 'time-outline'} color={color} size={24} />
           ),
@@ -69,7 +69,7 @@ export default function TabNavigation() {
       <Tabs.Screen
         name="tracker"
         options={{
-          title: 'Tracker',
+          title: '',
           tabBarIcon: ({ color, focused }) => (
             <TabBarIcon name={focused ? 'stats-chart' : 'stats-chart-outline'} color={color} size={24} />
           ),
@@ -78,7 +78,7 @@ export default function TabNavigation() {
       <Tabs.Screen
         name="coach"
         options={{
-          title: 'Coach',
+          title: '',
           tabBarIcon: ({ color, focused }) => (
             <TabBarIcon name={focused ? 'person' : 'person-outline'} color={color} size={24} />
           ),
