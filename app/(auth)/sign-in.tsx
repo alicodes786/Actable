@@ -11,28 +11,13 @@ export default function SignIn() {
   const [isLoading, setIsLoading] = useState(false);
   const signUpPath: Href = "/(auth)/sign-up";
   const { login, user, session } = useAuth();
-  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    setIsReady(true);
-  }, []);
-
-  useEffect(() => {
-    if (!isReady) return;
-    
     if (user && session) {
       const route = user.role === 'mod' ? '/(dashboard)/dashboard' : '/(user)';
       router.replace(route);
     }
-  }, [user, session, isReady]);
-
-  // Separate effect to handle back navigation prevention
-  useEffect(() => {
-    if (!user && router.canGoBack()) {
-      router.back();
-    }
-  }, []);
-
+  }, [user, session]);
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>

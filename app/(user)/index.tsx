@@ -7,6 +7,8 @@ export default function HomeScreen() {
   const { user } = useAuth();
   
   useEffect(() => {
+    console.log('HomeScreen: User state changed -', { userRole: user?.role });
+    
     if (!user) {
       router.replace('/(auth)/sign-in');
     } else if (user.role === 'mod') {
@@ -16,5 +18,6 @@ export default function HomeScreen() {
   }, [user]);
 
   // Only render Home component for non-moderator users
+  console.log('HomeScreen: Rendering with user role -', user?.role);
   return user && user.role !== 'mod' ? <Home /> : null;
 }
