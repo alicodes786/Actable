@@ -2,6 +2,7 @@ import { Alert } from 'react-native';
 import { supabase } from './db';
 import { router } from 'expo-router';
 import { User } from '@/providers/AuthProvider';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type LoginFunction = (user: {
   id: string;
@@ -95,7 +96,31 @@ export const handleSignIn = async (
         shouldSignOut = true;
         Alert.alert('Error', 'Failed to create or retrieve user profile');
       } else if (profile.role === 'mod') {
-        // Only check relationship if the user is a mod
+        // Check if this is a pending moderator completing verification
+        const pendingModData = await AsyncStorage.getItem('pendingMod');
+        if (pendingModData) {
+          const pendingMod = JSON.parse(pendingModData);
+          if (pendingMod.email === email) {
+            // Create the relationship now that email is verified
+            const { error: relError } = await supabase
+              .from('mod_user_relationships')
+              .insert({
+                user_uuid: pendingMod.userId,
+                mod_uuid: authData.user.id,
+              });
+
+            if (relError) {
+              shouldSignOut = true;
+              Alert.alert('Error', 'Failed to complete moderator setup. Please contact support.');
+              return;
+            }
+
+            // Clear pending mod data
+            await AsyncStorage.removeItem('pendingMod');
+          }
+        }
+
+        // Check relationship as before
         const { data: relationship, error: relError } = await supabase
           .from('mod_user_relationships')
           .select('*')
@@ -104,7 +129,7 @@ export const handleSignIn = async (
 
         if (relError || !relationship) {
           shouldSignOut = true;
-          Alert.alert('Access Denied', 'Your moderator access has been revoked.');
+          Alert.alert('Access Denied', 'Your moderator access has been revoked or is not yet activated.');
         } else {
           try {
             await login(profile);
