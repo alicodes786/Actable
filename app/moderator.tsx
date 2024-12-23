@@ -25,12 +25,6 @@ export default function ModeratorScreen() {
   const [showCredentials, setShowCredentials] = useState(false);
   const [isContentLoading, setIsContentLoading] = useState(true);
 
-  useEffect(() => {
-    if (user?.role !== 'user') {
-      Alert.alert('Access Denied', 'Only regular users can manage moderators');
-      router.back();
-    }
-  }, [user]);
 
   useEffect(() => {
     loadExistingMod();
