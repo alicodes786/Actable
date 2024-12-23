@@ -10,49 +10,128 @@ type LoginFunction = (user: {
   name: string;
 }) => Promise<void>;
 
+export const resendVerificationEmail = async (email: string) => {
+  try {
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email,
+    });
+    
+    if (error) throw error;
+    
+    Alert.alert(
+      'Verification Email Sent',
+      'Please check your email for the verification link.'
+    );
+  } catch (error: any) {
+    Alert.alert('Error', error.message);
+  }
+};
+
 export const handleSignIn = async (
   email: string,
   password: string,
   login: (userData: User) => Promise<void>,
   setIsLoading: (loading: boolean) => void
 ) => {
+  if (!email || !password) {
+    Alert.alert('Error', 'Please enter both email and password');
+    return;
+  }
+
   try {
     setIsLoading(true);
-    const { data, error } = await supabase.auth.signInWithPassword({
+    let shouldSignOut = false;
+
+    // First check authentication
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
-    if (error) throw error;
-
-    if (data.user) {
-      // Get user profile
-      const { data: profile, error: profileError } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', data.user.id)
-        .single();
-
-      if (profileError) throw profileError;
-
-      // Only check relationship if the user is a mod
-      if (profile.role === 'mod') {
+    if (authError) {
+      if (authError.message.toLowerCase().includes('email not confirmed')) {
+        Alert.alert(
+          'Email Not Verified',
+          'Please verify your email before signing in.',
+          [
+            {
+              text: 'Resend Verification Email',
+              onPress: () => resendVerificationEmail(email),
+            },
+            {
+              text: 'OK',
+              style: 'cancel',
+            },
+          ]
+        );
+        shouldSignOut = true;
+      } else {
+        throw authError;
+      }
+    } else if (!authData.user) {
+      throw new Error('No user data returned');
+    } else if (!authData.user.email_confirmed_at) {
+      Alert.alert(
+        'Email Not Verified',
+        'Please verify your email before signing in.',
+        [
+          {
+            text: 'Resend Verification Email',
+            onPress: () => resendVerificationEmail(email),
+          },
+          {
+            text: 'OK',
+            style: 'cancel',
+          },
+        ]
+      );
+      shouldSignOut = true;
+    } else {
+      // Try to get or create user profile
+      const profile = await createUserProfile(authData.user);
+      
+      if (!profile) {
+        shouldSignOut = true;
+        Alert.alert('Error', 'Failed to create or retrieve user profile');
+      } else if (profile.role === 'mod') {
+        // Only check relationship if the user is a mod
         const { data: relationship, error: relError } = await supabase
           .from('mod_user_relationships')
           .select('*')
-          .eq('mod_uuid', data.user.id)
+          .eq('mod_uuid', authData.user.id)
           .single();
 
         if (relError || !relationship) {
+          shouldSignOut = true;
           Alert.alert('Access Denied', 'Your moderator access has been revoked.');
-          await supabase.auth.signOut();
-          return;
+        } else {
+          try {
+            await login(profile);
+          } catch (loginError) {
+            console.error('Login error:', loginError);
+            shouldSignOut = true;
+            Alert.alert('Error', 'Failed to complete login process');
+          }
+        }
+      } else {
+        try {
+          await login(profile);
+        } catch (loginError) {
+          console.error('Login error:', loginError);
+          shouldSignOut = true;
+          Alert.alert('Error', 'Failed to complete login process');
         }
       }
-
-      await login(profile);
     }
+
+    // Handle sign out if needed
+    if (shouldSignOut) {
+      await supabase.auth.signOut();
+    }
+
   } catch (error: any) {
+    await supabase.auth.signOut();
     Alert.alert('Error', error.message);
   } finally {
     setIsLoading(false);
@@ -96,33 +175,23 @@ export const handleSignUp = async (
       return;
     }
 
-    // 1. Create auth user
+    // Create auth user
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: {
-          name: username
+          name: username,
+          pending_username: username // Store username temporarily in metadata
         }
       }
     });
 
     if (authError) throw authError;
 
-    // 2. Create user profile
-    const { error: profileError } = await supabase
-      .from('user_profiles')
-      .insert({
-        id: authData.user!.id,
-        name: username,
-        role: 'user'
-      });
-
-    if (profileError) throw profileError;
-
     Alert.alert(
-      'Success',
-      'Registration successful',
+      'Verification Email Sent',
+      'Please check your email and click the verification link to complete your registration.',
       [
         {
           text: 'OK',
@@ -138,6 +207,48 @@ export const handleSignUp = async (
     );
   } finally {
     setIsLoading(false);
+  }
+};
+
+// Add a new function to handle post-verification profile creation
+export const createUserProfile = async (user: any) => {
+  try {
+    const metadata = user.user_metadata;
+    const username = metadata?.pending_username || metadata?.name || user.email?.split('@')[0];
+    
+    if (!username) {
+      console.error('Could not determine username');
+      return null;
+    }
+
+    // First check if profile already exists
+    const { data: existingProfile } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (existingProfile) {
+      return existingProfile;
+    }
+
+    // Create new profile if it doesn't exist
+    const { data: newProfile, error: profileError } = await supabase
+      .from('user_profiles')
+      .insert({
+        id: user.id,
+        name: username,
+        role: 'user'
+      })
+      .select()
+      .single();
+
+    if (profileError) throw profileError;
+    return newProfile;
+
+  } catch (error: any) {
+    console.error('Error creating user profile:', error);
+    return null;
   }
 };
 

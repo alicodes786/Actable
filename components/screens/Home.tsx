@@ -17,40 +17,49 @@ const DEADLINE_COLORS = [
   '#FF9FD3',  // Light Pink
 ];
 
+const generateColorMapping = (deadlines: any[]) => {
+  const newColorMapping: Record<string, string> = {};
+  const usedColors = new Set<string>();
+  
+  deadlines.forEach((deadline) => {
+    if (!newColorMapping[deadline.id]) {
+      const availableColors = DEADLINE_COLORS.filter(color => !usedColors.has(color));
+      
+      if (availableColors.length === 0) {
+        usedColors.clear();
+        availableColors.push(...DEADLINE_COLORS);
+      }
+      
+      const randomIndex = Math.floor(Math.random() * availableColors.length);
+      const randomColor = availableColors[randomIndex];
+      
+      newColorMapping[deadline.id] = randomColor;
+      usedColors.add(randomColor);
+    }
+  });
+
+  return newColorMapping;
+};
+
 export default function Home() {
   const [deadlines, setDeadlines] = useState<IdeadlineList | null>(null);
   const [userName, setUserName] = useState<string | null>(null); // State to store user name
   const { isLoading, user, deadlineColors, setDeadlineColors } = useAuth();
 
-  // Only create color mapping when deadlines are first loaded and colors aren't set
+  // Update color mapping when deadlines change
   useEffect(() => {
-    if (!deadlines?.deadlineList || Object.keys(deadlineColors).length > 0) return;
-
-    const newColorMapping: Record<string, string> = {};
-    const usedColors = new Set<string>();
+    if (!deadlines?.deadlineList || deadlines.deadlineList.length === 0) return;
     
-    deadlines.deadlineList.forEach((deadline) => {
-      if (!newColorMapping[deadline.id]) {
-        // Get remaining unused colors
-        const availableColors = DEADLINE_COLORS.filter(color => !usedColors.has(color));
-        
-        // If we've used all colors, reset the used colors set
-        if (availableColors.length === 0) {
-          usedColors.clear();
-          availableColors.push(...DEADLINE_COLORS);
-        }
-        
-        // Pick a random color from available ones
-        const randomIndex = Math.floor(Math.random() * availableColors.length);
-        const randomColor = availableColors[randomIndex];
-        
-        newColorMapping[deadline.id] = randomColor;
-        usedColors.add(randomColor);
-      }
-    });
-
-    setDeadlineColors(newColorMapping);
-  }, [deadlines?.deadlineList, deadlineColors, setDeadlineColors]);
+    // Only generate new colors if we don't have colors for these deadlines
+    const needsNewColors = deadlines.deadlineList.some(
+      deadline => !deadlineColors[deadline.id]
+    );
+    
+    if (needsNewColors) {
+      const newColors = generateColorMapping(deadlines.deadlineList);
+      setDeadlineColors(newColors);
+    }
+  }, [deadlines?.deadlineList]); // Only depend on deadlines changing
 
   // Fetch user name when the user is available
   useEffect(() => {
